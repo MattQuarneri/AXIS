@@ -1,0 +1,42 @@
+# AXIS
+
+> AXIS (Agentically eXtensible Instruction Structures) is a placement grammar for code: seven concerns, each split into a definition (Essence) and a live counterpart (Expression), with rules that keep business logic pure, IO at the edge, and state under one owner. These pages are written for agents. Read the core first; fetch a reference only when the task needs it.
+
+## Core
+
+- [AXIS core](axis/SKILL.md): the model, the eight rules, where code goes, how to work in an existing repository (about 2705 tokens)
+
+## References
+
+- [recipe.md](axis/references/recipe.md): adding a feature: build order, type contracts, what to test at each layer (about 2429 tokens)
+- [tests.md](axis/references/tests.md): worked test files for Actions, Adapters, commit validation and Impact (about 1559 tokens)
+- [mistakes.md](axis/references/mistakes.md): ten wrong-and-right pairs and a review checklist (about 1828 tokens)
+- [boundaries.md](axis/references/boundaries.md): when to split a Manager or a Facet; failure as data; the two-pass read (about 4463 tokens)
+- [components.md](axis/references/components.md): precise definitions of the fourteen parts; AXIS beside MVC, Redux, CQRS, event sourcing (about 4382 tokens)
+- [frontend.md](axis/references/frontend.md): the mapping for browser code (about 1470 tokens)
+- [mapping.md](axis/references/mapping.md): the AXIS repo mapper: describe any existing repository in AXIS terms (about 3377 tokens)
+- [generation-units.md](axis/references/generation-units.md): break a change into small, checkable contracts (about 1184 tokens)
+- [example-spa.md](axis/references/example-spa.md): a complete browser example, one file per part (about 3775 tokens)
+- [example-server.md](axis/references/example-server.md): a complete Node server example with runtime extension (about 4940 tokens)
+- [codemaps.prompt.md](axis/references/codemaps.prompt.md): the CodeMaps navigation prompt, for broad maps of a large repository (about 2094 tokens)
+
+## Tools
+
+- [axis.py](axis/scripts/axis.py): scan a repo for signals, lint claimed-pure code, and validate, render, query and age-check a repo map. Python 3.8+, no dependencies
+- [axis-map.example.json](axis/assets/axis-map.example.json): a complete map of a small service, to copy the shape from
+
+## Install
+
+- [axis.skill](axis.skill): all of the above as an installable Agent Skill
+- [llms-full.txt](llms-full.txt): all of the above as one file (about 35003 tokens)
+
+## Optional
+
+- [Presenting AXIS](../presentations/Presenting_AXIS_byOpus.html): an interactive introduction for people
+- [AXIS-Lite.md](../AXIS-Lite.md), [AXIS-Design.md](../AXIS-Design.md), [AXIS-Code.md](../AXIS-Code.md), [AXIS-Specification.md](../AXIS-Specification.md), [AXIS-FrontEnd-Web.md](../AXIS-FrontEnd-Web.md), [AXIS-Principles.md](../AXIS-Principles.md): the source documents
+
+## License
+
+AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC. Originally published at https://mentic.com/AXIS. This skill is licensed under Apache 2.0 (axis/LICENSE.txt); the AXIS documents under CC BY 4.0 (../LICENSE.md).
+
+If you found these ideas useful you could [Buy Me a Coffee](https://buymeacoffee.com/mattq4) to show your support.

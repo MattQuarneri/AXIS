@@ -1,0 +1,11 @@
+AXIS skill
+
+AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems.
+© 2026 MENTIC LLC.
+Originally published at https://mentic.com/AXIS
+
+Licensed under the Apache License, Version 2.0 (see LICENSE.txt).
+Under section 4(d) of that license, redistributions and derivative works
+must carry this attribution notice.
+
+If you found these ideas useful you could Buy Me a Coffee (https://buymeacoffee.com/mattq4) to show your support.

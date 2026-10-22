@@ -1,0 +1,2704 @@
+<!DOCTYPE html>
+<html lang="en" data-look="argon-dark" data-layout="standard">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AXIS: Agentically eXtensible Instruction Structures — Presented by Argon</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN SYSTEM & VISUAL FACETS (Look & Layout Tokens)
+       ========================================================================== */
+    :root,
+    html[data-look="argon-dark"] {
+      --bg-canvas: #07090e;
+      --bg-surface: #0e131f;
+      --bg-elevated: #151c2e;
+      --bg-glass: rgba(14, 19, 31, 0.82);
+      --bg-code: #06080d;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-subtle: rgba(148, 163, 184, 0.14);
+      --border-strong: rgba(148, 163, 184, 0.28);
+      /* Essence (Static / Being) = Cyan/Indigo spectrum */
+      --essence-primary: #38bdf8;
+      --essence-bg: rgba(56, 189, 248, 0.10);
+      --essence-border: rgba(56, 189, 248, 0.35);
+      /* Expression (Dynamic / Doing) = Amber/Violet/Emerald spectrum */
+      --expression-primary: #f59e0b;
+      --expression-bg: rgba(245, 158, 11, 0.10);
+      --expression-border: rgba(245, 158, 11, 0.35);
+      /* Accents */
+      --accent-primary: #818cf8;
+      --accent-secondary: #2dd4bf;
+      --accent-danger: #f43f5e;
+      --accent-success: #10b981;
+      --shadow-card: 0 16px 40px -12px rgba(0, 0, 0, 0.65);
+      --glow-essence: 0 0 28px rgba(56, 189, 248, 0.18);
+      --glow-expression: 0 0 28px rgba(245, 158, 11, 0.18);
+    }
+
+    html[data-look="blueprint-light"] {
+      --bg-canvas: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-elevated: #f1f5f9;
+      --bg-glass: rgba(255, 255, 255, 0.88);
+      --bg-code: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-subtle: rgba(15, 23, 42, 0.10);
+      --border-strong: rgba(15, 23, 42, 0.22);
+      --essence-primary: #0284c7;
+      --essence-bg: rgba(2, 132, 199, 0.08);
+      --essence-border: rgba(2, 132, 199, 0.32);
+      --expression-primary: #d97706;
+      --expression-bg: rgba(217, 119, 6, 0.08);
+      --expression-border: rgba(217, 119, 6, 0.32);
+      --accent-primary: #4f46e5;
+      --accent-secondary: #0d9488;
+      --accent-danger: #e11d48;
+      --accent-success: #059669;
+      --shadow-card: 0 12px 32px -8px rgba(15, 23, 42, 0.08);
+      --glow-essence: 0 4px 18px rgba(2, 132, 199, 0.12);
+      --glow-expression: 0 4px 18px rgba(217, 119, 6, 0.12);
+    }
+
+    html[data-look="cyberpunk"] {
+      --bg-canvas: #05020a;
+      --bg-surface: #0d0618;
+      --bg-elevated: #170b29;
+      --bg-glass: rgba(13, 6, 24, 0.86);
+      --bg-code: #040108;
+      --text-primary: #fdf4ff;
+      --text-secondary: #d8b4fe;
+      --text-muted: #9333ea;
+      --border-subtle: rgba(217, 70, 239, 0.20);
+      --border-strong: rgba(34, 211, 238, 0.45);
+      --essence-primary: #22d3ee;
+      --essence-bg: rgba(34, 211, 238, 0.12);
+      --essence-border: rgba(34, 211, 238, 0.45);
+      --expression-primary: #f43f5e;
+      --expression-bg: rgba(244, 63, 94, 0.12);
+      --expression-border: rgba(244, 63, 94, 0.45);
+      --accent-primary: #e879f9;
+      --accent-secondary: #22d3ee;
+      --accent-danger: #fb7185;
+      --accent-success: #4ade80;
+      --shadow-card: 0 16px 44px -10px rgba(217, 70, 239, 0.25);
+      --glow-essence: 0 0 32px rgba(34, 211, 238, 0.25);
+      --glow-expression: 0 0 32px rgba(244, 63, 94, 0.25);
+    }
+
+    /* ==========================================================================
+       2. DIRECTIONAL VIEW TRANSITIONS (Modern Web Guidance Compliant)
+       ========================================================================== */
+    @keyframes slide-to-left {
+      to { transform: translateX(-48px); opacity: 0; }
+    }
+    @keyframes slide-from-right {
+      from { transform: translateX(48px); opacity: 0; }
+    }
+    @keyframes slide-to-right {
+      to { transform: translateX(48px); opacity: 0; }
+    }
+    @keyframes slide-from-left {
+      from { transform: translateX(-48px); opacity: 0; }
+    }
+
+    ::view-transition-group(root) {
+      animation: 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    html:active-view-transition-type(forward)::view-transition-old(root) {
+      animation-name: slide-to-left;
+    }
+    html:active-view-transition-type(forward)::view-transition-new(root) {
+      animation-name: slide-from-right;
+    }
+    html:active-view-transition-type(backward)::view-transition-old(root) {
+      animation-name: slide-to-right;
+    }
+    html:active-view-transition-type(backward)::view-transition-new(root) {
+      animation-name: slide-from-left;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation: none !important;
+      }
+    }
+
+    /* ==========================================================================
+       3. BASE TYPOGRAPHY & DECK SHELL LAYOUT
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    code, pre, .mono {
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .deck-shell {
+      display: grid;
+      grid-template-rows: 56px 1fr 54px;
+      height: 100vh;
+      width: 100vw;
+      background:
+        radial-gradient(circle at 12% 14%, var(--essence-bg), transparent 38%),
+        radial-gradient(circle at 88% 82%, var(--expression-bg), transparent 38%),
+        var(--bg-canvas);
+    }
+
+    /* Top Chrome Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      z-index: 30;
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--essence-bg), var(--expression-bg));
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--essence-primary), var(--expression-primary));
+    }
+
+    .slide-section-label {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chrome-btn, .select-pill {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s ease, transform 0.1s ease, background 0.15s ease;
+    }
+
+    .chrome-btn:hover, .select-pill:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-surface);
+    }
+
+    .chrome-btn[aria-pressed="true"] {
+      border-color: var(--essence-primary);
+      background: var(--essence-bg);
+      color: var(--essence-primary);
+    }
+
+    /* Main Slide Stage */
+    .stage-container {
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 28px 44px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1360px;
+      min-height: 100%;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 20px;
+      margin: 0 auto;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    .slide-header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 14px;
+    }
+
+    .slide-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--essence-primary);
+    }
+
+    .slide-title {
+      font-size: clamp(1.6rem, 2.4vw, 2.35rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.18;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .slide-subtitle {
+      font-size: 0.98rem;
+      color: var(--text-secondary);
+      max-width: 960px;
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .grid-sidebar {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2, .grid-3, .grid-4, .grid-sidebar {
+        grid-template-columns: 1fr;
+      }
+      .stage-container {
+        padding: 18px 20px;
+      }
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card.essence-card {
+      border-color: var(--essence-border);
+      background: linear-gradient(180deg, var(--essence-bg) 0%, var(--bg-surface) 100%);
+      box-shadow: var(--glow-essence);
+    }
+
+    .card.expression-card {
+      border-color: var(--expression-border);
+      background: linear-gradient(180deg, var(--expression-bg) 0%, var(--bg-surface) 100%);
+      box-shadow: var(--glow-expression);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .pill-essence {
+      background: var(--essence-bg);
+      color: var(--essence-primary);
+      border: 1px solid var(--essence-border);
+    }
+
+    .pill-expression {
+      background: var(--expression-bg);
+      color: var(--expression-primary);
+      border: 1px solid var(--expression-border);
+    }
+
+    .pill-neutral {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    pre.code-block {
+      background: var(--bg-code);
+      color: #e2e8f0;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    /* ==========================================================================
+       4. INTERACTIVE WIDGET STYLES (7x2 Grid, Flow Stepper, Simulator, etc.)
+       ========================================================================== */
+    /* Cognitive Flow Chain */
+    .cognitive-chain {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .cog-node {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .cog-node:hover, .cog-node.active {
+      border-color: var(--essence-primary);
+      background: var(--essence-bg);
+      transform: translateY(-2px);
+    }
+
+    .cog-step-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .cog-name {
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    /* 7x2 Interactive Grid Table */
+    .axis-matrix {
+      display: grid;
+      grid-template-columns: 150px 1fr 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .matrix-header {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .matrix-axis-cell {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .matrix-comp-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 9px 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .matrix-comp-btn.essence-btn:hover,
+    .matrix-comp-btn.essence-btn.selected {
+      border-color: var(--essence-primary);
+      background: var(--essence-bg);
+      box-shadow: var(--glow-essence);
+    }
+
+    .matrix-comp-btn.expression-btn:hover,
+    .matrix-comp-btn.expression-btn.selected {
+      border-color: var(--expression-primary);
+      background: var(--expression-bg);
+      box-shadow: var(--glow-expression);
+    }
+
+    .comp-name {
+      font-weight: 800;
+      font-size: 0.88rem;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .comp-tagline {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Pipeline Stepper */
+    .pipeline-track {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .pipe-step {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+      color: var(--text-primary);
+    }
+
+    .pipe-step.active {
+      border-color: var(--accent-secondary);
+      background: rgba(45, 212, 191, 0.12);
+      transform: translateY(-2px);
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .tab-btn {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--essence-bg);
+      color: var(--essence-primary);
+      border-color: var(--essence-primary);
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      z-index: 30;
+    }
+
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .progress-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-elevated);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--essence-primary), var(--expression-primary));
+      transition: width 0.25s ease;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Speaker Notes Drawer */
+    .notes-drawer {
+      position: fixed;
+      bottom: 64px;
+      right: 24px;
+      width: min(460px, 90vw);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-card);
+      z-index: 50;
+      display: none;
+    }
+
+    .notes-drawer.open {
+      display: block;
+    }
+
+    /* Slide Overview Modal */
+    .overview-modal {
+      position: fixed;
+      inset: 56px 0 54px 0;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      z-index: 60;
+      padding: 28px 44px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .overview-modal.open {
+      display: block;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+
+    .overview-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      text-align: left;
+      color: var(--text-primary);
+      transition: all 0.15s ease;
+    }
+
+    .overview-card:hover, .overview-card.current {
+      border-color: var(--essence-primary);
+      background: var(--essence-bg);
+    }
+
+    /* Layout Facet Variations (Demonstrated live on Slide 11 & Deck) */
+    html[data-layout="compact"] .card {
+      padding: 12px 14px;
+      gap: 6px;
+    }
+    html[data-layout="compact"] .stage-container {
+      padding: 16px 28px;
+    }
+
+    ul.clean-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    ul.clean-list li {
+      position: relative;
+      padding-left: 18px;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+    ul.clean-list li::before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--essence-primary);
+      font-weight: bold;
+    }
+    ul.clean-list.expr-list li::before {
+      color: var(--expression-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-shell">
+    <!-- ======================================================================
+         TOP CHROME BAR
+         ====================================================================== -->
+    <header class="top-bar" aria-label="Presentation Controls">
+      <div class="brand-cluster">
+        <span class="brand-badge">
+          <span class="brand-dot"></span>
+          AXIS ARCHITECTURE
+        </span>
+        <span class="slide-section-label" id="top-section-label">01 / Meta-Architecture &amp; Vision</span>
+      </div>
+
+      <div class="top-controls">
+        <label class="slide-section-label" for="look-facet-select">Look Facet:</label>
+        <select id="look-facet-select" class="select-pill" aria-label="Select Visual Look Facet">
+          <option value="argon-dark">Argon Obsidian (Dark)</option>
+          <option value="blueprint-light">Architectural Blueprint (Light)</option>
+          <option value="cyberpunk">Neon Cybernetics (High Contrast)</option>
+        </select>
+
+        <button type="button" class="chrome-btn" id="btn-overview" aria-pressed="false" title="Toggle Slide Grid Overview (Key: G)">
+          <span>⊞ All 14 Slides (G)</span>
+        </button>
+        <button type="button" class="chrome-btn" id="btn-notes" aria-pressed="false" title="Toggle Presenter Notes (Key: N)">
+          <span>✎ Notes (N)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ======================================================================
+         SLIDE STAGE (14 SLIDES FOR 14 AXIS COMPONENTS)
+         ====================================================================== -->
+    <main class="stage-container" id="stage-container">
+
+      <!-- ====================================================================
+           SLIDE 1: TITLE & EXECUTIVE VISION
+           ==================================================================== -->
+      <section class="slide active" data-slide-index="0" data-section="01 / Meta-Architecture &amp; Vision"
+               data-notes="Welcome to Presenting AXIS by Argon. Emphasize right away that AXIS is a cognitive meta-architecture, not a competing framework. It explains the deeper Essence–Expression duality shared by Clean Architecture, DDD, CQRS, Event Sourcing, MVC, and Flux.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>MENTIC Cognitive Systems · Version 2026.05.22</span>
+            <span class="pill pill-essence">Essence</span>
+            <span class="pill pill-expression">Expression</span>
+          </div>
+          <h1 class="slide-title" tabindex="-1">AXIS: Agentically eXtensible Instruction Structures</h1>
+          <p class="slide-subtitle">
+            <strong>The Essence–Expression Meta-Architecture</strong> — A cognitive and structural model for organizing software according to how <em>intent becomes behavior</em> and <em>behavior produces change</em>.
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card essence-card">
+            <div class="card-title">
+              <span>Why AXIS Exists: A Meta-Architecture for Codified Logic</span>
+              <span class="pill pill-essence">Foundational Thesis</span>
+            </div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary);">
+              Most successful architectural styles—Clean Architecture, Domain-Driven Design, CQRS, Event Sourcing, MVC, Flux/Redux—have independently discovered the same useful patterns: pure business logic, explicit boundaries, immutable state, and event-driven workflows.
+            </p>
+            <p style="font-size: 0.92rem; color: var(--text-primary); font-weight: 600;">
+              AXIS is not a replacement for those patterns. It is the underlying cognitive vocabulary that explains <em>why</em> they work and unifies them into composable, testable seams for both human engineers and synthetic coding agents.
+            </p>
+            <div class="grid-2" style="margin-top: 6px;">
+              <div class="card" style="padding: 12px 14px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: var(--essence-primary);">Immutable Essence (Static)</div>
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                  Defines <strong>what something is</strong>: generative shapes, enduring identity, capability maps, relationship rules, pure logic, and declared effects.
+                </p>
+              </div>
+              <div class="card" style="padding: 12px 14px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: var(--expression-primary);">Projected Expression (Dynamic)</div>
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                  Defines <strong>how it manifests at runtime</strong>: live state snapshots, scoped tokens, intents, graph hydration, orchestration, and IO execution.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>The 6-Document AXIS Canon</span>
+              <span class="pill pill-neutral">Interactive Deck Map</span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">
+              Click any guide below to jump directly to its architectural slides:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button type="button" class="matrix-comp-btn essence-btn" onclick="goToSlide(1)">
+                <span class="comp-name"><span>1. AXIS-Principles.md</span> <span class="pill pill-essence">Slides 2–4</span></span>
+                <span class="comp-tagline">The Cognitive Flow of Change, Essence–Expression split, and the 10 Principles.</span>
+              </button>
+              <button type="button" class="matrix-comp-btn expression-btn" onclick="goToSlide(4)">
+                <span class="comp-name"><span>2. AXIS-Specification.md</span> <span class="pill pill-expression">Slides 5–8</span></span>
+                <span class="comp-tagline">The complete 7×2 Grid (14 components), 12 Non-Negotiable Contracts, and Canonical Flow.</span>
+              </button>
+              <button type="button" class="matrix-comp-btn essence-btn" onclick="goToSlide(8)">
+                <span class="comp-name"><span>3. AXIS-Design.md</span> <span class="pill pill-essence">Slides 7–9</span></span>
+                <span class="comp-tagline">Composer–Conductor decomposition, Manager boundaries, and MVC/Flux/CQRS mappings.</span>
+              </button>
+              <button type="button" class="matrix-comp-btn expression-btn" onclick="goToSlide(9)">
+                <span class="comp-name"><span>4. AXIS-Lite.md</span> <span class="pill pill-expression">Slide 10</span></span>
+                <span class="comp-tagline">Pragmatic default profile ("preserve the discipline, not the ceremony") &amp; escalation ladder.</span>
+              </button>
+              <button type="button" class="matrix-comp-btn essence-btn" onclick="goToSlide(10)">
+                <span class="comp-name"><span>5. AXIS-FrontEnd-Web.md &amp; AXIS-Code.md</span> <span class="pill pill-essence">Slides 11–13</span></span>
+                <span class="comp-tagline">Visual CSS Facets, CodeMaps role analysis, anti-patterns, and Live Runtime Simulator.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 2: THE COGNITIVE FLOW OF CHANGE
+           ==================================================================== -->
+      <section class="slide" data-slide-index="1" data-section="02 / Cognitive Flow of Change"
+               data-notes="AXIS begins with cognition, not software components. Walk through the 9-stage Cognitive Flow of Change from Values down to Change. Click each stage to show how higher layers constrain and give meaning to lower layers.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Principles.md · Foundational Premise</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">The Cognitive Flow of Change</h2>
+          <p class="slide-subtitle">
+            Software exists to produce change. Change is not produced directly—it emerges from behavior, which executes instructions refined from progressively higher levels of intent.
+          </p>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 0.78rem; font-weight: 800; color: var(--essence-primary); text-transform: uppercase; letter-spacing: 0.08em;">← Expresses Purpose &amp; Meaning (Why)</span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Click any stage to inspect its architectural mapping</span>
+            <span style="font-size: 0.78rem; font-weight: 800; color: var(--expression-primary); text-transform: uppercase; letter-spacing: 0.08em;">Expresses Runtime Execution (How) →</span>
+          </div>
+
+          <div class="cognitive-chain" id="cognitive-chain">
+            <!-- Populated interactively via JS -->
+          </div>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card essence-card" id="cog-detail-card">
+            <!-- Populated interactively via JS -->
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>Why This Progression Matters</span>
+              <span class="pill pill-neutral">Architectural Axiom</span>
+            </div>
+            <ul class="clean-list">
+              <li><strong>Downward Constraint:</strong> Each layer constrains and gives meaning to the layers beneath it.</li>
+              <li><strong>Technology Independence:</strong> Architecture should not be organized around transport protocols, frameworks, or persistence engines.</li>
+              <li><strong>Semantic Traceability:</strong> When an agent or engineer inspects an <code>Action</code> or <code>Effect</code>, its lineage back to an <code>Intent</code>, <code>Facet</code>, and <code>Form</code> invariant is explicit in code.</li>
+              <li><strong>Closing the Loop:</strong> Dynamic behavior produces <strong>Change</strong>, and committed Change becomes the new declarative <strong>Instance</strong> state for the next cycle.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 3: THE ESSENCE–EXPRESSION PRINCIPLE
+           ==================================================================== -->
+      <section class="slide" data-slide-index="2" data-section="03 / Essence vs. Expression"
+               data-notes="Every software system contains two fundamentally different kinds of structure: Essence (what something is) and Expression (how it manifests at runtime). Keeping them explicitly separated is the heart of AXIS.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Principles.md · Orthogonal Decomposition</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">The Essence–Expression Principle</h2>
+          <p class="slide-subtitle">
+            Every architectural concern has a <strong>Static Essence</strong> (being, definition, contract) and a <strong>Dynamic Expression</strong> (doing, projection, runtime realization).
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card essence-card">
+            <div class="card-title">
+              <span>Immutable Essence — "What Something Is"</span>
+              <span class="pill pill-essence">Static · Generative · Pure</span>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--text-secondary);">
+              Essence consists of stable definitions, identities, capability surfaces, relationship rules, pure transformations, and causal descriptions.
+            </p>
+            <ul class="clean-list">
+              <li><strong>FORM:</strong> Generative schema, defaults, and invariants (holds no live values).</li>
+              <li><strong>IDENTITY:</strong> Immutable sameness and addressing policy across time.</li>
+              <li><strong>FACET:</strong> Static capability map associating capability keys with Action delegates.</li>
+              <li><strong>BOND:</strong> Declarative relationship topology, ownership, and cross-entity invariants.</li>
+              <li><strong>ACTION:</strong> Pure, deterministic function <code>(state, intent) → { delta, effects[] }</code>.</li>
+              <li><strong>EFFECT:</strong> Pure data value describing a desired side effect (never self-executing).</li>
+              <li><strong>WRAPPER:</strong> Structural boundary (DOM root, Shadow DOM, HTTP server socket).</li>
+            </ul>
+          </div>
+
+          <div class="card expression-card">
+            <div class="card-title">
+              <span>Projected Expression — "How It Manifests at Runtime"</span>
+              <span class="pill pill-expression">Dynamic · Temporal · Contextual</span>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--text-secondary);">
+              Expression consists of materialized state snapshots, scoped tokens, active interpretations, graph traversal, orchestration, and side-effect execution.
+            </p>
+            <ul class="clean-list expr-list">
+              <li><strong>INSTANCE:</strong> Materialized, versioned state snapshot (all mutable state lives here).</li>
+              <li><strong>TOKEN:</strong> Scoped, expirable, revocable temporal projection of Identity with claims.</li>
+              <li><strong>INTENT:</strong> Normalized, replayable semantic artifact ("what someone meant to do").</li>
+              <li><strong>LINK:</strong> Runtime traversal and graph hydration of a Bond within a query scope.</li>
+              <li><strong>MANAGER:</strong> Boundary-scoped orchestrator (Composer + Conductor).</li>
+              <li><strong>IMPACT:</strong> The sole site where IO, retries, and compensating rollbacks execute.</li>
+              <li><strong>ADAPTER:</strong> Edge transformer normalizing raw events + raw auth into Intents.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>The Generative Cycle of Essence &amp; Expression</span>
+            <span class="pill pill-neutral">Structural Loop</span>
+          </div>
+          <div class="grid-4">
+            <div class="card" style="padding: 12px; background: var(--bg-elevated);">
+              <strong style="font-size: 0.84rem; color: var(--essence-primary);">1. Static Structure</strong>
+              <span style="font-size: 0.78rem; color: var(--text-secondary);">Forms, Bonds, Facets, and Actions define what is valid and possible without executing IO.</span>
+            </div>
+            <div class="card" style="padding: 12px; background: var(--bg-elevated);">
+              <strong style="font-size: 0.84rem; color: var(--expression-primary);">2. Dynamic Behavior</strong>
+              <span style="font-size: 0.78rem; color: var(--text-secondary);">Adapters emit Intents; Managers route via Tokens &amp; Facets to pure Actions.</span>
+            </div>
+            <div class="card" style="padding: 12px; background: var(--bg-elevated);">
+              <strong style="font-size: 0.84rem; color: var(--accent-secondary);">3. Controlled Change</strong>
+              <span style="font-size: 0.78rem; color: var(--text-secondary);">Actions return <code>{ delta, effects[] }</code>; Impact executes IO with retry &amp; compensation.</span>
+            </div>
+            <div class="card" style="padding: 12px; background: var(--bg-elevated);">
+              <strong style="font-size: 0.84rem; color: var(--accent-primary);">4. New Declarative State</strong>
+              <span style="font-size: 0.78rem; color: var(--text-secondary);">Manager validates Form &amp; Bond invariants and commits a new versioned Instance.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 4: THE 10 AXIS PRINCIPLES
+           ==================================================================== -->
+      <section class="slide" data-slide-index="3" data-section="04 / The 10 AXIS Principles"
+               data-notes="Review the 10 foundational principles from AXIS-Principles.md. Notice how principles 5 (side effects as data) and 6 (responsibility as a routing problem) directly give rise to Effect/Impact and Token/Facet/Manager.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Principles.md · Architectural Commandments</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">The 10 Principles of AXIS</h2>
+          <p class="slide-subtitle">
+            The fourteen architectural components are not an arbitrary checklist—they are the natural consequences of these ten principles.
+          </p>
+        </div>
+
+        <div class="grid-2" style="gap: 12px;">
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--essence-primary);">01. Organize around behavior, not technology</span> <span class="pill pill-essence">Structure</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Structure software according to responsibilities and behavior rather than frameworks, transport protocols, or persistence mechanisms.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--essence-primary);">02. Follow the Cognitive Flow of Change</span> <span class="pill pill-essence">Cognition</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Higher levels of intent (Values → Goals → Plans → Declaratives) progressively refine into executable instructions, actions, and change.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--essence-primary);">03. Separate Essence from Expression</span> <span class="pill pill-essence">Duality</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Explicitly separate definitions from execution (`Form` vs. `Instance`), enduring identity from temporal scope (`Identity` vs. `Token`), and declarations from realization (`Effect` vs. `Impact`).</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--expression-primary);">04. Treat behavior as the engine of change</span> <span class="pill pill-expression">Dynamics</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">State never mutates spontaneously or ambiently; behavior (`Action` transformations committed by a `Manager`) is the sole engine that transforms state.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--expression-primary);">05. Treat side effects as data until execution</span> <span class="pill pill-expression">Testability</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Describe change before performing it. `Action`s return pure `Effect` descriptors; only `Impact` touches the outside world.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--expression-primary);">06. Treat responsibility as a routing problem</span> <span class="pill pill-expression">Policy</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Every behavior has an explicit owner and execution path: `Intent` + `Token` claims route through a `Facet` capability map to an `Action` delegate.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--essence-primary);">07. Prefer composition over inheritance</span> <span class="pill pill-essence">Modularity</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Assemble systems from composable capability overlays (`Facet`s), action pipelines, and relational `Bond`s rather than deep class hierarchies.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--essence-primary);">08. Design explicit boundaries</span> <span class="pill pill-essence">Encapsulation</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Every component owns one responsibility with a strict contract. `Manager`s own a single consistency boundary and communicate across contexts only via `Effect`s.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--expression-primary);">09. Dependencies are supplied, not discovered</span> <span class="pill pill-expression">Purity</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Components receive pre-hydrated state (`Instance` + `Link` graph) and `Intent` payloads rather than reaching out to global singletons or service locators.</p>
+          </div>
+          <div class="card" style="padding: 14px 16px;">
+            <div class="card-title"><span style="color: var(--essence-primary);">10. Form follows responsibility</span> <span class="pill pill-essence">Clarity</span></div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">Codebase topology should immediately reveal what the system does and where state, policy, and IO live—for both humans and machine agents.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 5: THE 7x2 AXIS GRID (INTERACTIVE 14-COMPONENT EXPLORER)
+           ==================================================================== -->
+      <section class="slide" data-slide-index="4" data-section="05 / The 7×2 Ontology Grid"
+               data-notes="This is the centerpiece ontology of AXIS-Specification.md. Read across the 7 rows (Being, Identity, Meaning, Relating, Doing, Changing, Bridging) and down the 2 columns (Essence vs. Expression). Click any of the 14 components to inspect its contract.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Specification.md · Section 0 &amp; 1 · Interactive Matrix</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">The 7×2 AXIS Grid: 7 Axes × 14 Components</h2>
+          <p class="slide-subtitle">
+            Along the diagonal: a thing <em>exists</em> (Being), <em>is itself</em> (Identity), <em>is perceived</em> (Meaning), <em>has relationships</em> (Relating), <em>acts</em> (Doing), <em>causes change</em> (Changing), and <em>connects</em> (Bridging). <strong>Click any component below to inspect its contract:</strong>
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="axis-matrix" id="axis-matrix-grid">
+            <div class="matrix-header" style="background: var(--bg-elevated); color: var(--text-secondary);">Axis (Concern)</div>
+            <div class="matrix-header" style="background: var(--essence-bg); color: var(--essence-primary); border: 1px solid var(--essence-border);">Immutable Essence (Static)</div>
+            <div class="matrix-header" style="background: var(--expression-bg); color: var(--expression-primary); border: 1px solid var(--expression-border);">Projected Expression (Dynamic)</div>
+            <!-- Rows injected via JS -->
+          </div>
+
+          <div class="card" id="grid-inspector-panel" style="position: sticky; top: 0;">
+            <!-- Populated interactively via JS when any of the 14 components is clicked -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 6: CANONICAL FLOW (COMPOSITION TIME VS. RUNTIME TRACE)
+           ==================================================================== -->
+      <section class="slide" data-slide-index="5" data-section="06 / Canonical Execution Flow"
+               data-notes="Walk through the runtime execution trace step-by-step. Point out that Actions never touch IO or mutate state—they return { delta, effects[] } which forks into Manager.commit(delta) and Impact.execute(effects[]).">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Specification.md · Section 2 &amp; 3 · Interactive Pipeline</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">Canonical Flow &amp; The 12 Non-Negotiable Contracts</h2>
+          <p class="slide-subtitle">
+            Step through the runtime execution lifecycle below to inspect the exact data contract and architectural seam at every stage.
+          </p>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="pill pill-expression">Runtime Trace Stepper</span>
+              <span style="font-size: 0.84rem; color: var(--text-secondary);">Click any stage or use the step buttons:</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="chrome-btn" onclick="stepPipeline(-1)">◀ Prev Stage</button>
+              <button type="button" class="chrome-btn" onclick="stepPipeline(1)">Next Stage ▶</button>
+            </div>
+          </div>
+
+          <div class="pipeline-track" id="pipeline-track">
+            <!-- 10 stages rendered in a 5x2 interactive track via JS -->
+          </div>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card essence-card" id="pipeline-detail-box">
+            <!-- Populated via JS -->
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>Composition Time (Binding) vs. Runtime</span>
+              <span class="pill pill-neutral">Setup Phase</span>
+            </div>
+            <pre class="code-block"><code>// Composition Time (Manager Composer / Binder)
+Wrapper.eventSlot  →  Adapter
+Intent             →  Facet       (via Manager routing)
+Facet              →  Action      (delegate resolution)
+Bond               →  Manager     (relationship registration)
+Effect             →  Impact      (handler registration)</code></pre>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">
+              <strong>Key Contract:</strong> Adapters <em>never</em> mint Tokens or call Actions directly. Actions <em>always</em> return <code>{ delta, effects[] }</code>. Only the Manager commits state (checking Form &amp; Bond invariants), and only Impact performs IO.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 7: INSIDE THE MANAGER — COMPOSER, CONDUCTOR & BOUNDARIES
+           ==================================================================== -->
+      <section class="slide" data-slide-index="6" data-section="07 / Manager Decomposition &amp; Boundaries"
+               data-notes="Address the #1 architectural question: 'Isn't Manager just a God Object?' No! Show how AXIS narrows the Manager into Composer (setup) and Conductor (runtime), and enforces strict bounded contexts that only communicate via Effects.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Design.md &amp; AXIS-Lite.md · Orchestration Discipline</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">Inside the Manager: Composer, Conductor &amp; Bounded Contexts</h2>
+          <p class="slide-subtitle">
+            A Manager is a <strong>boundary-scoped coordinator</strong>, never a catch-all service class. It owns one consistency boundary, one commit path, and one policy surface.
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card essence-card">
+            <div class="card-title">
+              <span>1. The Composer (Setup-Time Structure)</span>
+              <span class="pill pill-essence">manager/composer.*</span>
+            </div>
+            <p style="font-size: 0.86rem; color: var(--text-secondary);">
+              Decides <strong>what is possible</strong>. Wires Adapters to Wrappers, registers Facets and Bonds, and installs Impact handlers. Runs at startup or when system structure dynamically changes (e.g., plugin/service registration).
+            </p>
+            <pre class="code-block"><code>// Composer API (Structure)
+manager.bind(wrapper)
+manager.registerFacet(facet)
+manager.registerBond(bond)</code></pre>
+            <div style="font-size: 0.8rem; color: var(--essence-primary); font-weight: 600;">
+              💡 Diagnostic: Composer growing complex? Add more Facets, not more wiring conditionals.
+            </div>
+          </div>
+
+          <div class="card expression-card">
+            <div class="card-title">
+              <span>2. The Conductor (Runtime Performance)</span>
+              <span class="pill pill-expression">manager/conductor.* + commit.* + policy.*</span>
+            </div>
+            <p style="font-size: 0.86rem; color: var(--text-secondary);">
+              Decides <strong>what happens now</strong>. Resolves Tokens, selects Facets, hydrates Links, invokes pure Actions, validates Form &amp; Bond invariants on commit, and hands declared Effects to Impact.
+            </p>
+            <pre class="code-block"><code>// Conductor API (Performance)
+manager.dispatch(intent)
+manager.commit(delta) → Instance // validates Form &amp; Bond invariants
+manager.issueToken(identity, scope, rawAuth) → Token
+manager.resolveLink(link) → Link</code></pre>
+            <div style="font-size: 0.8rem; color: var(--expression-primary); font-weight: 600;">
+              💡 Diagnostic: Conductor growing branchy? Extract a Workflow sub-component or split Facets.
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card">
+            <div class="card-title">
+              <span>Cross-Boundary Communication: Managers Never Call Each Other Directly</span>
+              <span class="pill pill-neutral">Bounded Contexts</span>
+            </div>
+            <pre class="code-block"><code>[ Bounded Context A: Orders ]                     [ Bounded Context B: Billing ]
+  Manager A (owns Order Instances)                  Manager B (owns Invoice Instances)
+      ↓                                                 ↑
+  Action → Effect { kind: "EMIT_EVENT" }            Adapter → Intent { kind: "order.placed" }
+      ↓                                                 ↑
+   Impact ────────── (Queue / HTTP / Event Bus) ────→ Wrapper</code></pre>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <span>The 5-Part Manager Boundary Contract</span>
+              <span class="pill pill-essence">AXIS-Lite Interface</span>
+            </div>
+            <ul class="clean-list">
+              <li><strong>1. Owned State:</strong> Which Forms, Instances, and Identities it may commit.</li>
+              <li><strong>2. Accepted Intents:</strong> Exact command/intent kinds it accepts.</li>
+              <li><strong>3. Emitted Effects:</strong> The only outward requests it can make.</li>
+              <li><strong>4. Returned Outcomes:</strong> Acknowledgements, rejections, and follow-ups.</li>
+              <li><strong>5. Policy Scope:</strong> Token claims and roles it is allowed to interpret.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 8: DEEP PATTERNS — READS, BONDS/LINKS & FAILURES AS DATA
+           ==================================================================== -->
+      <section class="slide" data-slide-index="7" data-section="08 / Reads, Relations &amp; Failures"
+               data-notes="Use the interactive tabs to show how AXIS handles three classic hard problems without breaking Action purity: 1) Reads (Two-Pass Pattern & Link Hydration), 2) Relationships (Bonds & Links), and 3) Failures as pure data Effects.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Specification.md · Section 6 · Composition Patterns</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">Solving the Hard Problems: Reads, Relations &amp; Failures</h2>
+          <p class="slide-subtitle">
+            How does a system with strictly pure Actions fetch data, traverse entity graphs, and recover from partial IO failures? Select a pattern tab below:
+          </p>
+        </div>
+
+        <div class="tab-bar" role="tablist">
+          <button type="button" class="tab-btn active" onclick="selectPatternTab(0)" id="ptab-0">1. Read Paths: Two-Pass &amp; Link Hydration</button>
+          <button type="button" class="tab-btn" onclick="selectPatternTab(1)" id="ptab-1">2. Relating Axis: Bonds &amp; Links (DDD Aggregates)</button>
+          <button type="button" class="tab-btn" onclick="selectPatternTab(2)" id="ptab-2">3. Failures as Data (Zero Unhandled Exceptions)</button>
+        </div>
+
+        <div id="pattern-tab-content">
+          <!-- Populated interactively via JS -->
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 9: UNIFYING CLASSIC ARCHITECTURES (MVC, FLUX, CQRS, ES)
+           ==================================================================== -->
+      <section class="slide" data-slide-index="8" data-section="09 / Unifying Classic Patterns"
+               data-notes="Show how MVC, Flux/Redux, CQRS, Event Sourcing, and RBAC map directly onto AXIS. Point out the 1-seam vs. 5-seam diagram for Event -> Handler.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Design.md · Section 11 · Pattern Translation</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">How AXIS Unifies MVC, Flux, CQRS &amp; Event Sourcing</h2>
+          <p class="slide-subtitle">
+            AXIS splits traditional roles across the Essence–Expression boundary and names the four missing axes that classic patterns leave implicit.
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card">
+            <div class="card-title">
+              <span>MVC Decomposed into the 7×2 Grid</span>
+              <span class="pill pill-essence">What Changed</span>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-strong); text-align: left;">
+                  <th style="padding: 6px;">MVC Role</th>
+                  <th style="padding: 6px; color: var(--essence-primary);">AXIS Essence</th>
+                  <th style="padding: 6px; color: var(--expression-primary);">AXIS Expression</th>
+                  <th style="padding: 6px;">Architectural Gain</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 7px 6px; font-weight: 700;">Model</td>
+                  <td style="padding: 7px 6px;"><code>FORM</code> (shape)</td>
+                  <td style="padding: 7px 6px;"><code>INSTANCE</code> (state)</td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">Separates schema invariants from live versioned state</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 7px 6px; font-weight: 700;">View</td>
+                  <td style="padding: 7px 6px;"><code>FACET</code> (capabilities)</td>
+                  <td style="padding: 7px 6px;"><code>INTENT</code> (meaning)</td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">Separates policy affordances from semantic user intent</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 7px 6px; font-weight: 700;">Controller</td>
+                  <td style="padding: 7px 6px;"><code>ACTION</code> (logic)</td>
+                  <td style="padding: 7px 6px;"><code>MANAGER</code> (wiring)</td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">Separates pure state calculation from runtime routing</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 7px 6px; color: var(--text-muted);"><em>(Implicit)</em></td>
+                  <td style="padding: 7px 6px;"><code>IDENTITY</code></td>
+                  <td style="padding: 7px 6px;"><code>TOKEN</code></td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">First-class enduring sameness vs. scoped session/claims</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 7px 6px; color: var(--text-muted);"><em>(Implicit)</em></td>
+                  <td style="padding: 7px 6px;"><code>BOND</code></td>
+                  <td style="padding: 7px 6px;"><code>LINK</code></td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">Explicit aggregate boundaries vs. runtime graph hydration</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-subtle);">
+                  <td style="padding: 7px 6px; color: var(--text-muted);"><em>(Implicit)</em></td>
+                  <td style="padding: 7px 6px;"><code>EFFECT</code></td>
+                  <td style="padding: 7px 6px;"><code>IMPACT</code></td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">Decouples declarative side-effect data from IO execution</td>
+                </tr>
+                <tr>
+                  <td style="padding: 7px 6px; color: var(--text-muted);"><em>(Implicit)</em></td>
+                  <td style="padding: 7px 6px;"><code>WRAPPER</code></td>
+                  <td style="padding: 7px 6px;"><code>ADAPTER</code></td>
+                  <td style="padding: 7px 6px; color: var(--text-secondary);">Decouples UI/HTTP host surfaces from input normalization</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card essence-card">
+              <div class="card-title">
+                <span>From 1 Opaque Seam to 5 Testable Seams</span>
+                <span class="pill pill-essence">Event → Handler</span>
+              </div>
+              <pre class="code-block"><code>Generic:  Event ─────────────────────────────────────────→ Handler
+AXIS:     Event → Adapter → Intent → Manager → Facet → Action
+          (raw)  (normalize) (meaning) (route)  (select) (pure fn)</code></pre>
+            </div>
+
+            <div class="card expression-card">
+              <div class="card-title">
+                <span>Flux/Redux, CQRS, Event Sourcing &amp; RBAC</span>
+                <span class="pill pill-expression">Natural Emergence</span>
+              </div>
+              <ul class="clean-list expr-list">
+                <li><strong>Flux / Redux:</strong> Replaces opaque Thunks/Middleware with pure <code>EFFECT</code> data + <code>IMPACT</code> handlers.</li>
+                <li><strong>CQRS:</strong> Not a separate architecture—just a <strong>Write Facet</strong> vs. <strong>Read Facet</strong> selected by Token claims.</li>
+                <li><strong>Event Sourcing:</strong> The <code>Intent</code> stream + committed deltas <em>are</em> the event log, surrounded by named validation (`Form`) and consequence (`Effect`) layers.</li>
+                <li><strong>Roles &amp; Capabilities:</strong> <code>Token.claims</code> (Who) → <code>Manager</code> (When/Where) → <code>Facet.delegates</code> (What) → <code>Action</code> (How).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 10: AXIS LITE — PRAGMATIC ADOPTION & ESCALATION LADDER
+           ==================================================================== -->
+      <section class="slide" data-slide-index="9" data-section="10 / AXIS Lite &amp; Adoption Profiles"
+               data-notes="AXIS Lite is the default operating profile for ordinary application work: 'Preserve the discipline, not the ceremony.' Click through the 6 adoption profiles on the left to see which of the 14 components light up.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Lite.md · Pragmatic Default Profile</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">AXIS Lite: "Preserve the Discipline, Not the Ceremony"</h2>
+          <p class="slide-subtitle">
+            Not every feature needs 14 files. Start with the smallest profile that preserves the 8 Hard Rules, and escalate only when you feel the absence.
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card">
+            <div class="card-title">
+              <span>Interactive Escalation Ladder (Select a Scenario)</span>
+              <span class="pill pill-essence">Progressive Adoption</span>
+            </div>
+            <div id="lite-scenario-buttons" style="display: flex; flex-direction: column; gap: 7px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card essence-card" id="lite-profile-Visualizer">
+              <!-- Populated via JS -->
+            </div>
+
+            <div class="card">
+              <div class="card-title">
+                <span>The 5 Credibility Tests (AXIS-Lite.md)</span>
+                <span class="pill pill-neutral">Quality Gate</span>
+              </div>
+              <ul class="clean-list">
+                <li><strong>1. Zero-Mock Logic:</strong> Can a business rule be unit tested without network or DB mocks?</li>
+                <li><strong>2. Obvious IO:</strong> Can reviewers immediately tell where IO happens (`Impact`) and where it doesn't?</li>
+                <li><strong>3. Local Change:</strong> Can a new capability be added via a `Facet` without touching unrelated workflows?</li>
+                <li><strong>4. Context Isolation:</strong> Can one bounded context evolve without silently corrupting another?</li>
+                <li><strong>5. Net Clarity:</strong> Did adopting AXIS reduce ambiguity more than it increased ceremony? <em>(If no, simplify the shape!)</em></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 11: AXIS FOR FRONT-END WEB & VISUAL FACETS
+           ==================================================================== -->
+      <section class="slide" data-slide-index="10" data-section="11 / Front-End Web &amp; Visual Facets"
+               data-notes="In AXIS-FrontEnd-Web.md, we apply AXIS to the browser without forcing a metaphysical mapping onto every div. A div is a projection of an Instance inside a Custom Element Wrapper. Demonstrate the live Layout and Look CSS Facet switchers right here!">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-FrontEnd-Web.md · Browser Architecture</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">AXIS in the Browser: Projection &amp; Composable Visual Facets</h2>
+          <p class="slide-subtitle">
+            Treat the DOM as a rendered projection of the current <code>Instance</code> inside a Custom Element <code>Wrapper</code>, and decompose styling into orthogonal <strong>Layout Facets</strong> and <strong>Look Facets</strong>.
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card">
+            <div class="card-title">
+              <span>Live Visual Facet Composer (Try Switching Facets!)</span>
+              <span class="pill pill-expression">Interactive CSS Facets</span>
+            </div>
+            <p style="font-size: 0.84rem; color: var(--text-secondary);">
+              Instead of monolithic CSS bundles, AXIS Front-End splits stylesheets into <code>{component}.{layoutKind}.layout.css</code> and <code>{component}.{lookName}.look.css</code>:
+            </p>
+            <div class="grid-2" style="margin: 6px 0;">
+              <div class="card" style="background: var(--bg-elevated); padding: 12px;">
+                <strong style="font-size: 0.82rem; color: var(--essence-primary);">1. Select Look Facet (*.look.css)</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                  <button type="button" class="chrome-btn" onclick="setLookFacet('argon-dark')">app.argon-dark.look.css</button>
+                  <button type="button" class="chrome-btn" onclick="setLookFacet('blueprint-light')">app.blueprint.look.css</button>
+                  <button type="button" class="chrome-btn" onclick="setLookFacet('cyberpunk')">app.cyberpunk.look.css</button>
+                </div>
+              </div>
+              <div class="card" style="background: var(--bg-elevated); padding: 12px;">
+                <strong style="font-size: 0.82rem; color: var(--expression-primary);">2. Select Preview Layout (*.layout.css)</strong>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                  <button type="button" class="chrome-btn" onclick="setWidgetLayout('columnar')">todo.columnar.layout.css</button>
+                  <button type="button" class="chrome-btn" onclick="setWidgetLayout('rowified')">todo.rowified.layout.css</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Preview Box showing the composed Layout + Look Facets -->
+            <div id="facet-preview-box" style="border: 1px dashed var(--border-strong); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+              <div class="card" style="padding: 10px;">
+                <span class="pill pill-essence">Wrapper</span>
+                <strong style="font-size: 0.85rem;">&lt;profile-editor&gt;</strong>
+                <span style="font-size: 0.76rem; color: var(--text-secondary);">Shadow DOM boundary</span>
+              </div>
+              <div class="card" style="padding: 10px;">
+                <span class="pill pill-expression">Token</span>
+                <strong style="font-size: 0.85rem;">5d9f...look.active</strong>
+                <span style="font-size: 0.76rem; color: var(--text-secondary);">Scoped view handle</span>
+              </div>
+              <div class="card" style="padding: 10px;">
+                <span class="pill pill-neutral">Impact</span>
+                <strong style="font-size: 0.85rem;">dom.impact.js</strong>
+                <span style="font-size: 0.76rem; color: var(--text-secondary);">Swaps stylesheet links</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card essence-card">
+            <div class="card-title">
+              <span>6 Front-End Rules from AXIS-FrontEnd-Web.md</span>
+              <span class="pill pill-essence">Browser Discipline</span>
+            </div>
+            <ul class="clean-list">
+              <li><strong>1. Wrappers Are UI Boundaries:</strong> Custom Elements / Shadow DOM own event slots and rendering slots, never business rules.</li>
+              <li><strong>2. Adapters Normalize Browser Noise:</strong> Convert raw DOM events, URL changes, or storage signals into replayable <code>Intent</code>s (e.g. <code>todo.toggle</code>).</li>
+              <li><strong>3. Divs Are Projections, Not Domain Objects:</strong> <code>Instance</code> is the authoritative snapshot; the DOM is merely a visible projection.</li>
+              <li><strong>4. Actions Stay Pure:</strong> Never touch <code>document</code>, <code>fetch</code>, or <code>localStorage</code> inside an Action.</li>
+              <li><strong>5. Impact Owns Browser IO:</strong> DOM patches, stylesheet swaps, IndexedDB/localStorage, and network calls happen exclusively in <code>Impact</code>.</li>
+              <li><strong>6. Browser Token Families:</strong> Use <code>GUID.name.value</code> tokens (<code>sessionToken</code>, <code>routeToken</code>, <code>viewToken</code>, <code>selectionToken</code>) when runtime scope matters.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 12: AGENTIC ENGINEERING — CODEMAPS & ANTI-PATTERN GUARDRAILS
+           ==================================================================== -->
+      <section class="slide" data-slide-index="11" data-section="12 / Agentic Workflows &amp; Guardrails"
+               data-notes="Why is AXIS called 'Agentically eXtensible'? Because it gives AI coding agents deterministic seams, small generation units, and a lens (CodeMaps AXIS Role Maps) to understand and refactor legacy codebases without hallucinating side effects.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>AXIS-Code.md · Machine Agent Rules &amp; CodeMaps Pipeline</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">Agentic Engineering: CodeMaps &amp; Anti-Pattern Guardrails</h2>
+          <p class="slide-subtitle">
+            AXIS turns software architecture into small, deterministic <strong>Generation Units</strong> and provides a metadata lens for analyzing and refactoring existing repositories.
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card">
+            <div class="card-title">
+              <span>Interactive Anti-Pattern Inspector (10 Common Mistakes)</span>
+              <span class="pill pill-expression">Code Review Guardrails</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+              <label for="mistake-select" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Inspect Mistake:</label>
+              <select id="mistake-select" class="select-pill" style="flex: 1;" onchange="renderMistake(this.value)">
+                <option value="0">1. Performing IO inside an Action</option>
+                <option value="1">2. Minting Tokens inside an Adapter</option>
+                <option value="2">3. Magic Delta Keys (Control Flow Through State)</option>
+                <option value="3">4. Skipping Invariant Validation at Commit</option>
+                <option value="4">5. Business Logic / Permission Checks in Wrapper</option>
+                <option value="5">6. Self-Executing Effect Functions (Not Pure Data)</option>
+                <option value="6">7. Identity Carrying Live Mutable State</option>
+              </select>
+            </div>
+            <div id="mistake-comparison-box" class="grid-2" style="gap: 10px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <div class="card essence-card">
+            <div class="card-title">
+              <span>AXIS Shape Analysis for Existing Repos</span>
+              <span class="pill pill-essence">CodeMaps Stage 1 &amp; 2</span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary);">
+              You don't have to rewrite a legacy repo to use AXIS. Map native structures into <code>codemaps/axis-map.json</code> roles first:
+            </p>
+            <pre class="code-block"><code>// Generation Units for Scoped Agent Execution
+axis.intent  → normalized command/event shape
+axis.form    → state shape &amp; invariant rules
+axis.action  → pure state transition (0 mocks!)
+axis.effect  → declarative side-effect data
+axis.impact  → IO behind host boundary
+axis.adapter → normalize raw edge input
+axis.test    → layer-specific verification</code></pre>
+            <p style="font-size: 0.78rem; color: var(--text-secondary);">
+              <strong>Functional Forms:</strong> Capture a capability's portable closure (Forms, Intents, Actions, Effects) so agents know <em>"what must survive the transplant"</em> when harvesting code across repos.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 13: LIVE INTERACTIVE SANDBOX — THE AXIS RUNTIME SIMULATOR
+           ==================================================================== -->
+      <section class="slide" data-slide-index="12" data-section="13 / Live AXIS Runtime Simulator"
+               data-notes="This slide runs a genuine in-browser AXIS Manager + Facet + Pure Action + Invariant Committer + Impact simulator based on the Worked Example in AXIS-Specification.md. Try changing the Token role or triggering a validation or network failure!">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>Worked Example Live Sandbox · User Profile Editor &amp; Dynamic Server</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">Live Interactive AXIS Runtime Simulator</h2>
+          <p class="slide-subtitle">
+            Interact with a real AXIS loop below. Change the <strong>Token Claims</strong>, dispatch <strong>Intents</strong>, or simulate an <strong>Impact IO Failure</strong> to watch how compensations and invariants behave as pure data.
+          </p>
+        </div>
+
+        <div class="grid-sidebar">
+          <div class="card">
+            <div class="card-title">
+              <span>1. Wrapper Surface &amp; Token Control</span>
+              <span class="pill pill-essence">Wrapper + Adapter → Intent</span>
+            </div>
+
+            <div class="grid-2" style="gap: 12px;">
+              <div style="background: var(--bg-elevated); padding: 12px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 0.78rem; font-weight: 800; color: var(--expression-primary); margin-bottom: 6px;">ACTIVE SESSION TOKEN (Identity Projection)</div>
+                <label style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+                  Select Token Scope / Role Claim:
+                </label>
+                <select id="sim-token-select" class="select-pill" style="width: 100%;" onchange="simUpdateToken()">
+                  <option value="owner">Owner Token (claims.canEdit = true)</option>
+                  <option value="readonly">Viewer Token (claims.canEdit = false)</option>
+                  <option value="expired">Expired Session Token (expiry &lt; now)</option>
+                </select>
+                <div id="sim-facet-badge" style="margin-top: 8px; font-size: 0.78rem; color: var(--essence-primary); font-weight: 700;">
+                  Active Facet: editableFacet { save, cancel, load }
+                </div>
+              </div>
+
+              <div style="background: var(--bg-elevated); padding: 12px; border-radius: 10px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 0.78rem; font-weight: 800; color: var(--essence-primary); margin-bottom: 6px;">PROFILE EDITOR WRAPPER INPUTS</div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <input id="sim-input-name" type="text" value="Alice Quarneri" placeholder="Display Name (required)"
+                         style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 6px; padding: 6px 8px; font-size: 0.82rem;" />
+                  <input id="sim-input-email" type="text" value="alice@mentic.com" placeholder="Email (must contain @)"
+                         style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 6px; padding: 6px 8px; font-size: 0.82rem;" />
+                  <label style="font-size: 0.76rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" id="sim-fail-io" /> Simulate HTTP_PUT Network Failure (Trigger Compensating Rollback)
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+              <button type="button" class="chrome-btn" style="border-color: var(--essence-primary);" onclick="simDispatchSave()">
+                ▶ Dispatch profile.save Intent
+              </button>
+              <button type="button" class="chrome-btn" onclick="simDispatchInvalid()">
+                ⚠ Test Empty Name (Form Invariant Violation)
+              </button>
+              <button type="button" class="chrome-btn" onclick="simDispatchCancel()">
+                ↺ Dispatch profile.cancel (Workflow Restore)
+              </button>
+            </div>
+
+            <div class="grid-2" style="gap: 10px; margin-top: 4px;">
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">LATEST ACTION OUTPUT: <code>{ delta, effects[] }</code></div>
+                <pre class="code-block" id="sim-action-output" style="height: 135px;">// Click a button above to dispatch an Intent...</pre>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">LIVE INSTANCE SNAPSHOT (<code>user:u-1234</code>)</div>
+                <pre class="code-block" id="sim-instance-output" style="height: 135px;"></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="card expression-card">
+            <div class="card-title">
+              <span>2. Semantic Intent &amp; Impact Execution Stream</span>
+              <button type="button" class="chrome-btn" onclick="simReset()">Clear Log</button>
+            </div>
+            <div id="sim-event-log" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; font-size: 0.78rem;" class="mono">
+              <!-- Live trace items appended here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SLIDE 14: SUMMARY, 9 MENTAL SHIFTS & ATTRIBUTION
+           ==================================================================== -->
+      <section class="slide" data-slide-index="13" data-section="14 / Summary &amp; Attribution"
+               data-notes="Conclude with the 9 Core Mental Shifts of AXIS and the attribution to Matthew Quarneri and MENTIC Cognitive Systems.">
+        <div class="slide-header">
+          <div class="slide-eyebrow">
+            <span>Closing Synthesis · MENTIC Cognitive Systems</span>
+          </div>
+          <h2 class="slide-title" tabindex="-1">The 9 Core Mental Shifts &amp; Architectural Takeaways</h2>
+          <p class="slide-subtitle">
+            AXIS does not begin with software components. It begins with cognition—asking how meaning becomes action, then deriving software structure from that progression.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card essence-card" style="padding: 14px;">
+            <strong style="color: var(--essence-primary); font-size: 0.88rem;">1. Events Express Intent</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Events don't do work directly—Adapters normalize them into loggable, replayable <code>Intent</code> artifacts.</p>
+          </div>
+          <div class="card expression-card" style="padding: 14px;">
+            <strong style="color: var(--expression-primary); font-size: 0.88rem;">2. Effects Are Data; Impact Is IO</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Side effects have two distinct phases: pure declaration in <code>Action</code>s and runtime execution in <code>Impact</code>.</p>
+          </div>
+          <div class="card essence-card" style="padding: 14px;">
+            <strong style="color: var(--essence-primary); font-size: 0.88rem;">3. Changes Are Values, Not Mutations</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Actions compute <code>delta</code> values; only the Manager's Committer produces a new versioned <code>Instance</code>.</p>
+          </div>
+          <div class="card expression-card" style="padding: 14px;">
+            <strong style="color: var(--expression-primary); font-size: 0.88rem;">4. Identity Is Permanent; Tokens Expire</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);"><code>Identity</code> is timeless sameness; <code>Token</code>s project identity into a specific session, scope, and claim set.</p>
+          </div>
+          <div class="card essence-card" style="padding: 14px;">
+            <strong style="color: var(--essence-primary); font-size: 0.88rem;">5. Forms Generate; Instances Hold</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);"><code>Form</code>s define shape, defaults, and invariants without behavior; <code>Instance</code>s hold all live mutable state.</p>
+          </div>
+          <div class="card expression-card" style="padding: 14px;">
+            <strong style="color: var(--expression-primary); font-size: 0.88rem;">6. Facets Are Capability Maps</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Access control and lifecycle modes are data maps (<code>capability → Action</code>) selected by the Manager, not scattered <code>if/else</code> branches.</p>
+          </div>
+          <div class="card essence-card" style="padding: 14px;">
+            <strong style="color: var(--essence-primary); font-size: 0.88rem;">7. Bonds Structure; Links Traverse</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);"><code>Bond</code>s declare aggregate invariants externally; <code>Link</code>s pre-hydrate entity graphs before pure Actions run.</p>
+          </div>
+          <div class="card expression-card" style="padding: 14px;">
+            <strong style="color: var(--expression-primary); font-size: 0.88rem;">8. Composition Is Runtime Orchestration</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Dynamic extensibility is simply committing a new <code>Identity</code> + <code>Facet</code> into a live Manager's Instance state.</p>
+          </div>
+          <div class="card essence-card" style="padding: 14px;">
+            <strong style="color: var(--essence-primary); font-size: 0.88rem;">9. Failures Are Alternate Effects</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Rejections, retries, and compensating rollbacks flow through the same testable data pipeline as happy paths.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 4px; border-color: var(--border-strong);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary);">
+                Attribution &amp; License — AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+                Originally published at <a href="https://mentic.com/AXIS">mentic.com/AXIS</a> · Licensed under Creative Commons Attribution 4.0 International (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>) · Advisory &amp; Workshops: <code>consulting@mentic.com</code> · <code>www.mentic.com</code>
+                <br>If you found these ideas useful you could <a href="https://buymeacoffee.com/mattq4">Buy Me a Coffee</a> to show your support.
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="pill pill-essence">Presented by Argon</span>
+              <button type="button" class="chrome-btn" onclick="goToSlide(0)">↺ Replay from Slide 1</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ======================================================================
+         SPEAKER NOTES DRAWER & SLIDE OVERVIEW MODAL
+         ====================================================================== -->
+    <aside class="notes-drawer" id="notes-drawer" aria-live="polite">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <strong style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--essence-primary);">Presenter Notes</strong>
+        <button type="button" class="chrome-btn" style="padding: 2px 8px;" onclick="toggleNotes()">✕</button>
+      </div>
+      <p id="notes-content" style="font-size: 0.84rem; color: var(--text-secondary);"></p>
+    </aside>
+
+    <div class="overview-modal" id="overview-modal" role="dialog" aria-label="Slide Overview Grid">
+      <div style="max-width: 1360px; margin: 0 auto 16px auto; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.1rem; font-weight: 800;">All 14 Slides — Quick Jump</h3>
+        <button type="button" class="chrome-btn" onclick="toggleOverview()">Close Overview (Esc)</button>
+      </div>
+      <div class="overview-grid" id="overview-grid"></div>
+    </div>
+
+    <!-- ======================================================================
+         BOTTOM NAVIGATION BAR
+         ====================================================================== -->
+    <footer class="bottom-bar" aria-label="Slide Navigation">
+      <div class="progress-wrap">
+        <span class="mono" style="font-size: 0.8rem; font-weight: 700;" id="slide-counter">01 / 14</span>
+        <div class="progress-bar-bg" aria-hidden="true">
+          <div class="progress-bar-fill" id="progress-fill" style="width: 7.14%;"></div>
+        </div>
+      </div>
+
+      <div style="font-size: 0.76rem; color: var(--text-muted);">
+        Use <kbd style="padding: 2px 6px; background: var(--bg-elevated); border-radius: 4px; border: 1px solid var(--border-subtle);">←</kbd> <kbd style="padding: 2px 6px; background: var(--bg-elevated); border-radius: 4px; border: 1px solid var(--border-subtle);">→</kbd> keys · <kbd style="padding: 2px 6px; background: var(--bg-elevated); border-radius: 4px; border: 1px solid var(--border-subtle);">G</kbd> Grid · <kbd style="padding: 2px 6px; background: var(--bg-elevated); border-radius: 4px; border: 1px solid var(--border-subtle);">N</kbd> Notes
+      </div>
+
+      <div class="nav-controls">
+        <button type="button" class="chrome-btn" id="btn-prev" onclick="navigateSlide(-1)" aria-label="Previous Slide">◀ Prev</button>
+        <button type="button" class="chrome-btn" id="btn-next" onclick="navigateSlide(1)" aria-label="Next Slide">Next ▶</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================================================
+       PRESENTATION & INTERACTIVE ARCHITECTURE ENGINE (AXIS-STRUCTURED JS)
+       ======================================================================== -->
+  <script>
+    /* ------------------------------------------------------------------------
+       1. DATA MODELS (Cognitive Flow, 14 AXIS Components, Pipeline, Lite, etc.)
+       ------------------------------------------------------------------------ */
+    const COGNITIVE_LAYERS = [
+      {
+        name: "Values",
+        spectrum: "Highest Purpose",
+        desc: "Enduring principles and priorities that define what matters to the organization or user (e.g., security, auditability, zero data loss).",
+        axisMapping: "Shapes system-wide Invariants in FORMs and non-negotiable security claims in TOKENs."
+      },
+      {
+        name: "Goals",
+        spectrum: "Desired Outcomes",
+        desc: "Concrete objectives derived from Values (e.g., 'Allow account owners to update their profile with automatic rollback on network failure').",
+        axisMapping: "Defines the bounded context of a MANAGER and the capability surface of its FACETs."
+      },
+      {
+        name: "Plans",
+        spectrum: "Strategy & Topology",
+        desc: "Architectural blueprints and multi-step workflows that coordinate how Goals are achieved across boundaries.",
+        axisMapping: "Encoded in MANAGER Composer bindings, Workflow sagas, and relational BONDs."
+      },
+      {
+        name: "Declaratives",
+        spectrum: "Static Essence",
+        desc: "Explicit statements of structure, identity, relationship constraints, and capability surfaces before any runtime execution occurs.",
+        axisMapping: "Direct correspondence to FORM, IDENTITY, BOND, FACET, and semantic INTENT schemas."
+      },
+      {
+        name: "Imperatives",
+        spectrum: "Command Triggers",
+        desc: "Active requests demanding that a specific capability be exercised within a current runtime context and authority scope.",
+        axisMapping: "Normalized by ADAPTERs into immutable INTENT artifacts paired with scoped TOKENs."
+      },
+      {
+        name: "Instructions",
+        spectrum: "Codified Logic",
+        desc: "Deterministic rules and step-by-step computations that calculate state deltas and required side effects from current state + intent.",
+        axisMapping: "Pure ACTION pipelines: validate → compute → transform → declare EFFECTs."
+      },
+      {
+        name: "Actions",
+        spectrum: "Pure Transformation",
+        desc: "Execution of pure domain functions returning { delta, effects[] } without mutating live state or performing IO.",
+        axisMapping: "The ACTION component on the Doing axis (Essence)."
+      },
+      {
+        name: "Behaviors",
+        spectrum: "Runtime Orchestration",
+        desc: "Coordinated runtime realization: validating invariants on commit, routing follow-up intents, and executing declared effects against the world.",
+        axisMapping: "The MANAGER Conductor + IMPACT executors."
+      },
+      {
+        name: "Change",
+        spectrum: "Materialized Outcome",
+        desc: "The resulting transformation in the world and in system state—which immediately crystallizes into a new versioned declarative Instance.",
+        axisMapping: "New INSTANCE revision committed + external side effects completed by IMPACT."
+      }
+    ];
+
+    const AXIS_GRID_DATA = [
+      {
+        axis: "Being",
+        question: "What exists?",
+        essence: {
+          id: "FORM",
+          tagline: "Static generative structure",
+          quote: "“This is the shape of state, and the rules that govern it.”",
+          familiar: "Schema, Type, Model Shape",
+          adds: "Separates structural definition & invariants from live mutable state; carries zero behavior.",
+          contract: "{\n  shape,\n  defaults,\n  invariants[],\n  transitions? // optional valid delta shapes\n}",
+          rules: ["Forms generate; they do not hold live values.", "Never embed behavior or IO methods inside a Form.", "Manager validates Form invariants on every commit."]
+        },
+        expression: {
+          id: "INSTANCE",
+          tagline: "Dynamic generated state",
+          quote: "“This is the state as it exists now, with its own history and version.”",
+          familiar: "Entity Record, Aggregate State, Document",
+          adds: "Makes mutable state explicit, isolated, and versionable (committed head, optimistic branch, undo stack).",
+          contract: "{\n  formRef,\n  identityRef,\n  revisionId,\n  state\n}",
+          rules: ["All mutable state in the system lives exclusively in Instances.", "Updated only by the owning Manager applying a validated delta."]
+        }
+      },
+      {
+        axis: "Identity",
+        question: "Who/what is it?",
+        essence: {
+          id: "IDENTITY",
+          tagline: "Immutable sameness",
+          quote: "“This is the same thing across time and contexts, and this is how to address it.”",
+          familiar: "Entity ID, URI, Primary Key",
+          adds: "Separates enduring sameness and versioning policy from live values or temporary session authority.",
+          contract: "{\n  entityId,\n  formRef,\n  versioningPolicy // 'hash' | 'counter' | 'semver'\n}",
+          rules: ["Identity is frozen and immutable.", "Never store live mutable attributes (like currentEmail) inside an Identity."]
+        },
+        expression: {
+          id: "TOKEN",
+          tagline: "Temporal identity projections",
+          quote: "“This Identity is present here and now, with this scope, authority, and lifetime.”",
+          familiar: "Session Token, Revision Cursor, Workflow Handle",
+          adds: "Treats runtime-scoped identity projection (session, request, revision, view scope) as a first-class design concern.",
+          contract: "{\n  identityRef,\n  scope,\n  expiry,\n  claims // { role, canEdit, permissions }\n}",
+          rules: ["Tokens are issued, scoped, and revocable; Identities are none of these.", "Only the Manager (never an Adapter) mints Tokens from rawAuth."]
+        }
+      },
+      {
+        axis: "Meaning",
+        question: "How is it perceived?",
+        essence: {
+          id: "FACET",
+          tagline: "Defined capability views",
+          quote: "“Given this context, these are the ways this may be viewed or acted upon.”",
+          familiar: "Capability Map, Policy Surface, Role Overlay, CSS Variant",
+          adds: "Makes available operations explicit as data maps without burying permission conditionals inside Actions.",
+          contract: "{\n  delegates: {\n    [capability]: Action | ActionPipeline\n  }\n}",
+          rules: ["Facets are static data structures (maps of function references), not type guards.", "Selected dynamically by the Manager based on Token claims or lifecycle state."]
+        },
+        expression: {
+          id: "INTENT",
+          tagline: "Active interpretations",
+          quote: "“This is what someone meant to do.”",
+          familiar: "Command, Request DTO, Semantic Domain Event",
+          adds: "Captures normalized meaning instead of noisy edge transport data; forms a replayable, auditable semantic stream.",
+          contract: "{\n  kind, capability, identityRef?,\n  payload, rawAuth?,\n  wrapperCtx, meta\n}",
+          rules: ["Intents are immutable, loggable, replayable values.", "Include rawAuth extracted by the Adapter so the Manager can mint a Token."]
+        }
+      },
+      {
+        axis: "Relating (Having)",
+        question: "How is it connected?",
+        essence: {
+          id: "BOND",
+          tagline: "Static composition & relationship rules",
+          quote: "“Here is what it means to relate, and the invariants that govern it.”",
+          familiar: "Foreign Key Rule, DDD Aggregate Boundary",
+          adds: "Externalizes cardinality, ownership cascades, and cross-entity invariants so individual Forms stay clean.",
+          contract: "{\n  ownerRef, targetRef,\n  cardinality: 'one-to-one' | 'one-to-many' | 'many-to-many',\n  invariants[]\n}",
+          rules: ["Bonds define relationship topology; they do not hold live references or resolve queries.", "Evaluated by the Manager Committer across related Instances on commit."]
+        },
+        expression: {
+          id: "LINK",
+          tagline: "Dynamic traversal & reference resolution",
+          quote: "“This is the resolved relationship traversal for this specific source, in this context.”",
+          familiar: "Hydrated Reference, Graph Query Result, Join",
+          adds: "Pre-hydrates related entity graphs in the Manager before Actions run, keeping Actions pure and synchronous.",
+          contract: "{\n  bondRef,\n  sourceRef,\n  resolvedRefs[],\n  scope\n}",
+          rules: ["Only Links traverse and hydrate relationships at runtime.", "Actions never perform async relational lookups; they receive Link-hydrated state."]
+        }
+      },
+      {
+        axis: "Doing",
+        question: "How does it act?",
+        essence: {
+          id: "ACTION",
+          tagline: "Pure control logic",
+          quote: "“This is the pure state transformation and the Effects it declares.”",
+          familiar: "Pure Domain Function, Reducer, Use-Case Step",
+          adds: "Strictly deterministic transformation that computes both a state delta and declarative side effects.",
+          contract: "(stateSnapshot, intent) => {\n  delta,\n  effects[]\n}",
+          rules: ["Zero IO, zero mutation of input state, zero global reads.", "Signal workflow commands (like cancel/restore) via Effects, never magic delta keys."]
+        },
+        expression: {
+          id: "MANAGER",
+          tagline: "Contextual orchestration",
+          quote: "“This is how to orchestrate doing things in context.”",
+          familiar: "Coordinator, Application Service, Saga Orchestrator",
+          adds: "Decomposes orchestration into Setup-Time Composer (Binder) and Runtime Conductor (Router, Workflow, Committer).",
+          contract: "bind(wrapper) | registerFacet(facet) | registerBond(bond)\ndispatch(intent) | commit(delta) | issueToken(...) | resolveLink(...)",
+          rules: ["One Manager per bounded context; owns one consistency boundary.", "Validates Form & Bond invariants on commit; never executes IO directly."]
+        }
+      },
+      {
+        axis: "Changing",
+        question: "How does it affect the world?",
+        essence: {
+          id: "EFFECT",
+          tagline: "Declared causal descriptions",
+          quote: "“This is what should happen in the world as a result of this action.”",
+          familiar: "Side-Effect Descriptor, Infrastructure Command DTO",
+          adds: "Keeps side effects, retry policies, and compensating rollback plans as pure inspectable data until execution.",
+          contract: "{\n  kind, target, payload,\n  retryPolicy?,\n  compensatingEffect?\n}",
+          rules: ["Effects are pure data values, never self-executing callbacks or Promises.", "Can be batched, inspected in unit tests, or rolled back via compensatingEffect."]
+        },
+        expression: {
+          id: "IMPACT",
+          tagline: "Runtime causal execution",
+          quote: "“This is what actually happens in the world when we execute these Effects.”",
+          familiar: "Effect Handler, Infrastructure Adapter/Executor",
+          adds: "Isolates all network, disk, DOM, and queue IO into one explicit boundary with built-in retry and compensation.",
+          contract: "execute(effects[], ctx) => outcomes[]\ncompensate(effects[])",
+          rules: ["Impact is the ONLY place in the entire architecture where side effects occur.", "Emits follow-up Intents back to the Manager when IO results require processing."]
+        }
+      },
+      {
+        axis: "Bridging",
+        question: "How does it touch the edge?",
+        essence: {
+          id: "WRAPPER",
+          tagline: "Structural boundaries",
+          quote: "“This is the boundary where an outside surface hosts interaction.”",
+          familiar: "Custom Element, Shadow DOM, Route Shell, HTTP Server Socket",
+          adds: "Separates structural encapsulation and event slots from business capability surfaces (Facets).",
+          contract: "{\n  render(instance),\n  eventSlots: { [slotName]: () => Element },\n  readInputs()\n}",
+          rules: ["Wrappers host interaction surfaces and render from Instance snapshots.", "Wrappers never contain business logic, permission checks, or routing."]
+        },
+        expression: {
+          id: "ADAPTER",
+          tagline: "Dynamic transformations",
+          quote: "“This is how we convert noisy edge input into internal structure.”",
+          familiar: "Controller Input Mapper, Event Normalizer",
+          adds: "Provides a clean, testable seam between raw edge events (DOM, HTTP, Queue) and the semantic Intent stream.",
+          contract: "bindAdapter(wrapper, identityRef, dispatch)\n// Reads Wrapper inputs + rawAuth → dispatches Intent",
+          rules: ["Adapters always produce Intents—never direct mutations or Action calls.", "Adapters extract rawAuth but NEVER mint Tokens or resolve Identity."]
+        }
+      }
+    ];
+
+    const PIPELINE_STEPS = [
+      {
+        step: "01",
+        title: "External Event",
+        component: "WRAPPER",
+        type: "Essence (Bridging)",
+        desc: "An outside signal arrives at a structural boundary—a user submits a <profile-editor> Shadow DOM form, or an HTTP request hits node:http.",
+        code: "// Wrapper exposes eventSlot without business logic\nwrapper.eventSlots.submit() // <form id='profile-form'>"
+      },
+      {
+        step: "02",
+        title: "Edge Normalization",
+        component: "ADAPTER",
+        type: "Expression (Bridging)",
+        desc: "The Adapter reads raw Wrapper inputs and raw authentication headers/cookies, normalizing them into an immutable Intent.",
+        code: "const rawAuth = { authHeader: req.headers['authorization'] };\nconst intent = saveProfileIntent('u-1234', payload, 'profile-editor');"
+      },
+      {
+        step: "03",
+        title: "Semantic Artifact",
+        component: "INTENT",
+        type: "Expression (Meaning)",
+        desc: "The Intent enters the Manager's dispatch stream as a loggable, replayable description of what the caller meant to do.",
+        code: "{\n  kind: 'profile.save', capability: 'save',\n  identityRef: 'u-1234', payload: { displayName: 'Alice' },\n  wrapperCtx: 'profile-editor', meta: { timestamp: 1792173239000 }\n}"
+      },
+      {
+        step: "04",
+        title: "Token & Facet Routing",
+        component: "MANAGER + TOKEN + FACET",
+        type: "Expression → Essence",
+        desc: "The Manager resolves/validates the caller's Token and selects the appropriate capability Facet (e.g. editableFacet vs. readOnlyFacet).",
+        code: "const facet = (!token || isExpired(token) || !token.claims.canEdit)\n  ? readOnlyFacet\n  : editableFacet;\nconst action = facet.delegates[intent.capability];"
+      },
+      {
+        step: "05",
+        title: "Graph Pre-Hydration",
+        component: "LINK (via BOND)",
+        type: "Expression (Relating)",
+        desc: "If the target entity has registered Bonds, the Manager resolves Links to pre-hydrate related Instances before calling the pure Action.",
+        code: "const hydratedLink = await resolveInvoiceCustomerLink(link, loadInstance);\n// Action receives pre-hydrated snapshot without doing async IO!"
+      },
+      {
+        step: "06",
+        title: "Pure Transformation",
+        component: "ACTION",
+        type: "Essence (Doing)",
+        desc: "The pure Action computes the state delta and declares required Effects as plain data objects. Zero IO or mutation occurs.",
+        code: "const { delta, effects } = validateAndSave(currentInstance.state, intent);\n// delta: { displayName: 'Alice', _validationErrors: [] }\n// effects: [{ kind: 'HTTP_PUT', target: '/api/...', compensatingEffect: {...} }]"
+      },
+      {
+        step: "07",
+        title: "Invariant Commit",
+        component: "MANAGER + FORM + BOND",
+        type: "Conductor (Committer)",
+        desc: "The Manager applies the delta to a proposed state and validates all Form and Bond invariants. Violations reject the commit via a COMMIT_REJECTED Effect.",
+        code: "const violations = UserProfileForm.invariants.map(fn => fn(proposed)).filter(r => r !== true);\nif (violations.length === 0) currentInstance = applyDelta(currentInstance, delta);"
+      },
+      {
+        step: "08",
+        title: "Instance & Projection",
+        component: "INSTANCE → WRAPPER",
+        type: "Expression (Being)",
+        desc: "A new versioned Instance (with updated revisionId hash) is materialized, and the Wrapper re-renders its projection.",
+        code: "// instance.revisionId = 'a9f4c21e'\nwrapper.render(currentInstance);"
+      },
+      {
+        step: "09",
+        title: "Side-Effect Execution",
+        component: "EFFECT → IMPACT",
+        type: "Essence → Expression (Changing)",
+        desc: "Declared IO Effects are handed to Impact—the sole place where network, disk, DOM, or queue side effects actually execute.",
+        code: "const outcomes = await runImpact(ioEffects, ctx);\n// Executes fetch(), retries per retryPolicy, or runs compensatingEffect on error"
+      },
+      {
+        step: "10",
+        title: "Follow-Up Loop",
+        component: "IMPACT → INTENT",
+        type: "Closed Loop",
+        desc: "When an Effect completes (e.g., Pass 2 of a read fetch, or a rollback restoration), Impact emits a follow-up Intent back into Manager.dispatch().",
+        code: "for (const outcome of outcomes) {\n  if (outcome.followUpIntent) await dispatch(outcome.followUpIntent);\n}"
+      }
+    ];
+
+    const PATTERN_TABS = [
+      {
+        title: "The Two-Pass Read Pattern ('Ask to Know, Tell to Show') & Link Hydration",
+        badge: "Read Path Architecture",
+        leftTitle: "1. Runtime Async Reads: Two-Pass Pattern",
+        leftBody: "Because Actions are strictly pure, they cannot call fetch() or query a database mid-execution. Instead, runtime reads use two passes through the canonical pipeline:",
+        leftCode: "Pass 1 (Ask to Know):\n  Event → Adapter → Intent ('profile.load') → Action\n  Action returns: { delta: { _loading: true }, effects: [{ kind: 'FETCH_PROFILE', target: '/api/users/123' }] }\n\nImpact Execution:\n  Impact performs HTTP GET → emits followUpIntent('profile.fetched', { data })\n\nPass 2 (Tell to Show):\n  followUpIntent → Manager → Action ('applyFetch')\n  Action returns: { delta: { ...data, _loading: false }, effects: [] }\n  Manager commits delta → Wrapper renders updated Instance",
+        rightTitle: "2. Why Two Passes? + Pragmatic Shortcuts",
+        rightItems: [
+          "<strong>Automatic Retry &amp; Batching:</strong> Because FETCH is an Effect, Impact can batch concurrent reads and retry transient network failures using <code>retryPolicy</code>.",
+          "<strong>Complete Audit Trail:</strong> Both the read request and the received payload are logged as Intents in the semantic stream.",
+          "<strong>Composition-Time Hydration Shortcut:</strong> During initial <code>manager.bind()</code> setup, the Manager can hydrate the initial Instance directly before events flow—documented and valid in AXIS!",
+          "<strong>Declarative Graph Hydration via Links:</strong> When reading related entities (e.g. Flow + Tasks), the Manager resolves registered <code>Bond</code>s via <code>Link</code>s prior to calling the Action."
+        ]
+      },
+      {
+        title: "Relating (Having) Axis: Bonds & Links as Externalized DDD Aggregates",
+        badge: "Relational Composition",
+        leftTitle: "BOND (Immutable Essence of Relating)",
+        leftBody: "Instead of polluting individual Forms with foreign-key logic or burying relationship queries inside Actions, a Bond declares cardinality, ownership, and cross-entity invariants externally:",
+        leftCode: "// bonds/invoiceCustomer.js\nexport const InvoiceCustomerBond = {\n  ownerRef: 'InvoiceForm',\n  targetRef: 'CustomerForm',\n  cardinality: 'one-to-one',\n  invariants: [\n    (invoice, customer) =>\n      !invoice.isTaxable || Boolean(customer.taxId) ||\n      'Taxable invoice requires a Customer with a valid taxId'\n  ]\n};\n// At commit time, the Manager's Committer walks registered Bonds\n// and rejects any transaction that violates cross-entity invariants!",
+        rightTitle: "LINK (Projected Expression of Relating)",
+        rightItems: [
+          "<strong>Materialized Traversal:</strong> A Link holds <code>{ bondRef, sourceRef, resolvedRefs[], scope }</code> for a specific transaction or request.",
+          "<strong>Pre-Hydration for Pure Actions:</strong> The Manager resolves Links before invoking the Action, passing the hydrated aggregate tree in the snapshot.",
+          "<strong>Referential Integrity:</strong> Actions declare relationship changes purely as data deltas; the Committer validates Bond constraints before persisting.",
+          "<strong>Clean Forms:</strong> <code>InvoiceForm</code> and <code>CustomerForm</code> stay 100% focused on their own local attributes."
+        ]
+      },
+      {
+        title: "Principle: Failures Are Alternate Effects, Not Exceptions",
+        badge: "Resilience & Compensation",
+        leftTitle: "Self-Healing Effects with Retry & Compensation",
+        leftBody: "When an outcome diverges from an Intent's desire, AXIS expresses the divergence as structured data across three distinct failure points—never as an unhandled exception crash:",
+        leftCode: "// Effect declares its own resilience & rollback plan as pure data:\n{\n  kind: 'HTTP_PUT',\n  target: '/api/users/u-1234/profile',\n  payload: { displayName: 'Alice' },\n  retryPolicy: { maxRetries: 2, backoff: 'exponential' },\n  compensatingEffect: {\n    kind: 'ROLLBACK_INSTANCE',\n    target: 'u-1234',\n    payload: { restoreTo: previousState }\n  }\n}",
+        rightTitle: "The Three Failure Seams in AXIS",
+        rightItems: [
+          "<strong>1. Action-Level Failure (Business Rule Violation):</strong> Action returns <code>delta: {}</code> and an <code>INTENT_REJECTED</code> Effect (or validation errors in delta). Testable with zero mocks.",
+          "<strong>2. Impact-Level Failure (IO / Network Timeout):</strong> Impact retries per <code>retryPolicy</code>. On exhaustion, it executes <code>compensatingEffect</code> and emits an <code>impact.failed</code> follow-up Intent.",
+          "<strong>3. Manager-Level Failure (Unroutable Intent / Invariant Breach):</strong> Missing Facet capability emits <code>INTENT_UNROUTABLE</code>; failed commit emits <code>COMMIT_REJECTED</code>.",
+          "<strong>Replayable &amp; Auditable:</strong> Because every failure is an Intent or Effect, failed operations can be inspected, routed to error Facets, or replayed."
+        ]
+      }
+    ];
+
+    const LITE_PROFILES = [
+      {
+        name: "1. Pure Computation",
+        when: "Stateless calculators, parsers, pricing formulas, or domain validators.",
+        activeIds: ["ACTION", "FORM"],
+        summary: "Start with a pure Action. Add a Form only when input/output shape, defaults, or invariants need to be explicit."
+      },
+      {
+        name: "2. Simple Stateless Endpoint",
+        when: "Webhook receivers, health checks, or single-step proxy endpoints.",
+        activeIds: ["WRAPPER", "ADAPTER", "ACTION", "EFFECT", "IMPACT"],
+        summary: "Normalize edge input via Adapter, compute response/side-effects in a pure Action, and execute IO in Impact."
+      },
+      {
+        name: "3. CRUD Service with Owned State",
+        when: "Standard application services managing mutable domain state.",
+        activeIds: ["FORM", "INSTANCE", "ADAPTER", "INTENT", "ACTION", "MANAGER", "EFFECT", "IMPACT", "WRAPPER"],
+        summary: "Add Instance for versioned state and a boundary-scoped Manager to enforce Form invariants on commit."
+      },
+      {
+        name: "4. Role-Aware or Lifecycle-Aware Domain",
+        when: "Entities whose allowed operations vary by user permissions (Admin vs. Viewer) or state (Draft vs. Sent).",
+        activeIds: ["FORM", "INSTANCE", "IDENTITY", "TOKEN", "FACET", "INTENT", "ACTION", "MANAGER", "EFFECT", "IMPACT", "WRAPPER", "ADAPTER"],
+        summary: "Introduce Identity, Token claims, and Facet capability maps so permissions are routed rather than hardcoded as conditionals."
+      },
+      {
+        name: "5. Complex Relational / Aggregate Domain",
+        when: "Multi-entity consistency boundaries (e.g. Orders + LineItems, Invoices + Customers).",
+        activeIds: ["FORM", "INSTANCE", "IDENTITY", "BOND", "LINK", "INTENT", "ACTION", "MANAGER", "EFFECT", "IMPACT", "WRAPPER", "ADAPTER"],
+        summary: "Add Bonds to enforce cross-entity commit invariants and Links to pre-hydrate entity graphs before Actions run."
+      },
+      {
+        name: "6. Full Async Workflow, Retries, Compensation & Replay",
+        when: "Mission-critical distributed workflows, extensible platforms, and event-sourced systems.",
+        activeIds: ["FORM", "INSTANCE", "IDENTITY", "TOKEN", "FACET", "INTENT", "BOND", "LINK", "ACTION", "MANAGER", "EFFECT", "IMPACT", "WRAPPER", "ADAPTER"],
+        summary: "Full 14-component AXIS profile: complete traceability across Being, Identity, Meaning, Relating, Doing, Changing, and Bridging."
+      }
+    ];
+
+    const MISTAKES_DATA = [
+      {
+        title: "1. IO Inside an Action",
+        wrong: "// ❌ WRONG — Action performs network IO\nexport async function loadUser(state, intent) {\n  const res = await fetch(`/api/users/${intent.identityRef}`);\n  const data = await res.json();\n  return { delta: data, effects: [] };\n}",
+        right: "// ✅ RIGHT — Action declares pure Effect data\nexport function loadUser(state, intent) {\n  return {\n    delta: { _loading: true },\n    effects: [{ kind: 'FETCH_USER', target: `/api/users/${intent.identityRef}` }]\n  };\n}"
+      },
+      {
+        title: "2. Minting Tokens in an Adapter",
+        wrong: "// ❌ WRONG — Adapter resolves identity & claims\nwrapper.onRequest(async (req, res) => {\n  const token = issueRequestToken(req); // Security decision at edge!\n  dispatch(intent, { res, token });\n});",
+        right: "// ✅ RIGHT — Adapter extracts rawAuth; Manager mints Token\nwrapper.onRequest(async (req, res) => {\n  const rawAuth = { authHeader: req.headers['authorization'] || '' };\n  const intent = requestIntent(req.method, req.url, body, rawAuth, 'http');\n  dispatch(intent, { res });\n});"
+      },
+      {
+        title: "3. Magic Delta Keys (Control Flow Through State)",
+        wrong: "// ❌ WRONG — Smuggles workflow command in state delta\nexport function cancelEdit(state, intent) {\n  return { delta: { _resetToCommitted: true }, effects: [] };\n  // Spread-merging corrupts Instance state with magic flags!\n}",
+        right: "// ✅ RIGHT — Signal workflow operations via Effects\nexport function cancelEdit(state, intent) {\n  return {\n    delta: {},\n    effects: [{ kind: 'RESTORE_COMMITTED', target: intent.identityRef }]\n  };\n}"
+      },
+      {
+        title: "4. Skipping Invariant Validation at Commit",
+        wrong: "// ❌ WRONG — Blindly commits Action delta\nconst { delta, effects } = action(currentInstance.state, intent);\ncurrentInstance = applyDelta(currentInstance, delta);",
+        right: "// ✅ RIGHT — Committer enforces Form & Bond invariants\nconst proposed = { ...currentInstance.state, ...delta };\nconst violations = Form.invariants.map(fn => fn(proposed)).filter(r => r !== true);\nif (violations.length > 0) return emitCommitRejected(violations);\ncurrentInstance = applyDelta(currentInstance, delta);"
+      },
+      {
+        title: "5. Business Logic in the Wrapper",
+        wrong: "// ❌ WRONG — Wrapper checks roles/permissions\nrender(instance) {\n  const canSave = instance.state.role === 'admin';\n  this.shadowRoot.innerHTML = canSave ? '<button>Save</button>' : '';\n}",
+        right: "// ✅ RIGHT — Wrapper renders state; Facet governs capabilities\n// Manager selects readOnlyFacet vs editableFacet via Token claims.\n// Wrapper stays a pure structural surface."
+      },
+      {
+        title: "6. Effects That Execute Themselves",
+        wrong: "// ❌ WRONG — Effect contains an imperative closure\nconst effect = {\n  kind: 'SEND_EMAIL',\n  execute: async () => await sendEmail(to, body)\n};",
+        right: "// ✅ RIGHT — Effect is serializable, inspectable data\nconst effect = {\n  kind: 'SEND_EMAIL',\n  target: to,\n  payload: { body },\n  retryPolicy: { maxRetries: 3 }\n};"
+      },
+      {
+        title: "7. Identity Carrying Live Mutable State",
+        wrong: "// ❌ WRONG — Identity stores mutable fields\nconst identity = {\n  entityId: 'u-1234',\n  currentEmail: 'alice@example.com' // Mutable value!\n};",
+        right: "// ✅ RIGHT — Identity is frozen; Instance holds state\nconst identity = Object.freeze({\n  entityId: 'u-1234',\n  formRef: 'UserProfileForm',\n  versioningPolicy: 'hash'\n});"
+      }
+    ];
+
+    /* ------------------------------------------------------------------------
+       2. DECK NAVIGATION WITH DIRECTIONAL VIEW TRANSITIONS & A11Y FOCUS ROUTING
+       ------------------------------------------------------------------------ */
+    let currentSlideIndex = 0;
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const totalSlides = slides.length;
+
+    function applySlideDOMUpdate(targetIndex) {
+      slides.forEach((s, idx) => {
+        s.classList.toggle("active", idx === targetIndex);
+      });
+      currentSlideIndex = targetIndex;
+
+      // Update chrome indicators
+      const activeSlide = slides[currentSlideIndex];
+      document.getElementById("top-section-label").textContent = activeSlide.dataset.section || "";
+      document.getElementById("slide-counter").textContent =
+        `${String(currentSlideIndex + 1).padStart(2, "0")} / ${String(totalSlides).padStart(2, "0")}`;
+      document.getElementById("progress-fill").style.width =
+        `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+      document.getElementById("notes-content").textContent =
+        activeSlide.dataset.notes || "No presenter notes for this slide.";
+
+      document.getElementById("btn-prev").disabled = currentSlideIndex === 0;
+      document.getElementById("btn-next").disabled = currentSlideIndex === totalSlides - 1;
+
+      // Highlight current slide in overview modal
+      document.querySelectorAll(".overview-card").forEach((card, idx) => {
+        card.classList.toggle("current", idx === currentSlideIndex);
+      });
+
+      // Reset scroll position of stage
+      document.getElementById("stage-container").scrollTop = 0;
+    }
+
+    function routeFocusToActiveSlideHeading() {
+      const activeHeading = slides[currentSlideIndex].querySelector(".slide-title");
+      if (activeHeading) {
+        activeHeading.focus({ preventScroll: true });
+      }
+    }
+
+    function goToSlide(targetIndex) {
+      if (targetIndex < 0 || targetIndex >= totalSlides || targetIndex === currentSlideIndex) {
+        return;
+      }
+      const direction = targetIndex > currentSlideIndex ? "forward" : "backward";
+
+      // Close overview if open
+      document.getElementById("overview-modal").classList.remove("open");
+      document.getElementById("btn-overview").setAttribute("aria-pressed", "false");
+
+      // Feature detect View Transitions API with progressive enhancement fallback
+      if (!document.startViewTransition) {
+        applySlideDOMUpdate(targetIndex);
+        routeFocusToActiveSlideHeading();
+        return;
+      }
+
+      try {
+        const transition = document.startViewTransition({
+          update: () => applySlideDOMUpdate(targetIndex),
+          types: [direction]
+        });
+        transition.finished.finally(() => {
+          routeFocusToActiveSlideHeading();
+        });
+      } catch (err) {
+        // Fallback for browsers supporting startViewTransition(callback) only
+        const transition = document.startViewTransition(() => applySlideDOMUpdate(targetIndex));
+        transition.finished.finally(() => {
+          routeFocusToActiveSlideHeading();
+        });
+      }
+    }
+
+    function navigateSlide(delta) {
+      goToSlide(currentSlideIndex + delta);
+    }
+
+    /* ------------------------------------------------------------------------
+       3. INITIALIZE INTERACTIVE SLIDE WIDGETS
+       ------------------------------------------------------------------------ */
+    // Slide 2: Cognitive Flow of Change
+    function initCognitiveChain() {
+      const container = document.getElementById("cognitive-chain");
+      container.innerHTML = COGNITIVE_LAYERS.map((layer, idx) => `
+        <button type="button" class="cog-node ${idx === 0 ? 'active' : ''}" onclick="selectCogLayer(${idx})" id="cog-btn-${idx}">
+          <span class="cog-step-num">0${idx + 1}</span>
+          <span class="cog-name">${layer.name}</span>
+          <span style="font-size: 0.68rem; color: var(--text-secondary);">${idx < 8 ? '↓' : '⟲'}</span>
+        </button>
+      `).join("");
+      selectCogLayer(0);
+    }
+
+    function selectCogLayer(idx) {
+      document.querySelectorAll(".cog-node").forEach((el, i) => {
+        el.classList.toggle("active", i === idx);
+      });
+      const layer = COGNITIVE_LAYERS[idx];
+      document.getElementById("cog-detail-card").innerHTML = `
+        <div class="card-title">
+          <span>Stage 0${idx + 1}: ${layer.name}</span>
+          <span class="pill ${idx < 5 ? 'pill-essence' : 'pill-expression'}">${layer.spectrum}</span>
+        </div>
+        <p style="font-size: 0.92rem; color: var(--text-primary);">${layer.desc}</p>
+        <div style="margin-top: 6px; padding: 10px 12px; background: var(--bg-elevated); border-radius: 8px; border-left: 3px solid var(--essence-primary);">
+          <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; color: var(--essence-primary);">How AXIS Codifies This Layer</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">${layer.axisMapping}</div>
+        </div>
+      `;
+    }
+
+    // Slide 5: 7x2 Matrix Explorer
+    function initAxisMatrix() {
+      const matrix = document.getElementById("axis-matrix-grid");
+      AXIS_GRID_DATA.forEach((row, rowIdx) => {
+        const axisCell = document.createElement("div");
+        axisCell.className = "matrix-axis-cell";
+        axisCell.innerHTML = `
+          <span>${row.axis}</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">${row.question}</span>
+        `;
+
+        const essenceBtn = document.createElement("button");
+        essenceBtn.type = "button";
+        essenceBtn.className = "matrix-comp-btn essence-btn";
+        essenceBtn.id = `grid-btn-${row.essence.id}`;
+        essenceBtn.onclick = () => inspectGridComponent(rowIdx, "essence");
+        essenceBtn.innerHTML = `
+          <span class="comp-name"><span>${row.essence.id}</span> <span class="pill pill-essence">Essence</span></span>
+          <span class="comp-tagline">${row.essence.tagline}</span>
+        `;
+
+        const exprBtn = document.createElement("button");
+        exprBtn.type = "button";
+        exprBtn.className = "matrix-comp-btn expression-btn";
+        exprBtn.id = `grid-btn-${row.expression.id}`;
+        exprBtn.onclick = () => inspectGridComponent(rowIdx, "expression");
+        exprBtn.innerHTML = `
+          <span class="comp-name"><span>${row.expression.id}</span> <span class="pill pill-expression">Expression</span></span>
+          <span class="comp-tagline">${row.expression.tagline}</span>
+        `;
+
+        matrix.appendChild(axisCell);
+        matrix.appendChild(essenceBtn);
+        matrix.appendChild(exprBtn);
+      });
+      inspectGridComponent(0, "essence");
+    }
+
+    function inspectGridComponent(rowIdx, colKey) {
+      const row = AXIS_GRID_DATA[rowIdx];
+      const comp = row[colKey];
+      const isEssence = colKey === "essence";
+
+      document.querySelectorAll("#axis-matrix-grid .matrix-comp-btn").forEach(btn => {
+        btn.classList.remove("selected");
+      });
+      const activeBtn = document.getElementById(`grid-btn-${comp.id}`);
+      if (activeBtn) activeBtn.classList.add("selected");
+
+      const panel = document.getElementById("grid-inspector-panel");
+      panel.className = `card ${isEssence ? 'essence-card' : 'expression-card'}`;
+      panel.innerHTML = `
+        <div class="card-title">
+          <span>${comp.id} — ${row.axis} Axis</span>
+          <span class="pill ${isEssence ? 'pill-essence' : 'pill-expression'}">${isEssence ? 'Immutable Essence' : 'Projected Expression'}</span>
+        </div>
+        <p style="font-size: 0.9rem; font-style: italic; color: var(--text-primary); font-weight: 600;">${comp.quote}</p>
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+          <strong>Closest Familiar Term:</strong> ${comp.familiar}<br/>
+          <strong>What AXIS Adds:</strong> ${comp.adds}
+        </div>
+        <div>
+          <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Language-Agnostic Type Contract</div>
+          <pre class="code-block"><code>${comp.contract}</code></pre>
+        </div>
+        <div>
+          <div style="font-size: 0.74rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Non-Negotiable Rules</div>
+          <ul class="clean-list ${isEssence ? '' : 'expr-list'}">
+            ${comp.rules.map(r => `<li>${r}</li>`).join("")}
+          </ul>
+        </div>
+      `;
+    }
+
+    // Slide 6: Canonical Flow Stepper
+    let currentPipeStep = 0;
+    function initPipelineStepper() {
+      const track = document.getElementById("pipeline-track");
+      track.innerHTML = PIPELINE_STEPS.map((s, idx) => `
+        <button type="button" class="pipe-step ${idx === 0 ? 'active' : ''}" id="pipe-step-${idx}" onclick="selectPipeStep(${idx})">
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+            <span>STEP ${s.step}</span>
+            <span>${s.component}</span>
+          </div>
+          <div style="font-weight: 800; font-size: 0.84rem; margin-top: 2px;">${s.title}</div>
+        </button>
+      `).join("");
+      selectPipeStep(0);
+    }
+
+    function selectPipeStep(idx) {
+      currentPipeStep = (idx + PIPELINE_STEPS.length) % PIPELINE_STEPS.length;
+      document.querySelectorAll(".pipe-step").forEach((el, i) => {
+        el.classList.toggle("active", i === currentPipeStep);
+      });
+      const s = PIPELINE_STEPS[currentPipeStep];
+      document.getElementById("pipeline-detail-box").innerHTML = `
+        <div class="card-title">
+          <span>Step ${s.step}: ${s.title} (${s.component})</span>
+          <span class="pill pill-essence">${s.type}</span>
+        </div>
+        <p style="font-size: 0.9rem; color: var(--text-secondary);">${s.desc}</p>
+        <pre class="code-block"><code>${s.code}</code></pre>
+      `;
+    }
+
+    function stepPipeline(delta) {
+      selectPipeStep(currentPipeStep + delta);
+    }
+
+    // Slide 8: Deep Pattern Tabs
+    function selectPatternTab(idx) {
+      document.querySelectorAll(".tab-btn").forEach((btn, i) => {
+        btn.classList.toggle("active", i === idx);
+      });
+      const tab = PATTERN_TABS[idx];
+      document.getElementById("pattern-tab-content").innerHTML = `
+        <div class="grid-2">
+          <div class="card essence-card">
+            <div class="card-title">
+              <span>${tab.leftTitle}</span>
+              <span class="pill pill-essence">${tab.badge}</span>
+            </div>
+            <p style="font-size: 0.86rem; color: var(--text-secondary);">${tab.leftBody}</p>
+            <pre class="code-block"><code>${tab.leftCode}</code></pre>
+          </div>
+          <div class="card expression-card">
+            <div class="card-title">
+              <span>${tab.rightTitle}</span>
+              <span class="pill pill-expression">Architectural Guarantees</span>
+            </div>
+            <ul class="clean-list expr-list">
+              ${tab.rightItems.map(item => `<li>${item}</li>`).join("")}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    // Slide 10: AXIS Lite Escalation Ladder
+    const ALL_14_IDS = [
+      "FORM", "INSTANCE", "IDENTITY", "TOKEN", "FACET", "INTENT",
+      "BOND", "LINK", "ACTION", "MANAGER", "EFFECT", "IMPACT", "WRAPPER", "ADAPTER"
+    ];
+
+    function initLiteLadder() {
+      const container = document.getElementById("lite-scenario-buttons");
+      container.innerHTML = LITE_PROFILES.map((p, idx) => `
+        <button type="button" class="matrix-comp-btn essence-btn ${idx === 2 ? 'selected' : ''}" id="lite-btn-${idx}" onclick="selectLiteProfile(${idx})">
+          <span class="comp-name"><span>${p.name}</span> <span class="pill pill-neutral">${p.activeIds.length} / 14 Components</span></span>
+          <span class="comp-tagline">${p.when}</span>
+        </button>
+      `).join("");
+      selectLiteProfile(2);
+    }
+
+    function selectLiteProfile(idx) {
+      document.querySelectorAll("#lite-scenario-buttons .matrix-comp-btn").forEach((b, i) => {
+        b.classList.toggle("selected", i === idx);
+      });
+      const profile = LITE_PROFILES[idx];
+      const badgesHtml = ALL_14_IDS.map(id => {
+        const active = profile.activeIds.includes(id);
+        return `<span style="padding: 5px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; text-align: center; border: 1px solid ${active ? 'var(--essence-primary)' : 'var(--border-subtle)'}; background: ${active ? 'var(--essence-bg)' : 'var(--bg-elevated)'}; color: ${active ? 'var(--text-primary)' : 'var(--text-muted)'}; opacity: ${active ? '1' : '0.42'};">${id}</span>`;
+      }).join("");
+
+      document.getElementById("lite-profile-Visualizer").innerHTML = `
+        <div class="card-title">
+          <span>Active Topology: ${profile.name}</span>
+          <span class="pill pill-essence">${profile.activeIds.length} Active Components</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">${profile.summary}</p>
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px;">
+          ${badgesHtml}
+        </div>
+      `;
+    }
+
+    // Slide 11: Visual Facet Switcher
+    function setLookFacet(lookName) {
+      document.documentElement.setAttribute("data-look", lookName);
+      document.getElementById("look-facet-select").value = lookName;
+    }
+
+    function setWidgetLayout(layoutMode) {
+      const box = document.getElementById("facet-preview-box");
+      if (layoutMode === "rowified") {
+        box.style.gridTemplateColumns = "1fr";
+      } else {
+        box.style.gridTemplateColumns = "repeat(3, 1fr)";
+      }
+    }
+
+    document.getElementById("look-facet-select").addEventListener("change", (e) => {
+      setLookFacet(e.target.value);
+    });
+
+    // Slide 12: Anti-Patterns
+    function renderMistake(idxStr) {
+      const m = MISTAKES_DATA[Number(idxStr)];
+      document.getElementById("mistake-comparison-box").innerHTML = `
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-danger); margin-bottom: 4px;">❌ ANTI-PATTERN (VIOLATES AXIS)</div>
+          <pre class="code-block" style="border-color: rgba(244, 63, 94, 0.4);"><code>${m.wrong}</code></pre>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-success); margin-bottom: 4px;">✅ AXIS PATTERN (TESTABLE SEAM)</div>
+          <pre class="code-block" style="border-color: rgba(16, 185, 129, 0.4);"><code>${m.right}</code></pre>
+        </div>
+      `;
+    }
+
+    /* ------------------------------------------------------------------------
+       4. SLIDE 13: GENUINE IN-BROWSER AXIS RUNTIME SIMULATOR
+       ------------------------------------------------------------------------ */
+    const UserProfileForm = {
+      invariants: [
+        (s) => (s.displayName && s.displayName.trim().length > 0) || "displayName must not be empty",
+        (s) => (s.email && /^[^@]+@[^@]+$/.test(s.email)) || "invalid email format"
+      ]
+    };
+
+    let simCommittedInstance = {
+      formRef: "UserProfileForm",
+      identityRef: "user:u-1234",
+      revisionId: "rev-1001",
+      state: { displayName: "Alice Quarneri", email: "alice@mentic.com", _validationErrors: [] }
+    };
+    let simCurrentInstance = JSON.parse(JSON.stringify(simCommittedInstance));
+    let simRevisionCounter = 1001;
+
+    function simLog(tag, color, message) {
+      const log = document.getElementById("sim-event-log");
+      const entry = document.createElement("div");
+      entry.style.padding = "7px 10px";
+      entry.style.background = "var(--bg-elevated)";
+      entry.style.borderRadius = "6px";
+      entry.style.borderLeft = `3px solid ${color}`;
+      entry.innerHTML = `<strong style="color:${color};">[${tag}]</strong> ${message}`;
+      log.prepend(entry);
+    }
+
+    function simRenderInstance() {
+      document.getElementById("sim-instance-output").textContent =
+        JSON.stringify(simCurrentInstance, null, 2);
+      document.getElementById("sim-input-name").value = simCurrentInstance.state.displayName;
+      document.getElementById("sim-input-email").value = simCurrentInstance.state.email;
+    }
+
+    function simUpdateToken() {
+      const mode = document.getElementById("sim-token-select").value;
+      const badge = document.getElementById("sim-facet-badge");
+      if (mode === "owner") {
+        badge.textContent = "Active Facet: editableFacet { save, cancel, load }";
+        badge.style.color = "var(--essence-primary)";
+      } else if (mode === "readonly") {
+        badge.textContent = "Active Facet: readOnlyFacet { load } (save/cancel absent)";
+        badge.style.color = "var(--expression-primary)";
+      } else {
+        badge.textContent = "Token Expired → Routes to readOnlyFacet / Re-Auth";
+        badge.style.color = "var(--accent-danger)";
+      }
+      simLog("TOKEN", "var(--expression-primary)", `Token projection switched to '${mode}' scope.`);
+    }
+
+    // Pure Action: validateAndSave
+    function pureValidateAndSave(state, intent) {
+      const next = { ...state, ...intent.payload };
+      const violations = UserProfileForm.invariants
+        .map(inv => inv(next))
+        .filter(r => r !== true);
+
+      if (violations.length > 0) {
+        return {
+          delta: { _validationErrors: violations },
+          effects: [{ kind: "INTENT_REJECTED", target: "caller", payload: { violations } }]
+        };
+      }
+
+      return {
+        delta: { ...intent.payload, _validationErrors: [] },
+        effects: [{
+          kind: "HTTP_PUT",
+          target: `/api/users/${intent.identityRef}/profile`,
+          payload: intent.payload,
+          retryPolicy: { maxRetries: 2, backoff: "exponential" },
+          compensatingEffect: {
+            kind: "ROLLBACK_INSTANCE",
+            target: intent.identityRef,
+            payload: { restoreTo: state }
+          }
+        }]
+      };
+    }
+
+    function simDispatchIntent(intent) {
+      simLog("INTENT", "var(--essence-primary)", `Dispatched ${intent.kind} (capability: '${intent.capability}')`);
+      const tokenMode = document.getElementById("sim-token-select").value;
+
+      // Manager Facet Selection
+      if (tokenMode !== "owner") {
+        const out = {
+          delta: {},
+          effects: [{ kind: "INTENT_UNROUTABLE", target: "caller", payload: { reason: `Capability '${intent.capability}' not in readOnlyFacet (token: ${tokenMode})` } }]
+        };
+        document.getElementById("sim-action-output").textContent = JSON.stringify(out, null, 2);
+        simLog("MANAGER", "var(--accent-danger)", `Facet routing blocked '${intent.capability}': Token lacks edit claims.`);
+        return;
+      }
+
+      if (intent.capability === "cancel") {
+        const result = {
+          delta: {},
+          effects: [{ kind: "RESTORE_COMMITTED", target: intent.identityRef }]
+        };
+        document.getElementById("sim-action-output").textContent = JSON.stringify(result, null, 2);
+        simCurrentInstance = JSON.parse(JSON.stringify(simCommittedInstance));
+        simRenderInstance();
+        simLog("WORKFLOW", "var(--accent-secondary)", "Executed RESTORE_COMMITTED workflow effect → Restored Instance to committed head.");
+        return;
+      }
+
+      // Run Pure Action
+      const result = pureValidateAndSave(simCurrentInstance.state, intent);
+      document.getElementById("sim-action-output").textContent = JSON.stringify(result, null, 2);
+
+      // Check if validation failed
+      if (result.delta._validationErrors && result.delta._validationErrors.length > 0) {
+        simCurrentInstance.state._validationErrors = result.delta._validationErrors;
+        simRenderInstance();
+        simLog("ACTION", "var(--accent-danger)", `Invariant check rejected input: ${result.delta._validationErrors.join(", ")}`);
+        return;
+      }
+
+      // Manager Committer applies optimistic delta
+      simRevisionCounter += 1;
+      simCurrentInstance = {
+        ...simCurrentInstance,
+        revisionId: `rev-${simRevisionCounter}`,
+        state: { ...simCurrentInstance.state, ...result.delta }
+      };
+      simRenderInstance();
+      simLog("COMMIT", "var(--accent-success)", `Committed delta → Instance revision ${simCurrentInstance.revisionId}. Handing HTTP_PUT Effect to Impact.`);
+
+      // Impact Execution
+      const shouldFailIO = document.getElementById("sim-fail-io").checked;
+      if (shouldFailIO) {
+        simLog("IMPACT", "var(--accent-danger)", "HTTP_PUT failed after retries! Executing compensatingEffect: ROLLBACK_INSTANCE.");
+        simCurrentInstance = JSON.parse(JSON.stringify(simCommittedInstance));
+        simRenderInstance();
+        simLog("COMPENSATE", "var(--expression-primary)", `Follow-up Intent 'instance.restore' rolled state back to ${simCommittedInstance.revisionId}.`);
+      } else {
+        simCommittedInstance = JSON.parse(JSON.stringify(simCurrentInstance));
+        simLog("IMPACT", "var(--accent-secondary)", `HTTP_PUT /api/users/u-1234/profile succeeded (200 OK). Promoted ${simCommittedInstance.revisionId} to committed head.`);
+      }
+    }
+
+    function simDispatchSave() {
+      const displayName = document.getElementById("sim-input-name").value;
+      const email = document.getElementById("sim-input-email").value;
+      simDispatchIntent({
+        kind: "profile.save",
+        capability: "save",
+        identityRef: "user:u-1234",
+        payload: { displayName, email }
+      });
+    }
+
+    function simDispatchInvalid() {
+      document.getElementById("sim-input-name").value = "";
+      simDispatchSave();
+    }
+
+    function simDispatchCancel() {
+      simDispatchIntent({
+        kind: "profile.cancel",
+        capability: "cancel",
+        identityRef: "user:u-1234",
+        payload: null
+      });
+    }
+
+    function simReset() {
+      document.getElementById("sim-event-log").innerHTML = "";
+      simLog("SYSTEM", "var(--essence-primary)", "AXIS Runtime Simulator ready. Dispatch an Intent to trace execution.");
+    }
+
+    /* ------------------------------------------------------------------------
+       5. OVERVIEW MODAL, NOTES DRAWER & KEYBOARD SHORTCUTS
+       ------------------------------------------------------------------------ */
+    function initOverviewGrid() {
+      const grid = document.getElementById("overview-grid");
+      grid.innerHTML = slides.map((s, idx) => {
+        const title = s.querySelector(".slide-title")?.textContent || `Slide ${idx + 1}`;
+        const section = s.dataset.section || "";
+        return `
+          <button type="button" class="overview-card ${idx === 0 ? 'current' : ''}" onclick="goToSlide(${idx})">
+            <div style="font-size: 0.72rem; color: var(--essence-primary); font-weight: 700;">${section}</div>
+            <div style="font-size: 0.9rem; font-weight: 800; margin-top: 4px;">${title}</div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function toggleOverview() {
+      const modal = document.getElementById("overview-modal");
+      const isOpen = modal.classList.toggle("open");
+      document.getElementById("btn-overview").setAttribute("aria-pressed", String(isOpen));
+    }
+
+    function toggleNotes() {
+      const drawer = document.getElementById("notes-drawer");
+      const isOpen = drawer.classList.toggle("open");
+      document.getElementById("btn-notes").setAttribute("aria-pressed", String(isOpen));
+    }
+
+    document.getElementById("btn-overview").addEventListener("click", toggleOverview);
+    document.getElementById("btn-notes").addEventListener("click", toggleNotes);
+
+    window.addEventListener("keydown", (e) => {
+      // Do not intercept keys when typing inside simulator inputs or selects
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+      if (e.key === "ArrowRight" || e.key === "PageDown") {
+        e.preventDefault();
+        navigateSlide(1);
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        navigateSlide(-1);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        goToSlide(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        goToSlide(totalSlides - 1);
+      } else if (e.key === "g" || e.key === "G") {
+        e.preventDefault();
+        toggleOverview();
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        toggleNotes();
+      } else if (e.key === "Escape") {
+        document.getElementById("overview-modal").classList.remove("open");
+        document.getElementById("btn-overview").setAttribute("aria-pressed", "false");
+      }
+    });
+
+    // Boot all interactive slide modules on DOMContentLoaded
+    initCognitiveChain();
+    initAxisMatrix();
+    initPipelineStepper();
+    selectPatternTab(0);
+    initLiteLadder();
+    renderMistake(0);
+    simRenderInstance();
+    simReset();
+    initOverviewGrid();
+    applySlideDOMUpdate(0);
+  </script>
+
+<!-- Shared, draggable navigation between AXIS presentations and MENTIC home. -->
+<axis-navigator></axis-navigator>
+<script src="../../../webcomponents/axis-navigator.js" defer></script>
+  <script src="../../devloiter/devloiter.js"></script>
+  <devloiter-widget height="160"></devloiter-widget>
+</body>
+</html>

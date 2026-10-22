@@ -1,0 +1,541 @@
+{
+  "meta": {
+    "axisMapVersion": 1,
+    "repo": "orders-service",
+    "generatedAt": "2026-10-05",
+    "commit": "",
+    "depth": "standard",
+    "scope": [
+      "src"
+    ],
+    "languages": [
+      "javascript"
+    ],
+    "notes": "Example map shipped with the AXIS skill. The repository it describes is a small Express + SQLite order API that does not use AXIS names."
+  },
+  "summary": "A small order API: Express routes call a controller, which calls a service, which prices the order with pure functions, writes it through a SQL repository, and emails a confirmation. Natively it is controller / service / repository. Pure pricing and the schema are cleanly separated; rules, coordination and the calls that cause IO are mixed together in the service, and one route bypasses it.",
+  "boundaries": [
+    {
+      "id": "orders",
+      "name": "Orders",
+      "nativeName": "src/orders/service.js",
+      "paths": [
+        "src/orders"
+      ],
+      "ownedState": [
+        "orders table",
+        "order_items table"
+      ],
+      "acceptedIntents": [
+        "create order (POST /orders)",
+        "cancel order (POST /orders/:id/cancel)",
+        "show order (GET /orders/:id)"
+      ],
+      "emittedEffects": [
+        "SQL writes to orders and order_items",
+        "order confirmation email"
+      ],
+      "policyScope": "session.role: admin, any signed-in customer, guest"
+    }
+  ],
+  "roles": [
+    {
+      "id": "server",
+      "nativeName": "Express app and route table",
+      "nativeKind": "server-bootstrap",
+      "paths": [
+        "src/server.js"
+      ],
+      "primaryAxisRole": "Wrapper",
+      "secondaryAxisRoles": [
+        "Manager"
+      ],
+      "purity": "io",
+      "stateOwnership": "none",
+      "sideEffects": [
+        "binds a port",
+        "reads PORT from the environment"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "creates the express() app and binds three routes",
+        "app.listen(process.env.PORT || 3000)"
+      ],
+      "inboundEdges": [
+        "HTTP"
+      ],
+      "outboundEdges": [
+        "orders/controller",
+        "auth/session"
+      ],
+      "boundaryNotes": [
+        "Composition only: the Manager part is Composer work (wiring), with no business logic. Keep it that way."
+      ],
+      "recompositionNotes": []
+    },
+    {
+      "id": "session",
+      "nativeName": "attachSession",
+      "nativeKind": "middleware",
+      "paths": [
+        "src/auth/session.js"
+      ],
+      "symbols": [
+        "attachSession"
+      ],
+      "primaryAxisRole": "Token",
+      "secondaryAxisRoles": [
+        "Adapter"
+      ],
+      "purity": "io",
+      "stateOwnership": "none",
+      "sideEffects": [
+        "reads JWT_SECRET from the environment"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "reads the Authorization header (raw auth material: Adapter work)",
+        "verifies the JWT and builds { userId, role, expires } on req.session (minting: Token work)"
+      ],
+      "inboundEdges": [
+        "every request"
+      ],
+      "outboundEdges": [
+        "req.session, read by controller and service"
+      ],
+      "boundaryNotes": [
+        "Extracting raw auth and minting the session happen in one middleware. Acceptable at this size.",
+        "The session has no email field, but service.js reads session.email."
+      ],
+      "recompositionNotes": [
+        "The session shape { userId, role, expires } is the Token contract to preserve."
+      ]
+    },
+    {
+      "id": "controller",
+      "nativeName": "orders controller",
+      "nativeKind": "route-handler",
+      "paths": [
+        "src/orders/controller.js"
+      ],
+      "symbols": [
+        "create",
+        "cancel",
+        "show"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Wrapper",
+      "secondaryAxisRoles": [
+        "Adapter",
+        "Manager"
+      ],
+      "purity": "io",
+      "stateOwnership": "reads",
+      "sideEffects": [
+        "writes HTTP responses",
+        "show() reads the orders table through the repository"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "(req, res) handlers that write status and JSON",
+        "read req.body and req.params and pass them on",
+        "show() applies the ownership rule and calls the repository directly"
+      ],
+      "inboundEdges": [
+        "POST /orders",
+        "POST /orders/:id/cancel",
+        "GET /orders/:id"
+      ],
+      "outboundEdges": [
+        "service.createOrder",
+        "service.cancelOrder",
+        "repo.findOrder"
+      ],
+      "boundaryNotes": [
+        "create and cancel are thin: parse, delegate, map errors to a status.",
+        "show bypasses the service and contains a business rule."
+      ],
+      "recompositionNotes": [
+        "Move the ownership check out of show(); keep the handlers as response writers."
+      ]
+    },
+    {
+      "id": "schema",
+      "nativeName": "NewOrder, LineItem, STATUSES",
+      "nativeKind": "validation-schema",
+      "paths": [
+        "src/orders/schema.js"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Form",
+      "secondaryAxisRoles": [],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "zod object schemas and a status list; no behaviour"
+      ],
+      "boundaryNotes": [
+        "STATUSES is declared but nothing checks a status against it."
+      ]
+    },
+    {
+      "id": "pricing",
+      "nativeName": "pricing functions",
+      "nativeKind": "pure-functions",
+      "paths": [
+        "src/orders/pricing.js"
+      ],
+      "symbols": [
+        "priceOrder",
+        "subtotal",
+        "discountFor"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Action",
+      "secondaryAxisRoles": [],
+      "purity": "pure",
+      "stateOwnership": "none",
+      "sideEffects": [],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "no imports; every function maps arguments to a return value",
+        "axis.py lint reports no purity problems",
+        "covered by test/pricing.test.js with no mocks"
+      ],
+      "boundaryNotes": [],
+      "recompositionNotes": [
+        "Portable as it stands."
+      ]
+    },
+    {
+      "id": "service",
+      "nativeName": "orders service",
+      "nativeKind": "application-service",
+      "paths": [
+        "src/orders/service.js"
+      ],
+      "symbols": [
+        "createOrder",
+        "cancelOrder"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Manager",
+      "secondaryAxisRoles": [
+        "Action"
+      ],
+      "purity": "mixed",
+      "stateOwnership": "owns",
+      "sideEffects": [
+        "inserts and updates orders through the repository",
+        "sends the confirmation email",
+        "reads the clock"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "sequences validate → price → insert → email",
+        "contains the rules: order-for-self, approval above 10000, cannot cancel once shipped",
+        "calls Date.now() and awaits repository and mailer calls between the rules"
+      ],
+      "inboundEdges": [
+        "controller.create",
+        "controller.cancel"
+      ],
+      "outboundEdges": [
+        "schema.NewOrder",
+        "pricing.priceOrder",
+        "repo",
+        "mailer"
+      ],
+      "boundaryNotes": [
+        "Coordination and business rules share two functions, so no rule here can be tested without a database and a mail transport.",
+        "Rules are signalled by throwing; the controller maps messages to status codes."
+      ],
+      "recompositionNotes": [
+        "Extract the three rules as pure functions returning a decision; leave sequencing here."
+      ]
+    },
+    {
+      "id": "order-row",
+      "nativeName": "order row with its line items",
+      "nativeKind": "database-record",
+      "paths": [
+        "src/orders/repo.js"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Instance",
+      "secondaryAxisRoles": [],
+      "confidence": "medium",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "rows in the orders and order_items tables, read and written only through the repository",
+        "no revision column: a status change overwrites the row in place"
+      ],
+      "boundaryNotes": [
+        "Live state is in SQLite. Nothing keeps an in-memory copy, and there is no history of an order's changes."
+      ]
+    },
+    {
+      "id": "order-id",
+      "nativeName": "orders.id",
+      "nativeKind": "primary-key",
+      "paths": [
+        "src/orders/repo.js"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Identity",
+      "secondaryAxisRoles": [],
+      "confidence": "medium",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "integer key returned by insertOrder as lastID",
+        "addressed in routes as /orders/:id"
+      ],
+      "boundaryNotes": []
+    },
+    {
+      "id": "repo",
+      "nativeName": "orders repository",
+      "nativeKind": "repository",
+      "paths": [
+        "src/orders/repo.js"
+      ],
+      "boundary": "orders",
+      "primaryAxisRole": "Impact",
+      "secondaryAxisRoles": [
+        "Link"
+      ],
+      "purity": "io",
+      "stateOwnership": "owns",
+      "sideEffects": [
+        "INSERT, SELECT and UPDATE on orders and order_items"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "every function awaits SQL through db/connection",
+        "findOrder loads an order and then its line items (the Link: hydration of a relationship)"
+      ],
+      "boundaryNotes": [
+        "The only writer of the orders tables.",
+        "The order → line items relationship exists only as these two queries; no constraint or declared rule (no Bond)."
+      ]
+    },
+    {
+      "id": "db",
+      "nativeName": "db connection",
+      "nativeKind": "infrastructure",
+      "paths": [
+        "src/db/connection.js"
+      ],
+      "primaryAxisRole": "Impact",
+      "secondaryAxisRoles": [],
+      "purity": "io",
+      "stateOwnership": "none",
+      "sideEffects": [
+        "opens the SQLite file named by DB_FILE"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "creates a sqlite3.Database at module load",
+        "promise wrappers over db.run and db.all"
+      ]
+    },
+    {
+      "id": "mailer",
+      "nativeName": "sendOrderConfirmation",
+      "nativeKind": "infrastructure",
+      "paths": [
+        "src/mail/mailer.js"
+      ],
+      "primaryAxisRole": "Impact",
+      "secondaryAxisRoles": [],
+      "purity": "io",
+      "stateOwnership": "none",
+      "sideEffects": [
+        "sends email through SMTP"
+      ],
+      "confidence": "high",
+      "evidenceBasis": "source-confirmed",
+      "evidence": [
+        "nodemailer transport.sendMail"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Create an order",
+      "trigger": "POST /orders",
+      "steps": [
+        {
+          "role": "Wrapper",
+          "ref": "server",
+          "does": "The route table hands the request to the controller."
+        },
+        {
+          "role": "Token",
+          "ref": "session",
+          "does": "Middleware turns the bearer token into req.session { userId, role }."
+        },
+        {
+          "role": "Adapter",
+          "ref": "controller",
+          "does": "create() refuses guests, then passes req.body and the session on. There is no explicit Intent object."
+        },
+        {
+          "role": "Form",
+          "ref": "schema",
+          "does": "NewOrder.parse checks the shape of the request body."
+        },
+        {
+          "role": "Manager",
+          "ref": "service",
+          "does": "createOrder applies the order-for-self and approval rules inline, then sequences everything below."
+        },
+        {
+          "role": "Action",
+          "ref": "pricing",
+          "does": "priceOrder computes subtotal, discount and total."
+        },
+        {
+          "role": "Impact",
+          "ref": "repo",
+          "does": "insertOrder writes the order and its line items."
+        },
+        {
+          "role": "Impact",
+          "ref": "mailer",
+          "does": "sendOrderConfirmation emails the customer. If this throws, the order already exists."
+        },
+        {
+          "role": "Wrapper",
+          "ref": "controller",
+          "does": "Responds 201 with the order, or 400 with the thrown message."
+        }
+      ]
+    },
+    {
+      "name": "Cancel an order",
+      "trigger": "POST /orders/:id/cancel",
+      "steps": [
+        {
+          "role": "Adapter",
+          "ref": "controller",
+          "does": "cancel() reads the id from the path."
+        },
+        {
+          "role": "Link",
+          "ref": "repo",
+          "does": "findOrder loads the order with its line items."
+        },
+        {
+          "role": "Manager",
+          "ref": "service",
+          "does": "cancelOrder applies the not-shipped and ownership rules inline."
+        },
+        {
+          "role": "Impact",
+          "ref": "repo",
+          "does": "setStatus writes 'cancelled'."
+        },
+        {
+          "role": "Wrapper",
+          "ref": "controller",
+          "does": "Responds with the order, or 404 / 409 chosen by matching the error message."
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "kind": "io-in-logic",
+      "risk": "high",
+      "paths": [
+        "src/orders/service.js"
+      ],
+      "evidence": "createOrder inserts the order and then awaits the email. If the email fails, the caller receives 400 although the order was stored.",
+      "separation": "Decide first, perform after: compute the order with pure functions, write it, and treat the email as a declared follow-up whose failure does not fail the request."
+    },
+    {
+      "kind": "policy-in-logic",
+      "risk": "medium",
+      "paths": [
+        "src/orders/service.js",
+        "src/orders/controller.js"
+      ],
+      "evidence": "session.role !== 'admin' appears in createOrder (twice), cancelOrder and controller.show, each with a slightly different ownership test.",
+      "separation": "One capability map keyed by role (the Facet) or, at minimum, one canOperateOn(session, order) function that all four call."
+    },
+    {
+      "kind": "adapter-decides",
+      "risk": "medium",
+      "paths": [
+        "src/orders/controller.js"
+      ],
+      "evidence": "show() calls repo.findOrder directly and applies the ownership rule in the handler, bypassing the service.",
+      "separation": "Add a getOrder(id, session) to the service and have show() only write the response."
+    },
+    {
+      "kind": "other",
+      "risk": "medium",
+      "paths": [
+        "src/orders/service.js",
+        "src/auth/session.js"
+      ],
+      "evidence": "createOrder emails session.email, but attachSession never sets an email on the session.",
+      "separation": "Decide where the customer's email comes from (a claim, or a customer lookup) and make that explicit."
+    }
+  ],
+  "placement": {
+    "Form": [
+      "src/orders/schema.js"
+    ],
+    "Instance": null,
+    "Identity": null,
+    "Token": [
+      "src/auth/session.js"
+    ],
+    "Facet": null,
+    "Intent": null,
+    "Bond": null,
+    "Link": [
+      "src/orders/repo.js"
+    ],
+    "Action": [
+      "src/orders/pricing.js"
+    ],
+    "Manager": [
+      "src/orders/service.js"
+    ],
+    "Effect": null,
+    "Impact": [
+      "src/orders/repo.js",
+      "src/mail",
+      "src/db"
+    ],
+    "Wrapper": [
+      "src/server.js",
+      "src/orders/controller.js"
+    ],
+    "Adapter": [
+      "src/orders/controller.js"
+    ]
+  },
+  "rules": [
+    "Put a new business rule in a pure function beside src/orders/pricing.js and call it from the service. Do not add rules to the controller.",
+    "All SQL goes through src/orders/repo.js. Nothing else should import src/db/connection.js.",
+    "Do not add another inline role check. If a change needs one, first collect the existing checks into one function (see the policy-in-logic finding).",
+    "Email is sent only from src/mail/mailer.js.",
+    "Validate a request body with a schema in src/orders/schema.js before using it.",
+    "Routes are declared only in src/server.js.",
+    "New pure functions get a test in test/ beside pricing.test.js; they should need no mocks."
+  ],
+  "unmapped": [
+    "test (one unit test, for pricing)"
+  ]
+}

@@ -1,6 +1,4 @@
 # AXIS: Agentically eXtensible Instruction Structures
-A meta-architecture for structuring codified logic.
-
 ### *The Essence–Expression Meta-Architectural Model for Software, Systems, and Agents*
 
 **Author:** Matthew Quarneri ([matt@mentic.com](mailto:matt@mentic.com))  
@@ -209,8 +207,9 @@ Depending on your immediate role and objective, follow one of these curated path
 
 AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC. Originally published at [mentic.com/AXIS](https://mentic.com/AXIS).
 
+If you found these ideas useful you could [Buy Me a Coffee](https://buymeacoffee.com/mattq4) to show your support.
+
 - **Documents and presentations:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 - **The skill (`skill/`):** [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 You may share and adapt AXIS, including commercially, if you credit Matthew Quarneri and MENTIC Cognitive Systems, link to [mentic.com/AXIS](https://mentic.com/AXIS), and say what you changed. See [LICENSE.md](LICENSE.md) for the details, [NOTICE](NOTICE) for the notice to keep with copies, and [CITATION.cff](CITATION.cff) for citation metadata.
-

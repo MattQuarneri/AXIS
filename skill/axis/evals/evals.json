@@ -1,0 +1,33 @@
+{
+  "skill_name": "axis",
+  "evals": [
+    {
+      "id": 1,
+      "name": "map-unfamiliar-repo",
+      "prompt": "I just inherited this little order API (it's in evals/files/orders-service). Before I change anything I want to understand how it's put together and where the risky parts are. Can you map it for me and leave something the next agent can use too?",
+      "expected_output": "A codemaps/axis-map.json that passes `axis.py validate`, and a rendered codemaps/AXIS-MAP.md. The map identifies pricing.js as the pure core, service.js as mixed (coordination plus rules), repo/mailer/db as IO sites, one Orders boundary owning the orders tables, a placement table with honest nulls (no Effect, Facet, Intent, Bond), and findings that include the email-after-insert failure and the repeated inline role checks. The reply summarises the map in the repo's own names.",
+      "files": ["evals/files/orders-service"]
+    },
+    {
+      "id": 2,
+      "name": "add-rule-in-mapped-repo",
+      "prompt": "In the orders service (evals/files/orders-service) customers should not be able to cancel an order more than 24 hours after placing it. Admins still can. Please add that.",
+      "expected_output": "The 24-hour rule is a pure function beside pricing.js that receives the current time as an argument (it does not call Date.now itself), with a unit test that needs no mocks. service.cancelOrder calls it; nothing is added to the controller; no new inline role check is scattered. `axis.py lint` on the new function is clean. The reply says which role each piece plays.",
+      "files": ["evals/files/orders-service"]
+    },
+    {
+      "id": 3,
+      "name": "review-planted-violations",
+      "prompt": "can you review these two files before I merge? we're following AXIS on this project. evals/files/review-me/profileActions.js and profileAdapter.js",
+      "expected_output": "Finds, names and gives the fix for: IO (fetch, await) inside loadProfile; a clock read inside saveProfile; an exception used for a business failure; an Effect that carries its own execute function; a magic delta key (_resetToCommitted) used for control flow; the Adapter minting a Token; the Adapter routing on e.target.id and making permission decisions. Each fix follows the documented right-hand pattern (declare an Effect, RESTORE_COMMITTED workflow Effect, raw auth passed through in the Intent, one binding per event slot).",
+      "files": ["evals/files/review-me/profileActions.js", "evals/files/review-me/profileAdapter.js"]
+    },
+    {
+      "id": 4,
+      "name": "place-code-small-shape",
+      "prompt": "I'm writing a tiny internal endpoint: POST /quote takes {items, coupon} and returns the price. No database, no auth. A teammate says we should do it 'the AXIS way' with all the components. What's the least I actually need, and what would the code look like?",
+      "expected_output": "Recommends the stateless-endpoint shape only: a Wrapper (the route), an Adapter (body to arguments or a small Intent), and a pure Action; says explicitly that Form is optional and that Manager, Token, Facet, Bond, Link are not needed; no Effect or Impact beyond writing the response. Short code, pure pricing function, one test without mocks. Does not produce fourteen files.",
+      "files": []
+    }
+  ]
+}

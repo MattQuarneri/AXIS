@@ -1,0 +1,2030 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presenting AXIS</title>
+<meta name="description" content="An introduction to the AXIS architecture for developers, human or agent: start with MVC, split each box in two, follow the change.">
+<!--
+  PRESENTING AXIS
+  ===============
+  A single self-contained page. No build step, no dependencies, no network.
+
+  If you are an agent: the edition written for you is ../skill/llms.txt (plain markdown, far fewer tokens than
+  this file). If you are reading this source anyway, here is the map:
+
+    <script id="axis-model">     the lesson as structured JSON: axes, components, contracts,
+                                 rules, placement table. Start there.
+    <main>                       the prose, as plain HTML, in reading order.
+    <script id="axis-kernel">    ~150 lines: Manager (Composer + Conductor), commit, Impact, Wrapper, Adapter.
+    <script id="outside-world">  everything that is NOT the system: a fake mail server, a legacy MVC app, storage.
+    <script id="ctx-billing">    the invoice. A bounded context using all fourteen AXIS components.
+    <script id="ctx-lesson">     the tutorial itself. A second bounded context, on the Lite profile.
+    <script id="wrappers">       every interactive panel, as a custom element that renders from an Instance.
+    <script id="composition">    where the two Managers are composed and bound.
+
+  The page is built the way it teaches. Nothing interactive on it bypasses the loop it describes.
+  Sources: the AXIS documents in this folder (Principles, Lite, Design, Code, Specification, FrontEnd-Web).
+-->
+
+<!-- CSS is split the way AXIS-FrontEnd-Web.md suggests: structure in a layout facet, colour in look facets. -->
+
+<style data-facet="page.paper.look.css">
+:root{
+  --bg:#faf8f3; --panel:#ffffff; --sunk:#f2efe7; --ink:#1d1c19; --ink2:#55524b; --ink3:#89857b; --line:#e4dfd3; --line2:#cdc7b8;
+  --ess:#1f4fbf; --ess-bg:#e9effc; --ess-ln:#9cb5ee;
+  --exp:#9f4b08; --exp-bg:#fdefd3; --exp-ln:#e9b560; --exp-dot:#e8930c;
+  --ok:#1b7a4b; --ok-bg:#e2f4e9; --bad:#b3261e; --bad-bg:#fde8e5; --out:#62548f; --out-bg:#efecf7;
+  --shadow:0 1px 2px rgba(40,30,10,.05),0 8px 24px rgba(40,30,10,.06);
+}
+</style>
+<style data-facet="page.night.look.css">
+:root[data-look="night"]{
+  --bg:#131419; --panel:#1b1d24; --sunk:#16181e; --ink:#eceae4; --ink2:#b7b4ab; --ink3:#817e76; --line:#2b2e38; --line2:#3d414d;
+  --ess:#94b5ff; --ess-bg:#19233d; --ess-ln:#3d5797;
+  --exp:#f5b85c; --exp-bg:#33270f; --exp-ln:#8a6521; --exp-dot:#f5a623;
+  --ok:#63cf99; --ok-bg:#12301f; --bad:#ff9082; --bad-bg:#3a1a17; --out:#b9abea; --out-bg:#221f31;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+</style>
+
+<style data-facet="page.essay.layout.css">
+:root{
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --measure:43rem; --wide:68rem; --r:10px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:68px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.62 var(--font);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{line-height:1.15;letter-spacing:-.015em;margin:0}
+h1{font-size:clamp(2.5rem,7vw,4rem);font-weight:800}
+h2{font-size:clamp(1.7rem,4vw,2.35rem);font-weight:760}
+h3{font-size:1.18rem;margin-top:2.4rem}
+p{margin:1em 0}
+a{color:var(--ess);text-underline-offset:3px}
+code,pre{font-family:var(--mono);font-size:.86em}
+:not(pre)>code{background:var(--sunk);border:1px solid var(--line);border-radius:5px;padding:.06em .32em;white-space:nowrap}
+button{font:inherit;color:inherit}
+ul,ol{padding-left:1.3em}
+li{margin:.35em 0}
+
+/* every Wrapper is a block */
+les-nav,les-specimen,les-world,les-code,les-split,les-pairs,les-grid,les-profiles,les-proof,les-list,les-brief,les-self,
+bill-invoice,bill-revisions,bill-trace,bill-map,bill-code,bill-replay,bill-self{display:block;min-width:0}
+
+/* frame */
+.bar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+les-nav{display:flex;align-items:center;gap:12px;max-width:var(--wide);margin:0 auto;padding:8px 20px}
+.brand{font-weight:760;text-decoration:none;color:var(--ink);white-space:nowrap}
+.dots{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.dot{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:50%;font-size:.78rem;font-weight:700;text-decoration:none;color:var(--ink3);border:1px solid transparent}
+.dot:hover{border-color:var(--line2);color:var(--ink)}
+.dot.on{background:var(--ink);color:var(--bg)}
+main{padding:0 20px 90px}
+.prose{max-width:var(--measure);margin:0 auto}
+.stage{max-width:var(--wide);margin:30px auto}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.stack{display:grid;gap:16px;min-width:0}
+section.ch{padding:76px 0 6px;border-top:1px solid var(--line);margin-top:60px}
+.hero{padding:clamp(48px,9vw,110px) 0 0}
+.eyebrow{font-size:.76rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin:0 0 .7rem}
+.lede{font-size:1.24rem;line-height:1.5;color:var(--ink2);margin-top:1.1rem}
+.take{border-left:3px solid var(--ink);padding:.15rem 0 .15rem 1rem;font-weight:620;margin:2rem 0 0}
+.ask{font-size:clamp(1.3rem,3.2vw,1.75rem);font-weight:740;line-height:1.28;letter-spacing:-.01em;margin:1.5rem 0;padding:1.15rem 1.35rem;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.quote{color:var(--ink2);font-style:italic;margin:1.4rem 0 0;font-size:.98rem}
+.arc{list-style:none;padding:0;margin:2rem 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.arc li{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.arc b{display:block;margin:.5rem 0 .15rem}
+.arc span{color:var(--ink2);font-size:.9rem;line-height:1.4;display:block}
+.glyphs{display:flex;gap:5px;align-items:center;height:22px}
+.g{width:20px;height:20px;border:2px solid var(--ink3);border-radius:3px;flex:none}
+.g.e{border-color:var(--ess);background:var(--ess-bg);border-radius:2px}
+.g.x{border-color:var(--exp-dot);background:var(--exp-dot);border-radius:50%}
+.g.arrow{border:0;width:auto;height:auto;color:var(--ink3);font-weight:700}
+.legend{display:grid;gap:8px;margin:1.6rem 0 0;font-size:.95rem}
+.legend div{display:flex;gap:10px;align-items:baseline}
+.aside{font-size:.92rem;color:var(--ink2);background:var(--sunk);border-radius:var(--r);padding:12px 16px;margin:1.6rem 0 0}
+footer{max-width:var(--measure);margin:70px auto 0;padding-top:20px;border-top:1px solid var(--line);font-size:.84rem;color:var(--ink3)}
+
+/* the two shapes that carry the whole page */
+.ess,.exp{display:inline-flex;align-items:center;gap:.38em;font-weight:680;font-size:.88em;line-height:1.35;padding:.05em .5em;white-space:nowrap;border:1.5px solid;vertical-align:baseline;font-style:normal}
+.ess{color:var(--ess);background:var(--ess-bg);border-color:var(--ess-ln);border-radius:3px}
+.exp{color:var(--exp);background:var(--exp-bg);border-color:var(--exp-ln);border-radius:999px}
+.ess::before{content:"";width:.6em;height:.6em;border:2px solid currentColor;border-radius:1px;flex:none}
+.exp::before{content:"";width:.6em;height:.6em;background:var(--exp-dot);border-radius:50%;flex:none}
+
+/* controls */
+.btn{appearance:none;border:1px solid var(--line2);background:var(--panel);border-radius:8px;padding:.42em .82em;font-size:.9rem;font-weight:620;cursor:pointer;line-height:1.3;color:var(--ink)}
+.btn:hover{border-color:var(--ink3)}
+.btn:focus-visible,.cell:focus-visible,.ln:focus-visible,.dot:focus-visible{outline:2px solid var(--ess);outline-offset:2px}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.sm{font-size:.8rem;padding:.24em .55em}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--ink2);text-decoration:underline;text-underline-offset:3px;padding-inline:.15em}
+.btn.off{opacity:.55;border-style:dashed}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.warn{border-color:var(--bad);color:var(--bad)}
+.btn.pe{color:var(--ess);border-color:var(--ess-ln);background:var(--ess-bg);border-radius:3px}
+.btn.px{color:var(--exp);border-color:var(--exp-ln);background:var(--exp-bg);border-radius:999px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg .btn{border:0;border-radius:0;background:transparent}
+.seg .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.split{justify-content:space-between}
+
+/* panels */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);min-width:0}
+.card>h4,.cap{margin:0 0 10px;font-size:.74rem;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+.note{font-size:.86rem;color:var(--ink2);margin:.5em 0 0}
+.msg{font-size:.88rem;padding:.5em .75em;border-radius:6px;margin-top:10px}
+.msg.bad{background:var(--bad-bg);color:var(--bad)}
+.msg.ok{background:var(--ok-bg);color:var(--ok)}
+.msg.info{background:var(--sunk);color:var(--ink2)}
+.out{border-color:var(--out);border-style:dashed;background:var(--out-bg);box-shadow:none}
+.out>h4{color:var(--out)}
+
+/* code */
+.codefig{margin:0;min-width:0}
+.codefig figcaption{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin:0 0 5px}
+pre.code{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:11px 13px;overflow-x:auto;font-size:.79rem;line-height:1.55;margin:0;white-space:pre;tab-size:2}
+pre.code.wrap{white-space:pre-wrap;overflow-wrap:anywhere}
+.code i,.ln i{font-style:normal}
+.c{color:var(--ink3)} .s{color:var(--ok)} .k{color:var(--ess)} .n{color:var(--exp)}
+.lines{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 0;overflow-x:auto}
+.ln{appearance:none;display:block;width:100%;min-width:max-content;text-align:left;border:0;border-left:3px solid transparent;background:transparent;font:.79rem/1.75 var(--mono);padding:0 12px 0 10px;white-space:pre;cursor:pointer;color:var(--ink)}
+.ln:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.ln[aria-pressed="true"]{background:var(--panel);border-left-color:var(--ink)}
+.ln.frame{cursor:default;color:var(--ink3)}
+.job{min-height:4.6em;margin-top:12px}
+.job b{display:block}
+.tally{display:flex;gap:5px;margin-top:10px}
+.tally i{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.tally i.on{background:var(--ink)}
+
+/* invoice */
+.inv-h{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.inv-h b{font-size:1.08rem}
+.inv-h small{display:block;color:var(--ink2);font-size:.84rem}
+.status{font-size:.72rem;font-weight:760;letter-spacing:.09em;text-transform:uppercase;padding:.22em .6em;border-radius:4px;background:var(--sunk);color:var(--ink2);white-space:nowrap}
+.status[data-s="sent"]{background:var(--ess-bg);color:var(--ess)}
+.status[data-s="paid"]{background:var(--ok-bg);color:var(--ok)}
+.items{list-style:none;margin:12px 0 0;padding:0;border-top:1px solid var(--line)}
+.items li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;margin:0;border-bottom:1px solid var(--line);font-size:.94rem}
+.items .empty{color:var(--ink3);font-style:italic}
+.total{display:flex;justify-content:space-between;font-weight:760;padding:9px 0 12px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:.88rem;margin:10px 0 0}
+.kv dt{color:var(--ink3)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.kv code{white-space:normal}
+.outbox{list-style:none;margin:8px 0 0;padding:0;font-size:.86rem}
+.outbox li{padding:5px 0;border-top:1px dashed var(--line2);margin:0}
+
+/* revisions */
+.revs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rev{margin:0;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:var(--bg);animation:rise .35s both}
+.rev.head{border-color:var(--exp-ln);background:var(--exp-bg)}
+.rev.refused{border-color:var(--bad);background:var(--bad-bg)}
+.rev-h{display:flex;justify-content:space-between;gap:10px;font-size:.84rem;font-weight:700}
+.rev-h span{font-weight:500;color:var(--ink2)}
+.rev pre{margin:6px 0 0;font-size:.76rem;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+
+/* sorting */
+.box{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin:18px 0}
+.box-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.box-h b{font-size:1.25rem}
+.box-h span{color:var(--ink2);font-size:.9rem}
+.pile{display:grid;gap:8px;margin:12px 0 0}
+.stmt{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;border:1px solid var(--line2);border-radius:8px;padding:9px 12px;background:var(--bg)}
+.stmt>span{flex:1 1 15rem}
+.stmt.left{border-style:dashed;color:var(--ink2);background:transparent}
+.stmt.left em{font-style:normal;font-size:.76rem;color:var(--ink3);white-space:nowrap}
+.stmt.miss{animation:shake .32s}
+.hint{flex-basis:100%;font-size:.85rem;color:var(--bad)}
+.halves{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:14px}
+.half{padding:11px 14px;min-height:70px;min-width:0}
+.half.e{border:1.5px solid var(--ess-ln);background:var(--ess-bg);border-radius:4px}
+.half.x{border:1.5px solid var(--exp-ln);background:var(--exp-bg);border-radius:20px}
+.half h5{margin:0 0 4px;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase}
+.half.e h5{color:var(--ess)} .half.x h5{color:var(--exp)}
+.half .name{font-size:1.25rem;font-weight:780;letter-spacing:-.01em;margin:2px 0}
+.half.e .name{color:var(--ess)} .half.x .name{color:var(--exp)}
+.placed{font-size:.92rem;margin:7px 0 0}
+.placed.just{animation:rise .4s both}
+.placed small{display:block;color:var(--ink2);line-height:1.4}
+.reveal{margin-top:14px;animation:rise .45s both}
+.slogan{font-weight:680;margin:0 0 10px}
+.tray{border:1.5px dashed var(--line2);border-radius:var(--r);padding:14px 16px;margin:18px 0}
+.pair{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow);padding:14px 16px;margin:12px 0}
+.pair .halves{margin-top:10px}
+.pair-q{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:10px}
+.pick{appearance:none;text-align:left;border:1.5px dashed var(--line2);border-radius:8px;background:var(--bg);padding:10px 12px;cursor:pointer;font-size:.94rem;line-height:1.4}
+.pick:hover{border-color:var(--ink3);border-style:solid}
+.pick.miss{animation:shake .32s;border-color:var(--bad)}
+
+/* the grid */
+.grid{display:grid;grid-template-columns:minmax(118px,.85fr) minmax(0,1fr) minmax(0,1fr);gap:8px}
+.hd{font-size:.74rem;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:700;padding:2px}
+.hd.e{color:var(--ess)} .hd.x{color:var(--exp)}
+.axis{padding:8px 2px;align-self:center}
+.axis b{display:block}
+.axis small{color:var(--ink2);font-size:.79rem;line-height:1.3;display:block}
+.cell{appearance:none;text-align:left;cursor:pointer;padding:9px 12px;border:1.5px solid;display:block;width:100%;min-width:0;line-height:1.3}
+.cell.e{border-color:var(--ess-ln);background:var(--ess-bg);color:var(--ess);border-radius:4px}
+.cell.x{border-color:var(--exp-ln);background:var(--exp-bg);color:var(--exp);border-radius:24px;padding-inline:17px}
+.cell b{display:block;font-size:1.02rem}
+.cell small{color:var(--ink2);font-size:.79rem;display:block}
+.cell[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
+.cell.hot{box-shadow:0 0 0 3px var(--exp-dot)}
+.cell.dim{opacity:.3}
+.cell.static{cursor:default}
+.detail h3{margin:0 0 2px;font-size:1.5rem}
+.detail .says{font-size:1.05rem;font-style:italic;color:var(--ink2);margin:.4em 0 .8em}
+
+/* the trace */
+.trace{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hop{margin:0;padding:9px 12px;border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:8px;background:var(--panel);font-size:.92rem;line-height:1.5;animation:rise .4s both;animation-delay:calc(var(--i)*70ms);min-width:0}
+.hop.bad{border-left-color:var(--bad)}
+.hop.ok{border-left-color:var(--ok)}
+.hop.back{border-left-color:var(--out);background:var(--out-bg)}
+.hop p{margin:0}
+.hop details{margin-top:4px}
+.hop summary{cursor:pointer;font-size:.76rem;color:var(--ink3)}
+.hop pre{margin:6px 0 0}
+.map{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow)}
+.map svg{display:block;min-width:820px;width:100%;height:auto}
+.map text{font:600 12.5px var(--font);fill:var(--ink)}
+.map .lbl{font-weight:500;font-size:11px;fill:var(--ink3)}
+.map .node{opacity:.4;transition:opacity .3s}
+.map .node.lit{opacity:1}
+.map .node.e rect{fill:var(--ess-bg);stroke:var(--ess);stroke-width:1.5}
+.map .node.x rect{fill:var(--exp-bg);stroke:var(--exp-dot);stroke-width:1.5}
+.map .node.e text{fill:var(--ess)} .map .node.x text{fill:var(--exp)}
+.map .node.lit rect{stroke-width:2.6}
+.map .wire{fill:none;stroke:var(--ink3);stroke-width:1.5}
+.map .wire.soft{stroke-dasharray:3 4;stroke:var(--line2)}
+.map .wire.back{stroke-dasharray:6 5;stroke:var(--out)}
+.map .ah{fill:var(--ink3)}
+.map .inside{fill:color-mix(in srgb,var(--ink) 3%,transparent);stroke:var(--line2);stroke-dasharray:5 5}
+
+/* lists and tables rendered from the model */
+.rules{counter-reset:r;list-style:none;padding:0;margin:1.2rem 0}
+.rules li{counter-increment:r;position:relative;padding-left:2.2em;margin:.6em 0}
+.rules li::before{content:counter(r);position:absolute;left:0;top:.1em;width:1.55em;height:1.55em;border-radius:50%;background:var(--ink);color:var(--bg);font-size:.76rem;font-weight:760;display:grid;place-items:center}
+.where{width:100%;border-collapse:collapse;font-size:.94rem;margin:1rem 0}
+.where td{padding:7px 8px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.where td:last-child{padding-right:0}
+.where.tagged td:last-child{white-space:nowrap;text-align:right}
+.tests{list-style:none;padding:0;margin:12px 0 0;font-size:.92rem}
+.tests li{display:flex;gap:8px;margin:5px 0}
+.tests .p{color:var(--ok);font-weight:800} .tests .f{color:var(--bad);font-weight:800}
+.big{font-size:2.2rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.unit{font-size:.9rem;font-weight:600;color:var(--ink2);letter-spacing:0}
+details.more{margin:1.6rem 0 0;border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;background:var(--panel)}
+details.more summary{cursor:pointer;font-weight:650}
+.log{list-style:none;margin:8px 0 0;padding:0;font:.76rem/1.6 var(--mono)}
+.log li{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink2)}
+
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+@media (min-width:881px){.cols.lean{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}}
+@media (max-width:880px){.cols{grid-template-columns:minmax(0,1fr)}.arc{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){
+  body{font-size:16px}
+  main{padding-inline:16px}
+  les-nav{padding-inline:16px;gap:8px}
+  .brand span{display:none}
+  .dots{gap:1px}
+  .dot{width:23px;height:23px;font-size:.7rem}
+  .halves,.pair-q{grid-template-columns:minmax(0,1fr)}
+  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .grid .axis{grid-column:1/-1;padding-bottom:0}
+  .grid .hd.ax{display:none}
+  section.ch{padding-top:56px;margin-top:44px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     THE MODEL — the lesson as data. Wrappers render it; agents can read it directly.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script type="application/json" id="axis-model">
+{
+  "meta": {
+    "title": "Presenting AXIS",
+    "summary": "AXIS organises code along seven concerns (axes). Each axis has an Essence component (a definition, true before the program runs) and an Expression component (a live thing, existing only at runtime). Classic MVC contains three of the seven axes, unsplit; the other four are hidden inside its three boxes.",
+    "sources": ["AXIS-Principles.md", "AXIS-Lite.md", "AXIS-Design.md", "AXIS-Code.md", "AXIS-Specification.md", "AXIS-FrontEnd-Web.md"],
+    "startWith": "AXIS-Lite.md"
+  },
+
+  "question": "Is this true before the program runs, or only while it runs?",
+
+  "loop": "Event → Adapter → Intent → Manager (Token → Facet → Link) → Action → { delta, effects } → Manager.commit(delta) → Instance → Wrapper.render   and   effects → Impact → outside world → follow-up Intent → (same door)",
+
+  "chapters": [
+    { "n": 1,  "title": "The app you already know" },
+    { "n": 2,  "title": "One question, asked three times" },
+    { "n": 3,  "title": "How state works" },
+    { "n": 4,  "title": "How change works" },
+    { "n": 5,  "title": "What MVC never named" },
+    { "n": 6,  "title": "The whole loop" },
+    { "n": 7,  "title": "What it buys you" },
+    { "n": 8,  "title": "Start smaller than this" },
+    { "n": 9,  "title": "If you are an agent" },
+    { "n": 10, "title": "This page, in its own terms" }
+  ],
+
+  "axes": [
+    { "id": "being",    "name": "Being",    "asks": "What is it?",                         "diagonal": "a thing exists",        "essence": "form",     "expression": "instance", "from": "Model",      "slogan": "Forms generate. Instances hold." },
+    { "id": "identity", "name": "Identity", "asks": "Which one is it, and who is asking?", "diagonal": "it is itself",          "essence": "identity", "expression": "token",    "from": null,         "hiding": "in the Model's id column and the Controller's session check", "slogan": "Identity is permanent. Tokens are temporary." },
+    { "id": "meaning",  "name": "Meaning",  "asks": "What can be done, and what was meant?", "diagonal": "it is perceived",     "essence": "facet",    "expression": "intent",   "from": "View",       "slogan": "Facets say what can be done. Intents say what was meant." },
+    { "id": "relating", "name": "Relating", "asks": "What belongs to what?",               "diagonal": "it has relationships",  "essence": "bond",     "expression": "link",     "from": null,         "hiding": "in a foreign key and a lookup", "slogan": "Bonds structure. Links traverse." },
+    { "id": "doing",    "name": "Doing",    "asks": "What is the rule, and who runs it?",  "diagonal": "it acts",               "essence": "action",   "expression": "manager",  "from": "Controller", "slogan": "Actions decide. The Manager coordinates." },
+    { "id": "changing", "name": "Changing", "asks": "What should happen, and what does?",  "diagonal": "it causes change",      "essence": "effect",   "expression": "impact",   "from": null,         "hiding": "in the Controller's last line", "slogan": "Effects are data. Impact is execution." },
+    { "id": "bridging", "name": "Bridging", "asks": "Where does the outside come in?",     "diagonal": "it connects",           "essence": "wrapper",  "expression": "adapter",  "from": null,         "hiding": "in the View's markup and its click handlers", "slogan": "Wrappers are boundaries. Adapters translate." }
+  ],
+
+  "components": {
+    "form":     { "name": "Form",     "axis": "being",    "side": "essence",    "short": "shape, defaults, rules",
+                  "says": "This is the shape of state, and the rules that govern it.",
+                  "rule": "Forms generate; they do not hold.",
+                  "familiar": "schema, type, model shape", "adds": "separates structural definition from live mutable state",
+                  "contract": "{ shape, defaults, invariants[], transitions? }",
+                  "invoice": "InvoiceForm: line items, a total, a status. The total is never negative.",
+                  "when": "state shape, defaults, or invariants need to be explicit" },
+    "instance": { "name": "Instance", "axis": "being",    "side": "expression", "short": "the values right now",
+                  "says": "This is the state as it exists now, with its own history and version.",
+                  "rule": "All mutable state lives here.",
+                  "familiar": "entity record, aggregate state, document", "adds": "makes mutable state explicit and versionable",
+                  "contract": "{ formRef, identityRef, revisionId, state }",
+                  "invoice": "One revision of invoice:1042, for example: draft, $240.",
+                  "when": "there is state the system owns" },
+    "identity": { "name": "Identity", "axis": "identity", "side": "essence",    "short": "permanent sameness",
+                  "says": "This is the same thing across time and contexts, and this is how to address it.",
+                  "rule": "Identity defines what something is and how to find it. It does not hold live values.",
+                  "familiar": "id, key, stable reference", "adds": "separates enduring sameness from runtime-scoped projections",
+                  "contract": "{ entityId, formRef, versioningPolicy }",
+                  "invoice": "invoice:1042 is the same invoice at every revision. user:sam is the same person in every session.",
+                  "when": "the same entity must be addressed across requests, stores, or workflows" },
+    "token":    { "name": "Token",    "axis": "identity", "side": "expression", "short": "who, here, for now",
+                  "says": "This Identity is present here and now, with this scope, authority, and lifetime.",
+                  "rule": "Tokens are issued, scoped, and revocable. Identities are none of these.",
+                  "familiar": "session, revision handle, workflow handle, scoped reference", "adds": "treats runtime-scoped identity projection as a first-class design concern",
+                  "contract": "{ identityRef, scope, expiry, claims }",
+                  "invoice": "Sam, signed in as a clerk, for the next thirty minutes.",
+                  "when": "claims, scope, expiry, or temporal identity really matter" },
+    "facet":    { "name": "Facet",    "axis": "meaning",  "side": "essence",    "short": "what can be done here",
+                  "says": "Given this context, these are the ways this may be viewed or acted upon.",
+                  "rule": "Facets define policy affordances, not UI widgets. A Facet is a map from capability to Action.",
+                  "familiar": "capability map, policy surface, role overlay", "adds": "makes available operations explicit without burying them in conditionals",
+                  "contract": "{ delegates: { capability: Action | ActionPipeline } }",
+                  "invoice": "facet.invoice.draft offers addItem, removeItem and send. facet.invoice.sent offers markPaid.",
+                  "when": "one entity has multiple capability surfaces by role, lifecycle, or context" },
+    "intent":   { "name": "Intent",   "axis": "meaning",  "side": "expression", "short": "what was meant",
+                  "says": "This is what someone meant to do.",
+                  "rule": "Intents are loggable, replayable, testable artifacts. They are the system's semantic event stream.",
+                  "familiar": "command, request DTO, semantic event", "adds": "captures normalized meaning instead of raw transport data",
+                  "contract": "{ kind, capability, identityRef?, payload, rawAuth?, wrapperCtx, meta }",
+                  "invoice": "invoice.send for invoice:1042: what the click meant.",
+                  "when": "semantic normalization needs to be explicit" },
+    "bond":     { "name": "Bond",     "axis": "relating", "side": "essence",    "short": "relationship rules",
+                  "says": "Here is what it means to relate, and the invariants that govern it.",
+                  "rule": "Bonds structure topology; they do not hold references or resolve graphs.",
+                  "familiar": "schema relationship, foreign key rule, aggregate boundary", "adds": "defines ownership and composition rules between Forms",
+                  "contract": "{ ownerRef, targetRef, cardinality, invariants[] }",
+                  "invoice": "An invoice owns its line items, and its total must equal their sum.",
+                  "when": "relationship rules, parent-child multiplicities, or cross-entity invariants must be validated on commit" },
+    "link":     { "name": "Link",     "axis": "relating", "side": "expression", "short": "a relationship, followed",
+                  "says": "This is the resolved relationship traversal for this specific source, in this specific context.",
+                  "rule": "Links resolve, hydrate, and traverse relationships at runtime, never inside a pure Action.",
+                  "familiar": "hydrated reference, join, graph query result", "adds": "traverses and resolves relationships dynamically",
+                  "contract": "{ bondRef, sourceRef, resolvedRefs, scope }",
+                  "invoice": "The customer this invoice is for, looked up before the rule runs.",
+                  "when": "entities must traverse relationships dynamically or pre-hydrate state graphs for Actions" },
+    "action":   { "name": "Action",   "axis": "doing",    "side": "essence",    "short": "the rule, as a pure function",
+                  "says": "This is the pure state transformation and the Effects it declares.",
+                  "rule": "No IO. No mutation. No global reads. Deterministic.",
+                  "familiar": "pure domain function, reducer, use-case step", "adds": "must stay deterministic and side-effect free",
+                  "contract": "(state, intent) → { delta, effects[] }",
+                  "invoice": "sendInvoice: a draft becomes sent and an email is declared. Anything else is refused.",
+                  "when": "always. It is the one part every profile starts with" },
+    "manager":  { "name": "Manager",  "axis": "doing",    "side": "expression", "short": "the coordinator that runs it",
+                  "says": "This is how to orchestrate doing things in context.",
+                  "rule": "A boundary-scoped coordinator: it routes, commits and hands Effects to Impact for one consistency boundary. It contains no business rules and performs no IO.",
+                  "familiar": "coordinator, application service, orchestrator", "adds": "owns routing, workflow, and commit for one boundary",
+                  "contract": "Composer: bind(wrapper) · registerFacet() · registerBond()    Conductor: dispatch(intent) · commit(delta) → Instance · issueToken() · resolveLink()",
+                  "invoice": "The billing Manager: resolves who is asking, picks the Facet, runs the Action, commits the delta, hands Effects to Impact.",
+                  "when": "more than one Action must be coordinated across state transitions or workflows" },
+    "effect":   { "name": "Effect",   "axis": "changing", "side": "essence",    "short": "a side effect, written down",
+                  "says": "This is what should happen in the world as a result of this action.",
+                  "rule": "Effects are data, not execution.",
+                  "familiar": "side-effect descriptor, infrastructure command", "adds": "keeps IO as data until execution time",
+                  "contract": "{ kind, target, payload, retryPolicy?, compensatingEffect? }",
+                  "invoice": "{ kind: 'EMAIL_SEND', target: 'ana@reyes.example' }: written down, not yet done.",
+                  "when": "as soon as there is IO" },
+    "impact":   { "name": "Impact",   "axis": "changing", "side": "expression", "short": "the side effect, performed",
+                  "says": "This is what actually happens in the world when we execute these Effects.",
+                  "rule": "Impact is the only place where side effects actually occur.",
+                  "familiar": "effect handler, infrastructure executor", "adds": "is the only place where IO actually occurs",
+                  "contract": "execute(effects[]) → outcomes[]  ·  compensate(effects[])",
+                  "invoice": "The one function that talks to the mail server, retrying as the Effect asked.",
+                  "when": "as soon as there is IO" },
+    "wrapper":  { "name": "Wrapper",  "axis": "bridging", "side": "essence",    "short": "a boundary that hosts a surface",
+                  "says": "This is the boundary where an outside surface hosts interaction.",
+                  "rule": "Wrappers host interaction surfaces but do not contain business logic.",
+                  "familiar": "endpoint, screen, route, consumer host", "adds": "names the structural boundary separately from business capability",
+                  "contract": "render(instance)  ·  event slots for Adapters to bind",
+                  "invoice": "<bill-invoice>: the panel on this page where the invoice appears.",
+                  "when": "there is a UI surface or an endpoint" },
+    "adapter":  { "name": "Adapter",  "axis": "bridging", "side": "expression", "short": "raw input, translated",
+                  "says": "This is how we convert edge input into internal structure.",
+                  "rule": "No IO. No state mutation. No identity resolution. No business decisions.",
+                  "familiar": "controller, input mapper, request normalizer", "adds": "converts raw edge input into stable internal meaning",
+                  "contract": "(raw event, runtime context) → Intent",
+                  "invoice": "Turns a click on the Send button into an invoice.send Intent.",
+                  "when": "raw input arrives at an edge" }
+  },
+
+  "boxes": [
+    { "id": "model",      "name": "Model",      "sub": "the invoice's data",              "axis": "being" },
+    { "id": "view",       "name": "View",       "sub": "what the user sees and can do",   "axis": "meaning" },
+    { "id": "controller", "name": "Controller", "sub": "what happens when they do it",    "axis": "doing" }
+  ],
+
+  "chips": [
+    { "id": "m1", "box": "model", "side": "essence",    "goes": "form",     "text": "An invoice has line items, a total and a status.",          "why": "The shape of the data. True of every invoice, before any exists." },
+    { "id": "m3", "box": "model", "side": "expression", "goes": "instance", "text": "Right now this invoice is a draft for $240.",                "why": "Live values. They exist only because the program ran and something happened." },
+    { "id": "m2", "box": "model", "side": "essence",    "goes": "form",     "text": "The total is never negative.",                              "why": "A rule. It holds for every invoice, always." },
+    { "id": "m4", "box": "model", "side": "expression", "goes": "instance", "text": "This is the fourth version of it since it was opened.",     "why": "A revision. It counts what has happened at runtime." },
+    { "id": "x-identity", "box": "model", "side": "essence",    "goes": "identity", "leftover": true, "text": "It is still invoice 1042, whatever its values are.",                    "why": "Permanent sameness. It does not change and it does not expire." },
+    { "id": "x-bond",     "box": "model", "side": "essence",    "goes": "bond",     "leftover": true, "text": "Line items belong to one invoice, and the total must equal their sum.", "why": "A rule about how two kinds of thing relate. Declared once." },
+
+    { "id": "v3", "box": "view", "side": "expression", "goes": "intent", "text": "Someone just asked to send invoice 1042.",                 "why": "A request. It did not exist until someone made it." },
+    { "id": "v1", "box": "view", "side": "essence",    "goes": "facet",  "text": "A draft invoice can have items added, or be sent.",        "why": "What is on offer for a draft. Decided ahead of time." },
+    { "id": "v2", "box": "view", "side": "essence",    "goes": "facet",  "text": "A sent invoice can only be marked paid.",                  "why": "A different set of offers for a different stage of life. Also decided ahead of time." },
+    { "id": "x-wrapper", "box": "view", "side": "essence",    "goes": "wrapper", "leftover": true, "text": "The panel on the page where the invoice appears.", "why": "A fixed boundary where the outside meets the system." },
+    { "id": "x-adapter", "box": "view", "side": "expression", "goes": "adapter", "leftover": true, "text": "A click just landed on the Send button.",          "why": "A raw event, being translated into meaning as it arrives." },
+
+    { "id": "c2", "box": "controller", "side": "expression", "goes": "manager", "text": "A request has arrived: find the rule that handles it.",                   "why": "Coordination. It only happens while requests are arriving." },
+    { "id": "c1", "box": "controller", "side": "essence",    "goes": "action",  "text": "Sending a draft makes it sent. Sending anything else is refused.",        "why": "The business rule. It is the same every time it runs." },
+    { "id": "c3", "box": "controller", "side": "expression", "goes": "manager", "text": "Apply the change, check the rules still hold, keep the new version.",     "why": "Work in progress, at runtime." },
+    { "id": "x-token",  "box": "controller", "side": "expression", "goes": "token",  "leftover": true, "text": "The person asking is signed in as a clerk for the next half hour.", "why": "How an identity shows up here and now: scoped, expiring, carrying claims such as a role." },
+    { "id": "x-link",   "box": "controller", "side": "expression", "goes": "link",   "leftover": true, "text": "Fetch the customer this invoice is for.",                          "why": "That relationship, followed for this invoice at this moment." },
+    { "id": "x-effect", "box": "controller", "side": "essence",    "goes": "effect", "leftover": true, "text": "An email should go to that customer.",                             "why": "A description of something that should happen. Plain data." },
+    { "id": "x-impact", "box": "controller", "side": "expression", "goes": "impact", "leftover": true, "text": "Open a connection to the mail server and send it.",                "why": "The doing of it. The only code that touches the world." }
+  ],
+
+  "hints": {
+    "essence":    "Would this still be true with the program switched off? It would, so it is a definition.",
+    "expression": "Could you know this without running the program? You could not, so it is live."
+  },
+
+  "pairs": [
+    { "axis": "changing", "chips": ["x-effect", "x-impact"],   "met": true },
+    { "axis": "identity", "chips": ["x-token", "x-identity"] },
+    { "axis": "relating", "chips": ["x-bond", "x-link"] },
+    { "axis": "bridging", "chips": ["x-adapter", "x-wrapper"] }
+  ],
+
+  "specimen": {
+    "about": "The chapter 1 controller. These lines are assembled into a real function and executed; what you read is what runs.",
+    "lines": [
+      { "frame": true, "code": "function onSendClick(event) {", "job": "Decides what a click means, and coordinates everything below it.", "becomes": ["intent", "manager"], "now": "The click's meaning becomes an Intent, a value. The coordinating becomes the Manager." },
+      { "code": "  const id = event.target.dataset.invoice;",                              "job": "Reads raw input off the page.",                 "becomes": ["adapter"],            "now": "An Adapter reads raw input at the edge and turns it into an Intent. It decides nothing." },
+      { "code": "  if (session.role !== 'clerk') return alert('Not allowed');",           "job": "Decides who is asking and what they may do.",   "becomes": ["token", "facet"],     "now": "Who is asking is a Token. What they may do is a Facet. The rule itself never mentions roles." },
+      { "code": "  const invoice = Invoice.find(id);",                                     "job": "Finds one particular invoice by its id.",       "becomes": ["identity", "instance"], "now": "The id is an Identity. What comes back is an Instance: the values at one revision." },
+      { "code": "  const customer = Customer.find(invoice.customerId);",                   "job": "Follows a relationship to another record.",     "becomes": ["bond", "link"],       "now": "The relationship is declared once as a Bond. Following it is a Link, resolved before the rule runs." },
+      { "code": "  if (invoice.status !== 'draft') return alert('Already sent');",        "job": "Applies a business rule.",                      "becomes": ["action"],             "now": "The rule lives in an Action, a pure function you can call with two plain objects." },
+      { "code": "  invoice.status = 'sent';",                                              "job": "Changes state, in place.",                      "becomes": ["action", "manager", "instance"], "now": "The Action returns { status: 'sent' } as a delta. The Manager commits it into a new Instance." },
+      { "code": "  invoice.save();",                                                       "job": "Writes to storage.",                            "becomes": ["effect", "impact"],   "now": "Storage is IO. It is declared as an Effect and performed by Impact." },
+      { "code": "  view.render(invoice);",                                                 "job": "Draws the screen.",                             "becomes": ["wrapper", "impact"],  "now": "A Wrapper renders from the Instance. Drawing is IO too, so Impact triggers it." },
+      { "code": "  mailer.send(customer.email, 'Invoice ' + id + ': $' + invoice.total);", "job": "Talks to another system.",                      "becomes": ["effect", "impact"],   "now": "The Action declares an EMAIL_SEND Effect. Impact sends it, with the retries the Effect asked for." },
+      { "frame": true, "code": "}", "job": "", "becomes": [] }
+    ],
+    "unwritten": "One part has no line at all. The shape of an invoice and the rules it must satisfy, its Form, were never written down in this controller. They were implied by every line that touches invoice."
+  },
+
+  "hardRules": [
+    ["Actions stay pure.", "They transform state and declare effects. They do not perform IO."],
+    ["Effects are data.", "They describe side effects; they do not execute themselves."],
+    ["Only Impact performs IO.", "Network, disk, queues, and external APIs stay out of Actions."],
+    ["Adapters normalize edge input.", "They convert raw events, requests, or UI signals into stable Intents or equivalent command objects."],
+    ["Mutable state has an owner.", "If state is shared, the owning boundary must be explicit."],
+    ["Invariant checks happen at commit time.", "If a boundary accepts state transitions, it must reject invalid ones, validating both Form and Bond invariants."],
+    ["Cross-boundary interaction is explicit.", "No hidden shared mutable state between bounded contexts."],
+    ["Relationships are explicit.", "Static relationship rules are Bonds; runtime traversals are Links, resolved by the Manager or a link-service, never inside pure Actions."]
+  ],
+
+  "profiles": [
+    { "name": "Pure computation",                                         "start": ["action"],                                                                         "add": "Add a Form when shape, defaults, or invariants need to be explicit." },
+    { "name": "Read-only display",                                        "start": ["wrapper"],                                                                        "add": "Add Form, Instance, or Identity when rendering from owned or versioned state." },
+    { "name": "Simple stateless endpoint",                                "start": ["wrapper", "adapter", "action", "effect", "impact"],                               "add": "Effect and Impact only if IO is needed. Add Intent or Facet when semantic normalization or capability selection needs to be explicit." },
+    { "name": "CRUD service with owned state",                            "start": ["form", "instance", "action", "manager", "effect", "impact"],                      "add": "Add Identity, Token, or Facet when stable addressing, scope, or permissions matter." },
+    { "name": "Role-aware or lifecycle-aware domain",                     "start": ["form", "instance", "action", "manager", "effect", "impact", "facet"],             "add": "Add Facets first. Split Managers only when state boundaries or workflows diverge." },
+    { "name": "Complex relational or aggregate domain",                   "start": ["form", "instance", "action", "bond", "link", "manager", "effect", "impact"],     "add": "Bonds validate cross-entity rules on commit. Links pre-hydrate what an Action will need." },
+    { "name": "Multi-step async workflow, retries, compensation, replay", "start": ["form", "instance", "identity", "token", "facet", "intent", "bond", "link", "action", "manager", "effect", "impact", "wrapper", "adapter"], "add": "Full AXIS, or close to it. Keep the whole chain visible." }
+  ],
+
+  "absence": [
+    ["Getting undefined when you try to address something?",   "You need an Identity."],
+    ["Passing raw state around with no schema?",                "You need a Form."],
+    ["Checking permissions inline in an Action?",               "You need a Facet split and Token claims."],
+    ["Calling fetch() inside an Action?",                       "Declare an Effect and handle it in Impact."],
+    ["Hardcoding initial data?",                                "You may need the two-pass read path: ask to know, tell to show."]
+  ],
+
+  "placement": [
+    ["Defines valid state shape",                           "form"],
+    ["Holds live mutable state",                            "instance"],
+    ["Names or addresses an entity",                        "identity"],
+    ["Projects identity into a session or scope",           "token"],
+    ["Mints tokens from raw auth material",                 "manager"],
+    ["Maps capabilities to actions",                        "facet"],
+    ["Describes what someone meant to do",                  "intent"],
+    ["Transforms state (pure logic)",                       "action"],
+    ["Orchestrates routing and workflow",                   "manager"],
+    ["Validates aggregate invariants on commit",            "manager"],
+    ["Defines static relationship or ownership boundaries", "bond"],
+    ["Resolves runtime relationship or reference queries",  "link"],
+    ["Wires Adapters to Wrappers; registers Facets at setup", "manager"],
+    ["Declares a side effect",                              "effect"],
+    ["Executes a side effect",                              "impact"],
+    ["Hosts a UI surface or endpoint",                      "wrapper"],
+    ["Converts raw events to Intents",                      "adapter"],
+    ["Extracts raw auth material (and passes it through in the Intent)", "adapter"]
+  ],
+
+  "agentRules": [
+    "Never mutate state outside Instance.",
+    "Never perform IO outside Impact.",
+    "Identity is immutable. Only Tokens project it into runtime contexts.",
+    "Effects are data, never self-executing.",
+    "Prefer the explicit chain when a feature crosses normalization, policy, owned state, or IO boundaries: Adapter → Intent → Manager → Facet → Action → Effect → Impact. Collapse pieces only when the same guarantees remain obvious in code.",
+    "Prefer new capabilities (new Facet entries) over conditionals.",
+    "Forms define shape. Never embed behavior in a Form.",
+    "Adapters normalize only. They extract raw auth and include it in the Intent; they never mint Tokens or resolve identity.",
+    "The Manager validates Form and Bond invariants on commit, rejecting invalid deltas.",
+    "Manager Composer grows complex? Add Facets, not wiring logic.",
+    "Manager Conductor grows complex? Add a Workflow sub-component, not branches.",
+    "Conductor coordinates multiple domains? Separate Managers, communicating through Effects.",
+    "Actions signal workflow operations (cancel, restore) through Effects, never through magic delta keys."
+  ],
+
+  "testPerLayer": [
+    ["action",  "Unit test with snapshot state + intent; assert delta + effects."],
+    ["adapter", "Raw event in; assert the correct Intent comes out, including raw auth extraction."],
+    ["manager", "Commit: delta + invariants; assert accepted or rejected. Routing: intent + token; assert the correct Facet is selected."],
+    ["effect",  "Assert the Action declares the expected Effect data."],
+    ["impact",  "Integration test with mocked targets; assert side effects executed."],
+    ["token",   "Assert scoping, expiry, and claim propagation."],
+    ["bond",    "Assert relational constraints block violations; assert Links resolve to the correct Instances."]
+  ],
+
+  "generationUnits": {
+    "units": [
+      ["axis.intent",  "define the normalized command or event shape"],
+      ["axis.form",    "update the state shape or an invariant"],
+      ["axis.action",  "implement the pure state transition"],
+      ["axis.effect",  "declare the side-effect data"],
+      ["axis.impact",  "execute IO behind the existing host boundary"],
+      ["axis.adapter", "normalize raw edge input"],
+      ["axis.test",    "prove the behavior and the boundary rules"]
+    ],
+    "split": "Small local models can often handle pure Actions, object literals, simple Adapters, and tests. Stronger agents or human review should handle Managers, security-sensitive policy, migrations, cross-boundary workflow, and infrastructure integration."
+  },
+
+  "managerSketch": [
+    "dispatch(intent):",
+    "  token  = who is asking                        // Identity → Token",
+    "  facet  = what may they do, in this state      // chosen by Token + Instance",
+    "  action = facet.delegates[intent.capability]   // or: unroutable",
+    "  { delta, effects } = action(state, intent)    // the pure rule",
+    "  commit(delta)                                 // check Form + Bond rules, keep a new Instance",
+    "  impact(effects)                               // the only IO; results come back as Intents"
+  ]
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     THE PROSE — plain HTML. A read-only display needs a Wrapper and nothing else
+     (AXIS-Code.md, "Partial AXIS"). Every <les-*> and <bill-*> element below is a
+     Wrapper that renders from an Instance.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<header class="bar"><les-nav></les-nav></header>
+
+<main>
+
+<section class="hero" id="top" data-ch="0">
+  <div class="prose">
+    <p class="eyebrow">An introduction for developers, human or agent</p>
+    <h1>Presenting AXIS</h1>
+    <p class="lede">AXIS is a way of deciding where code goes. It names fourteen parts, which sounds like a lot until you notice they are seven pairs, and that you can work out every pair yourself by asking one question of code you have already written.</p>
+    <p>This page works them out with you on one small app: an invoice with a Send button. It starts as Model–View–Controller. We split each of those three boxes in two, then follow what happens to state, and to the outside world, when someone presses Send. Every example below is running in your browser.</p>
+
+    <ol class="arc">
+      <li><div class="glyphs"><i class="g"></i><i class="g"></i><i class="g"></i></div><b>Start with MVC</b><span>Three boxes you already know, and one controller quietly doing nine jobs.</span></li>
+      <li><div class="glyphs"><i class="g e"></i><i class="g x"></i><i class="g arrow">·</i><i class="g e"></i><i class="g x"></i><i class="g arrow">·</i><i class="g e"></i><i class="g x"></i></div><b>Split each box in two</b><span>What is defined ahead of time, and what is alive only at runtime.</span></li>
+      <li><div class="glyphs"><i class="g e"></i><i class="g arrow">→</i><i class="g x"></i><i class="g arrow">→</i><i class="g x"></i></div><b>Follow the change</b><span>How state moves, and how the outside world gets touched.</span></li>
+    </ol>
+
+    <div class="legend">
+      <div><span class="ess">Essence</span><span>Blue and square: a <b>definition</b>. True before the program runs.</span></div>
+      <div><span class="exp">Expression</span><span>Amber and round: a <b>live thing</b>. Exists only while the program runs.</span></div>
+    </div>
+
+    <p class="aside">Reading as an agent? Use the agent edition instead: <a href="../skill/llms.txt"><code>../skill/llms.txt</code></a>. Short on time? <a href="#ch-9">Chapter 9</a> is the cheat-sheet. The lesson is also in this file as structured JSON (<code>&lt;script id="axis-model"&gt;</code>), and the page's own source is a working example of everything it describes.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 1 ─────────────────────────────── -->
+<section class="ch" id="ch-1" data-ch="1">
+  <div class="prose">
+    <p class="eyebrow">Chapter 1</p>
+    <h2>The app you already know</h2>
+    <p>Here is an invoice app written the way most of us would write it first. A <b>Model</b> holds the invoice. A <b>View</b> draws it. A <b>Controller</b> handles the Send button. It is real code and it runs. Press <b>Send invoice</b>.</p>
+  </div>
+  <div class="stage cols lean">
+    <les-specimen></les-specimen>
+    <les-code mode="jobs"></les-code>
+  </div>
+  <div class="prose">
+    <p>It works. Now press <b>Start over</b>, switch the mail server <b>off</b>, and send again.</p>
+    <p>The screen says <i>sent</i>. The database says <i>sent</i>. The outbox is empty, and an error went past with nothing listening for it. The invoice is now wrong, and it will stay wrong.</p>
+    <p>No single line of that controller is a mistake. The trouble is how many different jobs one function is doing. Click through its lines and read what each is for: reading the page, deciding who is allowed, finding a record, following a relationship, applying a business rule, changing state, writing to storage, drawing, talking to another system. Nine lines, nine jobs, in an order that happens to matter.</p>
+    <p class="take">MVC's three boxes are a good first cut. Each of them is holding more than one kind of thing, and the rest of this page takes them apart with a single question.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 2 ─────────────────────────────── -->
+<section class="ch" id="ch-2" data-ch="2">
+  <div class="prose">
+    <p class="eyebrow">Chapter 2</p>
+    <h2>One question, asked three times</h2>
+    <p>Take any statement you could make about the invoice app and ask:</p>
+    <p class="ask">Is this true before the program runs, or only while it runs?</p>
+    <p>Things that are true beforehand are <b>definitions</b>. AXIS calls that side <span class="ess">Essence</span>: stable shapes, rules and capabilities. Things that exist only at runtime are <b>live</b>. AXIS calls that side <span class="exp">Expression</span>: state, requests, sessions, work in progress.</p>
+    <p>Each MVC box below holds a handful of statements about the app. Sort them. A few will not fit either half of their box. Leave those where they are; they come back in chapters 4 and 5.</p>
+  </div>
+  <div class="stage"><div class="prose" style="max-width:54rem"><les-split></les-split></div></div>
+  <div class="prose">
+    <p>The Model split into what an invoice <i>is</i> and what this invoice <i>holds</i>. The View split into what <i>can be done</i> here and what someone <i>meant</i>. The Controller split into the <i>rule</i> and the <i>running</i> of it. Three boxes became six parts, and the question that did it was the same each time.</p>
+    <p>A note on the View. What splits here is its <i>meaning</i>: what is on offer, and what a gesture meant. Its pixels and its click handlers are a separate concern, and they are among the statements still on the table.</p>
+    <p class="take">Essence defines what something is. Expression is how it shows up at runtime. Keep them in separate places and each becomes easier to read, to test and to change.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 3 ─────────────────────────────── -->
+<section class="ch" id="ch-3" data-ch="3">
+  <div class="prose">
+    <p class="eyebrow">Chapter 3</p>
+    <h2>How state works</h2>
+    <p>With the Model split in two, state has one shape and one way to move.</p>
+    <ul>
+      <li>A <span class="ess">Form</span> says what a valid invoice is: its fields, its starting values, and the rules it must always satisfy.</li>
+      <li>An <span class="exp">Instance</span> is one snapshot of an invoice: plain values, plus a revision number.</li>
+      <li>Nothing edits an Instance in place. An <span class="ess">Action</span> looks at the current one and returns a <b>delta</b>, a description of what should be different. The <span class="exp">Manager</span> <b>commits</b> it: apply the delta, check every rule, keep the result as the next revision. If a rule breaks, the commit is refused and nothing changes.</li>
+    </ul>
+    <p>Add and remove a few line items and watch the revisions accumulate. Then press the button marked <i>wrong on purpose</i>. It runs an Action with a bug in it.</p>
+  </div>
+  <div class="stage cols">
+    <bill-invoice show="items"></bill-invoice>
+    <bill-revisions></bill-revisions>
+  </div>
+  <div class="prose">
+    <p>The buggy Action asked to take $500 off the total without touching the line items. The commit refused it, because the result would break the rules: a Form rule says a total is never negative, and a rule about how an invoice relates to its line items says the total must equal their sum. (That second kind of rule gets its own name in chapter 5.) The Action was wrong. The state never was.</p>
+    <p class="take">State changes are values, not mutations. One place commits them, and it checks the rules every time.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 4 ─────────────────────────────── -->
+<section class="ch" id="ch-4" data-ch="4">
+  <div class="prose">
+    <p class="eyebrow">Chapter 4</p>
+    <h2>How change works</h2>
+    <p>Press Send and two different things need to change. The invoice has to become <i>sent</i>: a change to what the system knows. And an email has to leave the building: a change to the world. The MVC controller did both in one breath, which is how a dead mail server left the invoice wrong.</p>
+    <p>AXIS makes one move here. An Action never <i>does</i> either. It returns a description of both. This is the Action the page is running:</p>
+    <bill-code what="action"></bill-code>
+    <p><code>delta</code> is the change inside. <code>effects</code> is the change outside, written down as plain data. Each entry is an <span class="ess">Effect</span>: what should happen, to what, and what to do if it cannot. The Manager commits the delta. A separate part, <span class="exp">Impact</span>, carries out the Effects, and it is the only code in the system allowed to touch the outside world.</p>
+    <p>That is the first of the leftover statements finding a home, and the same question sorted it. <i>An email should go to that customer</i> is true the moment the rule runs: a definition. <i>Open a connection and send it</i> exists only while it is happening.</p>
+    <p>Send the invoice. Then start over, switch the mail server off, and send again.</p>
+  </div>
+  <div class="stage cols">
+    <div class="stack">
+      <bill-invoice show="send"></bill-invoice>
+      <les-world for="billing"></les-world>
+    </div>
+    <bill-trace scope="fork"></bill-trace>
+  </div>
+  <div class="prose">
+    <p>The same dead server as chapter 1. This time Impact tried three times, because the Effect said to. When that failed it ran the Effect's own plan B, which came back into the system as an ordinary request and returned the invoice to draft. Nothing was thrown. The failure is a record you can read.</p>
+    <p class="take">Describe change before performing it. Actions decide, the Manager commits what is inside, and Impact performs what is outside.</p>
+    <p class="quote">“Static structures produce dynamic behavior. Dynamic behavior produces change. Change becomes new declarative state.” (AXIS Principles)</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 5 ─────────────────────────────── -->
+<section class="ch" id="ch-5" data-ch="5">
+  <div class="prose">
+    <p class="eyebrow">Chapter 5</p>
+    <h2>What MVC never named</h2>
+    <p>Six parts came from splitting MVC, and two more from following a side effect. Six statements are still on the table. They pair up, and the same question sorts every pair. In each pair below, pick the <b>definition</b>.</p>
+  </div>
+  <div class="stage"><div class="prose" style="max-width:54rem"><les-pairs></les-pairs></div></div>
+  <div class="prose">
+    <p>That completes the grid: seven concerns, each with a definition and a live counterpart. Read a row and you get one concern. Read a column and you get one kind of thing. Click any cell for what it is, what you probably call it already, and the real object this page is running.</p>
+  </div>
+  <div class="stage"><les-grid></les-grid></div>
+  <div class="prose">
+    <p>And here is the controller from chapter 1 again. Every line had somewhere to go.</p>
+  </div>
+  <div class="stage"><div class="prose" style="max-width:54rem"><les-code mode="axis"></les-code></div></div>
+  <div class="prose">
+    <details class="more">
+      <summary>Coming from Redux, CQRS or event sourcing?</summary>
+      <p><b>Flux and Redux.</b> The flow is the same and the names collide, so read carefully: a Redux <i>action</i> is an AXIS <span class="exp">Intent</span> (a description of what happened); a <i>reducer</i> is an AXIS <span class="ess">Action</span>; the <i>store</i> is an <span class="exp">Instance</span>; the <i>dispatcher</i> is the <span class="exp">Manager</span>. The real difference is that thunks and middleware both declare a side effect and perform it. AXIS separates those into Effect and Impact, so side effects can be tested without mocking middleware.</p>
+      <p><b>CQRS.</b> Not a separate pattern to adopt; it is a Facet configuration. A command is an Intent whose capability maps to a state-changing Action in a write Facet. A query maps to a read-only Action in a read Facet. Different Tokens can be given different Facets.</p>
+      <p><b>Event sourcing.</b> The Intent stream is an event source. Store the Intents, or the committed deltas, and you get replay, audit and undo. AXIS adds names for what sits around the stream: Forms validate, Actions transform, Effects declare consequences.</p>
+      <p><b>Event → handler.</b> The generic pattern gives you one seam. AXIS gives you five: Event → Adapter → Intent → Manager → Facet → Action, each testable on its own.</p>
+    </details>
+    <p class="take">AXIS is a decompression. It does not add fourteen new ideas to MVC. It gives separate names to things MVC kept in three boxes.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 6 ─────────────────────────────── -->
+<section class="ch" id="ch-6" data-ch="6">
+  <div class="prose">
+    <p class="eyebrow">Chapter 6</p>
+    <h2>The whole loop</h2>
+    <p>Fourteen parts, one path. Every interaction with a system built this way takes it.</p>
+  </div>
+  <div class="stage"><bill-map></bill-map></div>
+  <div class="prose">
+    <p>Raw input arrives at the edge. A <span class="ess">Wrapper</span> hosts the surface, and an <span class="exp">Adapter</span> turns the raw event into an <span class="exp">Intent</span>, a plain statement of what was meant. The <span class="exp">Manager</span> works out who is asking (a <span class="exp">Token</span>), which <span class="ess">Facet</span> applies, and resolves any <span class="exp">Links</span> the rule will need. The <span class="ess">Action</span> returns a delta and some <span class="ess">Effects</span>. The delta is committed into a new <span class="exp">Instance</span>, checked against its <span class="ess">Form</span> and <span class="ess">Bonds</span>. The Effects go to <span class="exp">Impact</span>. Anything Impact learns comes back as a new Intent, by the same door.</p>
+    <p>The map lights up with the path the last request actually took. Try three things, and watch where each one stops:</p>
+    <ol>
+      <li>Ask as <b>Kit</b>, a viewer, and press Send.</li>
+      <li>Ask as <b>Sam</b>, the clerk. Remove every line item, then press Send.</li>
+      <li>Start over, switch the mail server <b>off</b>, and press Send.</li>
+    </ol>
+  </div>
+  <div class="stage cols">
+    <div class="stack">
+      <bill-invoice show="all"></bill-invoice>
+      <les-world for="billing"></les-world>
+    </div>
+    <bill-trace scope="loop"></bill-trace>
+  </div>
+  <div class="prose">
+    <p>Three failures, caught by three different parts. The Manager turned Kit away because the Facet in force for a viewer has no <code>send</code>; the rule never ran, and it contains no line about roles. The Action refused an empty invoice, because that is a business rule. Impact handled the dead server, because that is the world. None of them threw an exception. Each produced data.</p>
+    <p class="take">A role is a claim in a Token. A capability is an entry in a Facet. A rule is an Action. Authorization is the Manager choosing the Facet. Each can change without touching the others.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 7 ─────────────────────────────── -->
+<section class="ch" id="ch-7" data-ch="7">
+  <div class="prose">
+    <p class="eyebrow">Chapter 7</p>
+    <h2>What it buys you</h2>
+    <p>Structure is only worth its cost if it makes something easier. Here are two things it makes easier. You can run both.</p>
+    <h3>A business rule you can test with two plain objects</h3>
+    <p>The rule is <i>a sent invoice cannot be sent twice</i>. Below are two tests of it: one against the AXIS Action, one against the chapter 1 controller.</p>
+  </div>
+  <div class="stage"><les-proof></les-proof></div>
+  <div class="prose">
+    <h3>A session you can replay</h3>
+    <p>Every Intent the invoice has received on this page was recorded, including the ones Impact sent back in. Because Actions are pure and Effects are data, feeding that recording to a brand-new Manager with Impact disconnected has to arrive at the same state.</p>
+  </div>
+  <div class="stage"><div class="prose"><bill-replay></bill-replay></div></div>
+  <div class="prose">
+    <p class="take">AXIS Lite sets the bar plainly: a business rule should be unit-testable without network or database mocks, and a reviewer should be able to tell at a glance where IO happens. If adopting it does not reduce ambiguity more than it adds ceremony, simplify the shape.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 8 ─────────────────────────────── -->
+<section class="ch" id="ch-8" data-ch="8">
+  <div class="prose">
+    <p class="eyebrow">Chapter 8</p>
+    <h2>Start smaller than this</h2>
+    <p>You do not need fourteen parts to begin, and most features never need all of them. What you need from the first day is the discipline. AXIS Lite states it as eight rules:</p>
+    <les-list of="hardRules"></les-list>
+    <p>Everything else is added when the problem asks for it. Pick the kind of thing you are building:</p>
+  </div>
+  <div class="stage"><les-profiles></les-profiles></div>
+  <div class="prose">
+    <p>The signal to add a part is that you can feel its absence:</p>
+    <les-list of="absence"></les-list>
+    <p>And the signal to stop: AXIS is less useful for a mostly static page or a handful of direct listeners, and nobody should create a dozen files for a simple CRUD endpoint.</p>
+    <p class="take">Preserve the discipline, not the ceremony. Add the next part only when the current shape would hide IO, blur ownership, or mix unrelated responsibilities.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 9 ─────────────────────────────── -->
+<section class="ch" id="ch-9" data-ch="9">
+  <div class="prose">
+    <p class="eyebrow">Chapter 9</p>
+    <h2>If you are an agent</h2>
+    <p>Or a person who wants the page that stays open in another tab. An agent does not inherit a team's memory of where things go, so AXIS writes the placement rules down.</p>
+    <h3>Where does this code go?</h3>
+    <les-list of="placement"></les-list>
+    <h3>Constraints when generating or reviewing</h3>
+    <les-list of="agentRules"></les-list>
+    <h3>One test per layer</h3>
+    <les-list of="testPerLayer"></les-list>
+    <h3>Break a change into keyed units</h3>
+    <les-list of="generationUnits"></les-list>
+    <h3>The brief</h3>
+    <p>Everything above, compressed for a context window.</p>
+    <les-brief></les-brief>
+    <h3>The agent edition</h3>
+    <p>This page is written for people. The same material, organised for agents, is in <a href="../skill/llms.txt"><code>../skill/llms.txt</code></a>: plain markdown, a core of about 2,600 tokens, and references fetched only when a task needs them. It installs as an Agent Skill from <a href="../skill/axis.skill"><code>../skill/axis.skill</code></a>, which adds two things a page cannot: a repo mapper that describes any existing codebase in AXIS terms and leaves a map for the next agent, and a lint that checks code claimed to be pure for hidden IO.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── 10 ─────────────────────────────── -->
+<section class="ch" id="ch-10" data-ch="10">
+  <div class="prose">
+    <p class="eyebrow">Chapter 10</p>
+    <h2>This page, in its own terms</h2>
+    <p>Every button above went through the loop it describes. There are two bounded contexts on this page, and they were built to two different profiles on purpose.</p>
+  </div>
+  <div class="stage cols">
+    <les-self></les-self>
+    <bill-self></bill-self>
+  </div>
+  <div class="prose">
+    <p>The <b>lesson</b> context tracks your place, your answers, and what the outside world currently looks like. It runs the Lite profile: one Form, one Instance, pure Actions, a Manager, Effects and Impact, Wrappers and Adapters. It has no Tokens, Bonds or Links, because nothing about it needs them. The <b>billing</b> context is the invoice. It uses all fourteen parts, because it has roles, a lifecycle, relationships, and a side effect that can fail. The two share no state and never call each other. (The tests in chapter 7 import billing's pure functions directly, as tests do.)</p>
+    <p>The prose you are reading is plain HTML. A read-only display needs a Wrapper and nothing else.</p>
+    <h3>What is simulated</h3>
+    <ul>
+      <li>The mail server is a small object in this page that can be switched off. Its failures are real exceptions. Its email is not real email.</li>
+      <li>The chapter 1 controller is assembled from the nine lines shown and really executes, against stand-ins for a database, a session and a view.</li>
+      <li>Retries happen immediately. There is no real backoff delay.</li>
+      <li>Both contexts live in one browser tab. Nothing here shows how AXIS behaves across a network, or across a team.</li>
+    </ul>
+    <h3>Where to go next</h3>
+    <ul>
+      <li><a href="../AXIS-Lite.md">AXIS-Lite.md</a>: the hard rules and the pragmatic profile. Start here.</li>
+      <li><a href="../AXIS-Design.md">AXIS-Design.md</a>: deciding when more structure is justified.</li>
+      <li><a href="../AXIS-Code.md">AXIS-Code.md</a>: the feature recipe, test examples, and a checklist of common mistakes.</li>
+      <li><a href="../AXIS-Specification.md">AXIS-Specification.md</a>: the complete reference, with two worked examples.</li>
+      <li><a href="../AXIS-FrontEnd-Web.md">AXIS-FrontEnd-Web.md</a> and <a href="../AXIS-Principles.md">AXIS-Principles.md</a>: the browser mapping, and the reasoning underneath.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC. Originally published at <a href="https://mentic.com/AXIS">mentic.com/AXIS</a>. Licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. This introduction was written by Claude (Opus) from the documents in this folder. It is one self-contained file: view source to read it as an example.
+          <br>If you found these ideas useful you could <a href="https://buymeacoffee.com/mattq4">Buy Me a Coffee</a> to show your support.
+</footer>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     THE KERNEL — the smallest runtime that honours the AXIS contracts.
+     One Manager per bounded context: a Composer (bind, attach) and a Conductor
+     (dispatch → token → facet → link → action → commit → impact → follow-ups).
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="axis-kernel">
+'use strict';
+const AXIS = (() => {
+  const copy = (v) => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
+  const freeze = (v) => { if (v && typeof v === 'object' && !Object.isFrozen(v)) { Object.freeze(v); Object.values(v).forEach(freeze); } return v; };
+  const hash = (v) => { const s = JSON.stringify(v); let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  // An invariant returns true, or a sentence saying what is wrong.
+  const broken = (rules, ...args) => rules.map((rule) => rule(...args)).filter((r) => r !== true);
+  const managers = {};
+
+  function createManager(spec) {
+    const { id, form, identity, facets, selectFacet, impacts, policy = null, bonds = [], links = [], refs = {}, boundary = {} } = spec;
+    const clock = spec.clock || (() => Date.now());
+    const capabilityOf = spec.capabilityOf || ((kind) => kind.slice(kind.lastIndexOf('.') + 1));
+    const boundAt = clock();
+    const wrappers = new Set();
+    const history = [];   // every committed Instance, oldest first
+    const journal = [];   // the Intent stream: every Intent, and what became of it
+    let seq = 0, bound = false, queue = Promise.resolve();
+
+    // Composition-time hydration: defaults, plus whatever the entry point supplies, provided it satisfies the Form.
+    let state = { ...copy(form.defaults), ...copy(spec.hydrate || {}) };
+    if (broken(form.invariants, state).length) state = copy(form.defaults);
+    let head = freeze({ formRef: form.name, identityRef: identity.entityId, revisionId: 0, state });
+    history.push({ instance: head, delta: null, cause: 'bind' });
+    // Composition-time bootstrap of the session Token, as the docs allow at the entry point.
+    let session = policy ? (spec.bootstrapAuth ? policy.mint(spec.bootstrapAuth, boundAt) : policy.anonymous(boundAt)) : null;
+
+    const facetFor = (token, st) => { const name = selectFacet(token, st); return { name, facet: facets[name] }; };
+    // LINK: a Bond, traversed for this Instance, now.
+    const resolve = (st) => links.map((l) => freeze({ as: l.as, bondRef: l.bondRef, sourceRef: identity.entityId, resolvedRefs: copy(l.resolve(st, refs)), scope: 'dispatch' }));
+    const linked = (st) => Object.fromEntries(resolve(st).map((l) => [l.as, l.resolvedRefs]));
+
+    // What a Wrapper (or an Impact handler) is allowed to see. Read-only.
+    function view() {
+      const f = facetFor(session, head.state);
+      return { manager: id, instance: head, token: session, facet: f.name, offers: Object.keys(f.facet.delegates), links: linked(head.state),
+               history, journal, wrappers: [...wrappers].map((w) => w.localName) };
+    }
+
+    // INTENT: a frozen value. Adapters build these; so does the Conductor for follow-ups.
+    function intent(kind, payload = {}, extra = {}) {
+      return freeze({ kind, capability: capabilityOf(kind), identityRef: identity.entityId, payload: copy(payload), rawAuth: extra.rawAuth || null,
+        wrapperCtx: extra.wrapperCtx || id, meta: { seq: ++seq, at: clock(), origin: extra.origin || 'adapter', raw: extra.raw || null, causedBy: extra.causedBy || null } });
+    }
+
+    // COMMITTER: apply the delta, check every Form and Bond invariant, keep the result as a new revision. Or refuse.
+    function commit(delta, it) {
+      const next = { ...head.state, ...copy(delta) };
+      const found = [
+        ...broken(form.invariants, next),
+        ...bonds.flatMap((bond) => broken(bond.invariants, next, links.filter((l) => l.bondRef === bond.name).flatMap((l) => l.resolve(next, refs))))
+      ];
+      const checked = form.invariants.length + bonds.reduce((n, b) => n + b.invariants.length, 0);
+      if (found.length) return { ok: false, violations: found, checked, revisionId: head.revisionId };
+      head = freeze({ ...head, revisionId: head.revisionId + 1, state: next });
+      history.push({ instance: head, delta: copy(delta), cause: it.kind });
+      return { ok: true, checked, revisionId: head.revisionId };
+    }
+
+    // IMPACT: the only place anything touches the outside world. Retries and compensation are read off the Effect.
+    async function execute(effects, run, outcomes = []) {
+      for (const effect of effects) {
+        const handler = impacts[effect.kind];
+        if (!handler) { outcomes.push({ kind: effect.kind, ok: false, error: 'no impact handler for ' + effect.kind, followUps: [] }); continue; }
+        const attempts = 1 + ((effect.retryPolicy && effect.retryPolicy.maxRetries) || 0);
+        let out = { ok: false }, tried = 0;
+        while (!out.ok && tried < attempts) {
+          tried++;
+          try { out = { ok: true, ...((await handler(effect, { view: view(), run, wrappers })) || {}) }; }
+          catch (err) { out = { ok: false, error: err.message }; }
+          if (effect.kind !== 'RENDER') run.hops.push({ node: 'impact', value: { kind: effect.kind, target: effect.target, attempt: tried, of: attempts, ok: out.ok, error: out.error || null } });
+        }
+        const followUps = out.followUpIntent ? [out.followUpIntent] : [];
+        if (!out.ok && effect.compensatingEffect) {
+          run.hops.push({ node: 'effect', value: effect.compensatingEffect, tag: 'compensating' });
+          const undone = await execute([{ ...effect.compensatingEffect, cause: { kind: effect.kind, error: out.error, attempts: tried } }], run, []);
+          undone.forEach((o) => followUps.push(...o.followUps));
+        }
+        outcomes.push({ ...out, kind: effect.kind, followUps });
+      }
+      return outcomes;
+    }
+
+    // CONDUCTOR: one trip round the loop.
+    async function cycle(it, root) {
+      const run = { intent: it, root: root ? root.root : it.meta.seq, hops: [], token: null, facet: null, action: null, delta: {}, effects: [], commit: null, outcomes: [] };
+      journal.push(run);
+      const hop = (node, value, tag) => run.hops.push({ node, value, tag: tag || null });
+      const now = it.meta.at;
+
+      // IDENTITY → TOKEN. Only the Manager decides who is asking. The Adapter merely carried the raw material.
+      let token = null;
+      if (policy) {
+        if (it.meta.origin === 'impact') token = policy.system(now);
+        else {
+          if (it.rawAuth) session = policy.mint(it.rawAuth, now);
+          else if (session.expiry <= now) session = policy.anonymous(now);
+          token = session;
+        }
+        run.token = token;
+        hop('token', token);
+      }
+
+      // MEANING. The Token and the current state select a Facet. The Facet offers this capability, or it does not.
+      const { name, facet } = facetFor(token, head.state);
+      const action = facet.delegates[it.capability];
+      run.facet = name;
+      hop('facet', { facet: name, offers: Object.keys(facet.delegates) });
+
+      let delta = {}, effects = [];
+      if (!action) {
+        effects = [{ kind: 'INTENT_UNROUTABLE', target: 'caller', payload: { capability: it.capability, facet: name, reason: 'no_matching_capability' } }];
+        hop('manager', effects[0], 'unroutable');
+      } else {
+        // RELATING. Links are resolved here, so the Action never has to fetch.
+        const resolved = resolve(head.state);
+        if (resolved.length) hop('link', resolved);
+        // DOING. A pure function of (state, intent). The state it is handed is frozen.
+        const out = action(freeze({ ...head.state, links: Object.fromEntries(resolved.map((l) => [l.as, l.resolvedRefs])) }), it);
+        delta = out.delta || {};
+        effects = out.effects || [];
+        run.action = action.name;
+        hop('action', { delta, effects }, action.name);
+      }
+
+      // CHANGING, inside. The delta becomes a new Instance, or the commit is refused.
+      if (Object.keys(delta).length) {
+        run.delta = delta;
+        run.commit = commit(delta, it);
+        hop('commit', run.commit);
+        if (!run.commit.ok) effects = [{ kind: 'COMMIT_REJECTED', target: 'caller', payload: { violations: run.commit.violations, delta } }];
+      }
+
+      // CHANGING, outside. Effects go to Impact. Drawing is IO as well, so it travels the same way.
+      const changed = run.commit && run.commit.ok ? Object.keys(delta) : [];
+      run.effects = effects;
+      await execute([...effects, { kind: 'RENDER', target: 'wrappers', payload: { changed } }], run, run.outcomes);
+
+      // Whatever Impact learned re-enters as Intents, by the same door.
+      for (const outcome of run.outcomes) {
+        for (const f of outcome.followUps) await cycle(intent(f.kind, f.payload, { origin: 'impact', wrapperCtx: 'impact', causedBy: it.meta.seq }), run);
+      }
+      return run;
+    }
+
+    const api = {
+      id, spec, boundary, boundAt, intent, view,
+      // COMPOSER
+      attach(wrapper) { wrappers.add(wrapper); if (bound) wrapper.paint(view()); },
+      detach(wrapper) { wrappers.delete(wrapper); },
+      bind() { bound = true; wrappers.forEach((w) => w.paint(view())); return api; },
+      describe: () => ({
+        form: form.name, identity: identity.entityId, tokens: !!policy, bonds: bonds.map((b) => b.name), links: links.map((l) => l.as),
+        facets: Object.fromEntries(Object.entries(facets).map(([k, f]) => [k, Object.keys(f.delegates)])),
+        actions: [...new Set(Object.values(facets).flatMap((f) => Object.values(f.delegates)).map((a) => a.name))],
+        impacts: Object.keys(impacts)
+      }),
+      // CONDUCTOR. One Intent at a time, in arrival order.
+      dispatch(it) { queue = queue.then(() => cycle(it, null)).catch((err) => console.error('[' + id + ']', err)); return queue; },
+      replay(it) { return cycle(it, null); }   // re-run a recorded Intent exactly as it was
+    };
+    return api;
+  }
+
+  // WRAPPER: a structural boundary. It renders from what the Manager shows it and holds no state of its own.
+  class Wrapper extends HTMLElement {
+    connectedCallback() { const m = managers[this.constructor.managerId]; if (m) m.attach(this); }
+    disconnectedCallback() { const m = managers[this.constructor.managerId]; if (m) m.detach(this); }
+    paint(view) {
+      const focused = this.contains(document.activeElement) ? document.activeElement.getAttribute('data-k') : null;
+      try { this.innerHTML = this.constructor.render(view, this); }
+      catch (err) { console.error('<' + this.localName + '>', err); this.textContent = this.localName + ': ' + err.message; }
+      if (focused) { const el = [...this.querySelectorAll('[data-k]')].find((n) => n.getAttribute('data-k') === focused); if (el) el.focus({ preventScroll: true }); }
+    }
+  }
+  function defineWrapper(tag, managerId, render, watch) {
+    customElements.define(tag, class extends Wrapper { static managerId = managerId; static render = render; static watch = watch || null; });
+  }
+  // The RENDER impact handler, shared by both contexts. A Wrapper may name the state keys it cares about.
+  const render = (effect, ctx) => ctx.wrappers.forEach((w) => {
+    const watch = w.constructor.watch;
+    if (!watch || watch.some((key) => effect.payload.changed.includes(key))) w.paint(ctx.view);
+  });
+
+  // ADAPTER: raw DOM event → Intent. It reads what the Wrapper declared (data-intent, data-p-*, data-auth) and decides nothing.
+  function bindDomAdapter(root) {
+    root.addEventListener('click', (event) => {
+      const el = event.target.closest('[data-intent]');
+      if (!el) return;
+      let wrapper = el.parentElement;
+      while (wrapper && !(wrapper instanceof Wrapper)) wrapper = wrapper.parentElement;
+      if (!wrapper) return;
+      const manager = managers[wrapper.constructor.managerId];
+      const payload = {};
+      for (const [key, raw] of Object.entries(el.dataset)) {
+        if (!/^p[A-Z]/.test(key)) continue;
+        payload[key[1].toLowerCase() + key.slice(2)] = raw === 'true' ? true : raw === 'false' ? false : raw !== '' && !isNaN(raw) ? Number(raw) : raw;
+      }
+      manager.dispatch(manager.intent(el.dataset.intent, payload, {
+        rawAuth: el.dataset.auth ? { badge: el.dataset.auth } : null,   // raw auth material, passed through untouched
+        wrapperCtx: wrapper.localName,
+        raw: event.type + ' on <' + el.localName + ' data-intent="' + el.dataset.intent + '">'
+      }));
+    });
+  }
+
+  return { copy, freeze, hash, broken, managers, createManager, defineWrapper, render, bindDomAdapter, Wrapper };
+})();
+
+const MODEL = AXIS.freeze(JSON.parse(document.getElementById('axis-model').textContent));
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     THE OUTSIDE WORLD — everything that is not the system. A mail server that can
+     be switched off, a legacy MVC app, browser storage. Only Impact handlers may
+     reach in here; the system hears about changes through an Adapter.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="outside-world">
+'use strict';
+const World = (() => {
+  const watchers = new Set();
+  let pending = false;
+  const changed = () => { if (pending) return; pending = true; queueMicrotask(() => { pending = false; watchers.forEach((fn) => fn()); }); };
+
+  // A mail server. When it is down, sending throws.
+  let mailSeq = 0;
+  const mail = {
+    up: true, refused: 0, outbox: [],
+    send(from, to, subject) {
+      if (!mail.up) { mail.refused++; changed(); throw new Error('mail server unreachable'); }
+      const message = { id: 'm' + (++mailSeq), from, to, subject };
+      mail.outbox.push(message);
+      changed();
+      return message;
+    }
+  };
+
+  // The chapter 1 app. Its controller is assembled from the lines in the model, so what the page shows is what runs.
+  const controllerBody = MODEL.specimen.lines.filter((line) => !line.frame).map((line) => line.code).join('\n');
+  const buildController = (env) => new Function(...Object.keys(env), 'return function onSendClick(event) {\n' + controllerBody + '\n}')(...Object.values(env));
+  const legacy = (() => {
+    const fresh = () => ({ id: '1042', customerId: 'ana', status: 'draft', total: 240 });
+    let row = fresh(), screen = { status: 'draft', total: 240 }, alerts = [], error = null;
+    const onSendClick = buildController({
+      session:  { role: 'clerk' },
+      Invoice:  { find: () => { const record = { ...row, save() { const { save, ...plain } = record; row = plain; } }; return record; } },
+      Customer: { find: (id) => ({ id, name: 'Ana Reyes', email: 'ana@reyes.example' }) },
+      mailer:   { send: (to, subject) => mail.send('legacy', to, subject) },
+      view:     { render: (invoice) => { screen = { status: invoice.status, total: invoice.total }; } },
+      alert:    (message) => { alerts.push(message); }
+    });
+    return {
+      click() { error = null; alerts = []; try { onSendClick({ target: { dataset: { invoice: '1042' } } }); } catch (err) { error = err.message; } changed(); },
+      reset() { row = fresh(); screen = { status: 'draft', total: 240 }; alerts = []; error = null; mail.outbox = mail.outbox.filter((m) => m.from !== 'legacy'); changed(); },
+      snapshot: () => ({ database: { ...row }, screen: { ...screen }, alerts: [...alerts], error })
+    };
+  })();
+
+  const store = {
+    get(key) { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (err) { return {}; } },
+    set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (err) { /* private mode: nothing to do */ } }
+  };
+
+  return {
+    mail, legacy, store, buildController,
+    setMail(up) { mail.up = !!up; changed(); },
+    subscribe(fn) { watchers.add(fn); },
+    snapshot: () => ({ mail: { up: mail.up, refused: mail.refused, outbox: mail.outbox.map((m) => ({ ...m })) }, legacy: legacy.snapshot() })
+  };
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CONTEXT 1 — BILLING. The invoice. All fourteen components, one of each kind
+     where one is enough. Read this top to bottom and you have read the grid.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="ctx-billing">
+'use strict';
+const Billing = (() => {
+  const sum = (items) => items.reduce((total, item) => total + item.price, 0);
+
+  /* ── BEING ─────────────────────────────────────────────────────────────── */
+  // FORM: what a valid invoice is. Shape, defaults, rules. No behaviour, no values.
+  const InvoiceForm = AXIS.freeze({
+    name: 'InvoiceForm',
+    shape: { customerId: 'string', lineItems: 'array', total: 'number', status: ['draft', 'sent', 'paid'], notice: 'string' },
+    defaults: { customerId: 'customer:ana', lineItems: [], total: 0, status: 'draft', notice: '' },
+    invariants: [
+      (s) => s.total >= 0 || 'total must not be negative',
+      (s) => ['draft', 'sent', 'paid'].includes(s.status) || 'status must be draft, sent or paid',
+      (s) => s.status === 'draft' || s.lineItems.length > 0 || 'an invoice with no line items cannot leave draft'
+    ]
+  });
+  // INSTANCE: created and versioned by the Manager. This is only the state the first one starts with.
+  const opening = () => ({
+    lineItems: [{ id: 'li-a', desc: 'Design review', price: 120 }, { id: 'li-b', desc: 'Prototype build', price: 120 }],
+    total: 240, status: 'draft', notice: ''
+  });
+
+  /* ── IDENTITY ──────────────────────────────────────────────────────────── */
+  // IDENTITY: permanent, addressable, valueless.
+  const invoiceIdentity = AXIS.freeze({ entityId: 'invoice:1042', formRef: 'InvoiceForm', versioningPolicy: 'counter' });
+  const badges = { clerk: { identityRef: 'user:sam', role: 'clerk' }, viewer: { identityRef: 'user:kit', role: 'viewer' } };
+  // TOKEN: an Identity as it appears here and now. Minted by the Manager's policy, never by an Adapter.
+  const token = (identityRef, role, scope, now, ttl) => AXIS.freeze({ identityRef, scope, expiry: now + ttl, claims: { role } });
+  const policy = {
+    mint: (rawAuth, now) => { const who = badges[rawAuth.badge]; return who ? token(who.identityRef, who.role, 'session', now, 30 * 60000) : policy.anonymous(now); },
+    anonymous: (now) => token('anonymous', 'viewer', 'session', now, 30 * 60000),
+    system: (now) => token('system:impact', 'system', 'request', now, 30000)
+  };
+
+  /* ── RELATING ──────────────────────────────────────────────────────────── */
+  // BOND: how an invoice relates to other things, and what must stay true across the relationship.
+  const bonds = [
+    { name: 'bond.invoice.lineItems', ownerRef: 'InvoiceForm', targetRef: 'LineItemForm', cardinality: 'one-to-many',
+      invariants: [(invoice, items) => invoice.total === sum(items) || 'total must equal the sum of its line items'] },
+    { name: 'bond.invoice.customer', ownerRef: 'InvoiceForm', targetRef: 'CustomerForm', cardinality: 'one-to-one',
+      invariants: [(invoice, customers) => invoice.status === 'draft' || customers.some((c) => c.email) || 'an invoice cannot leave draft without a customer email'] }
+  ];
+  // LINK: those relationships, followed. Resolved by the Manager before an Action runs, and again at commit.
+  const links = [
+    { as: 'lineItems', bondRef: 'bond.invoice.lineItems', resolve: (state) => state.lineItems },
+    { as: 'customer',  bondRef: 'bond.invoice.customer',  resolve: (state, refs) => [refs.customers[state.customerId]].filter(Boolean) }
+  ];
+  const refs = { customers: { 'customer:ana': { id: 'customer:ana', name: 'Ana Reyes', email: 'ana@reyes.example' } } };
+
+  /* ── DOING ─────────────────────────────────────────────────────────────── */
+  // ACTION: (state, intent) → { delta, effects }. Pure. No IO, no mutation, no clock, no globals.
+  const refuse = (intent, reason) => ({ delta: {}, effects: [{ kind: 'INTENT_REJECTED', target: 'caller', payload: { capability: intent.capability, reason } }] });
+
+  function sendInvoice(state, intent) {
+    const [customer] = state.links.customer;
+    if (state.status !== 'draft')     return refuse(intent, 'invoice_already_sent');
+    if (state.lineItems.length === 0) return refuse(intent, 'invoice_has_no_line_items');
+    if (!customer || !customer.email) return refuse(intent, 'customer_has_no_email');
+    return {
+      delta: { status: 'sent', notice: 'Sending to ' + customer.email + '…' },
+      effects: [{
+        kind: 'EMAIL_SEND',
+        target: customer.email,
+        payload: { subject: 'Invoice 1042: $' + state.total },
+        retryPolicy: { maxRetries: 2, backoff: 'exponential' },
+        compensatingEffect: {
+          kind: 'ROLLBACK_INSTANCE',
+          target: intent.identityRef,
+          payload: { restoreTo: { status: state.status } }
+        }
+      }]
+    };
+  }
+  function addItem(state, intent) {
+    const lineItems = [...state.lineItems, { id: 'li-' + intent.meta.seq, desc: intent.payload.desc, price: intent.payload.price }];
+    return { delta: { lineItems, total: sum(lineItems), notice: '' }, effects: [] };
+  }
+  function removeItem(state, intent) {
+    const lineItems = state.lineItems.filter((item) => item.id !== intent.payload.id);
+    return { delta: { lineItems, total: sum(lineItems), notice: '' }, effects: [] };
+  }
+  function markPaid() {
+    return { delta: { status: 'paid', notice: 'Paid in full.' }, effects: [] };
+  }
+  function noteDelivered(state, intent) {
+    return { delta: { notice: 'Delivered to ' + intent.payload.to + '.' }, effects: [] };
+  }
+  function restoreInvoice(state, intent) {
+    return { delta: { ...intent.payload.restoreTo, notice: 'The mail server could not be reached after ' + intent.payload.attempts + ' attempts. Returned to draft.' }, effects: [] };
+  }
+  function fudgeTotal(state) {            // wrong on purpose: changes the total without touching the line items
+    return { delta: { total: state.total - 500 }, effects: [] };
+  }
+  function presentBadge() {               // the Manager has already minted the Token; there is nothing to change
+    return { delta: {}, effects: [] };
+  }
+  function resetInvoice() {               // a demo affordance rather than a business capability
+    return { delta: opening(), effects: [] };
+  }
+  function replayJournal(state, intent) {
+    return { delta: {}, effects: [{ kind: 'REPLAY_JOURNAL', target: intent.identityRef, payload: {} }] };
+  }
+
+  /* ── MEANING ───────────────────────────────────────────────────────────── */
+  // FACET: capability → Action. Which Facet is in force depends on who is asking and on the invoice's stage of life.
+  const base = { present: presentBadge, reset: resetInvoice, replay: replayJournal };
+  const facets = AXIS.freeze({
+    'facet.invoice.draft':    { delegates: { ...base, addItem, removeItem, send: sendInvoice, fudge: fudgeTotal } },
+    'facet.invoice.sent':     { delegates: { ...base, markPaid } },
+    'facet.invoice.paid':     { delegates: { ...base } },
+    'facet.invoice.readonly': { delegates: { ...base } },
+    'facet.invoice.system':   { delegates: { delivered: noteDelivered, restore: restoreInvoice } }
+  });
+  // The Manager's whole routing decision. Note what is absent: no Action above mentions a role.
+  const selectFacet = (tok, state) =>
+    tok.claims.role === 'system' ? 'facet.invoice.system' :
+    tok.claims.role !== 'clerk'  ? 'facet.invoice.readonly' :
+    'facet.invoice.' + state.status;
+  // INTENT: built by the Adapter from data-intent attributes. The kinds this context accepts:
+  const intents = ['invoice.addItem', 'invoice.removeItem', 'invoice.send', 'invoice.markPaid', 'invoice.fudge', 'invoice.reset', 'session.present', 'journal.replay', 'mail.delivered', 'instance.restore'];
+
+  /* ── CHANGING ──────────────────────────────────────────────────────────── */
+  // EFFECT: declared inline by the Actions above. Nothing here; that is the point.
+  // IMPACT: the handlers. Every line in this context that touches anything outside it is in this object.
+  const impacts = {
+    RENDER: AXIS.render,
+    EMAIL_SEND: (effect) => {
+      World.mail.send('billing', effect.target, effect.payload.subject);          // throws when the server is down
+      return { followUpIntent: { kind: 'mail.delivered', payload: { to: effect.target } } };
+    },
+    ROLLBACK_INSTANCE: (effect) => ({ followUpIntent: { kind: 'instance.restore', payload: { restoreTo: effect.payload.restoreTo, attempts: effect.cause.attempts } } }),
+    // Refusals are delivered to the caller as outcomes; the Wrapper shows them on the next render.
+    INTENT_REJECTED: () => ({}),
+    INTENT_UNROUTABLE: () => ({}),
+    COMMIT_REJECTED: () => ({}),
+    // Rebuild the state from nothing but the recorded Intents, with every Impact disconnected.
+    REPLAY_JOURNAL: async (effect, ctx) => {
+      const silent = Object.fromEntries(Object.keys(impacts).map((kind) => [kind, () => ({})]));
+      const fresh = AXIS.createManager({ ...spec, impacts: silent, clock: () => manager.boundAt });
+      const tape = ctx.view.journal.map((run) => run.intent);
+      for (const recorded of tape) await fresh.replay(recorded);
+      const live = ctx.view.instance, again = fresh.view().instance;
+      return { replay: { intents: tape.length, live: { revisionId: live.revisionId, hash: AXIS.hash(live.state) }, replayed: { revisionId: again.revisionId, hash: AXIS.hash(again.state) } } };
+    }
+  };
+
+  /* ── DOING, at runtime ─────────────────────────────────────────────────── */
+  // MANAGER: composed here, bound at the bottom of the file. Its boundary contract is the five lines below.
+  const spec = {
+    id: 'billing', form: InvoiceForm, identity: invoiceIdentity, hydrate: opening(),
+    policy, bootstrapAuth: { badge: 'clerk' }, bonds, links, refs, facets, selectFacet, impacts,
+    boundary: {
+      ownedState: 'invoice:1042 (InvoiceForm), and a read-only customer directory',
+      acceptedIntents: intents.join(' · '),
+      emittedEffects: 'EMAIL_SEND · ROLLBACK_INSTANCE · INTENT_REJECTED · INTENT_UNROUTABLE · COMMIT_REJECTED · REPLAY_JOURNAL · RENDER',
+      returnedOutcomes: 'a new revision, a refusal with a reason, or a follow-up Intent',
+      policyScope: 'role claims: clerk, viewer, system'
+    }
+  };
+  const manager = AXIS.createManager(spec);
+
+  return { manager, spec, InvoiceForm, invoiceIdentity, bonds, links, facets, selectFacet, impacts, policy, actions: { sendInvoice, addItem, removeItem, markPaid, fudgeTotal } };
+})();
+AXIS.managers.billing = Billing.manager;
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CONTEXT 2 — LESSON. The tutorial itself: your place, your answers, the look,
+     and what the outside world currently looks like. AXIS Lite profile: a Form,
+     an Instance, pure Actions, one Facet, a Manager, Effects and Impact. No Tokens,
+     Bonds or Links, because nothing about it needs them.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="ctx-lesson">
+'use strict';
+const Lesson = (() => {
+  const chips = Object.fromEntries(MODEL.chips.map((chip) => [chip.id, chip]));
+  const KEY = 'presenting-axis';
+
+  // FORM
+  const LessonForm = AXIS.freeze({
+    name: 'LessonForm',
+    shape: { look: ['paper', 'night'], chapter: 'number', sorted: 'object', miss: 'object|null', last: 'string|null', line: 'number|null', cell: 'string', profile: 'number', world: 'object', proof: 'object|null', copied: 'string' },
+    defaults: { look: 'paper', chapter: 0, sorted: {}, miss: null, last: null, line: null, cell: 'form', profile: 3, world: {}, proof: null, copied: '' },
+    invariants: [
+      (s) => ['paper', 'night'].includes(s.look) || 'look must be paper or night',
+      (s) => (Number.isInteger(s.chapter) && s.chapter >= 0 && s.chapter <= MODEL.chapters.length) || 'chapter out of range',
+      (s) => Object.keys(s.sorted).every((id) => id in chips) || 'only known statements can be sorted',
+      (s) => s.cell in MODEL.components || 'cell must name a component',
+      (s) => (Number.isInteger(s.profile) && s.profile >= 0 && s.profile < MODEL.profiles.length) || 'profile out of range',
+      (s) => s.line === null || (Number.isInteger(s.line) && s.line >= 0 && s.line < MODEL.specimen.lines.length) || 'line out of range'
+    ]
+  });
+  const identity = AXIS.freeze({ entityId: 'lesson:reader', formRef: 'LessonForm', versioningPolicy: 'counter' });
+
+  // EFFECT builders. Still just data.
+  const remember = (s) => ({ kind: 'PERSIST', target: KEY, payload: { look: s.look, sorted: s.sorted, cell: s.cell, profile: s.profile } });
+  const nothing = { delta: {}, effects: [] };
+
+  // ACTIONS
+  function setLook(state, intent) {
+    const look = intent.payload.look;
+    return { delta: { look }, effects: [{ kind: 'LOOK_SWAP', target: 'document', payload: { look } }, remember({ ...state, look })] };
+  }
+  function enterChapter(state, intent) {
+    return intent.payload.n === state.chapter ? nothing : { delta: { chapter: intent.payload.n }, effects: [] };
+  }
+  function placeChip(state, intent) {
+    const chip = chips[intent.payload.chip];
+    if (!chip || state.sorted[chip.id]) return nothing;
+    if (chip.side !== intent.payload.side) return { delta: { miss: { chip: chip.id, side: intent.payload.side } }, effects: [] };
+    const sorted = { ...state.sorted, [chip.id]: true };
+    return { delta: { sorted, miss: null, last: chip.id }, effects: [remember({ ...state, sorted })] };
+  }
+  function finishBox(state, intent) {
+    const sorted = { ...state.sorted };
+    MODEL.chips.filter((chip) => chip.box === intent.payload.box && !chip.leftover).forEach((chip) => { sorted[chip.id] = true; });
+    return { delta: { sorted, miss: null, last: null }, effects: [remember({ ...state, sorted })] };
+  }
+  function pickDefinition(state, intent) {
+    const chip = chips[intent.payload.chip];
+    const pair = chip && MODEL.pairs.find((p) => p.chips.includes(chip.id));
+    if (!pair) return nothing;
+    if (chip.side !== 'essence') return { delta: { miss: { chip: chip.id, side: 'essence' } }, effects: [] };
+    const sorted = { ...state.sorted, [pair.chips[0]]: true, [pair.chips[1]]: true };
+    return { delta: { sorted, miss: null, last: chip.id }, effects: [remember({ ...state, sorted })] };
+  }
+  function finishPairs(state) {
+    const sorted = { ...state.sorted };
+    MODEL.pairs.forEach((pair) => pair.chips.forEach((id) => { sorted[id] = true; }));
+    return { delta: { sorted, miss: null, last: null }, effects: [remember({ ...state, sorted })] };
+  }
+  function focusLine(state, intent) {
+    return { delta: { line: intent.payload.n }, effects: [] };
+  }
+  function openCell(state, intent) {
+    return { delta: { cell: intent.payload.id }, effects: [remember({ ...state, cell: intent.payload.id })] };
+  }
+  function pickProfile(state, intent) {
+    return { delta: { profile: intent.payload.n }, effects: [remember({ ...state, profile: intent.payload.n })] };
+  }
+  // The lab bench. These Actions change nothing here; they ask Impact to poke the outside world.
+  function switchMail(state, intent) {
+    return { delta: {}, effects: [{ kind: 'WORLD_MAIL', target: 'mail-server', payload: { up: intent.payload.up } }] };
+  }
+  function clickLegacy() {
+    return { delta: {}, effects: [{ kind: 'LEGACY_CLICK', target: 'legacy-app', payload: { button: 'send' } }] };
+  }
+  function resetLegacy() {
+    return { delta: {}, effects: [{ kind: 'LEGACY_RESET', target: 'legacy-app', payload: {} }] };
+  }
+  // Second pass of "ask to know, tell to show": what the world looks like arrives as an Intent.
+  function observeWorld(state, intent) {
+    return { delta: { world: intent.payload }, effects: [] };
+  }
+  function runProof() {
+    return { delta: {}, effects: [{ kind: 'RUN_TESTS', target: 'proof', payload: {} }] };
+  }
+  function noteProof(state, intent) {
+    return { delta: { proof: intent.payload }, effects: [] };
+  }
+  function copyBrief(state, intent) {
+    return { delta: {}, effects: [{ kind: 'COPY_TEXT', target: 'clipboard', payload: { what: 'brief' } }] };
+  }
+  function noteCopied(state, intent) {
+    return { delta: { copied: intent.payload.ok ? 'copied' : 'failed' }, effects: [] };
+  }
+  function startOver(state) {
+    const cleared = { sorted: {}, miss: null, last: null, line: null, cell: 'form', profile: 3, proof: null, copied: '' };
+    return { delta: cleared, effects: [remember({ ...state, ...cleared }), { kind: 'LEGACY_RESET', target: 'legacy-app', payload: {} }, { kind: 'WORLD_MAIL', target: 'mail-server', payload: { up: true } }] };
+  }
+
+  // FACET: one capability surface. There are no roles here, so there is no second Facet.
+  const facets = AXIS.freeze({
+    'facet.lesson.reading': { delegates: {
+      'look.set': setLook, 'chapter.entered': enterChapter,
+      'sort.place': placeChip, 'sort.finish': finishBox, 'pair.pick': pickDefinition, 'pair.finish': finishPairs,
+      'line.focus': focusLine, 'cell.open': openCell, 'profile.pick': pickProfile,
+      'lab.mail': switchMail, 'legacy.click': clickLegacy, 'legacy.reset': resetLegacy, 'world.observed': observeWorld,
+      'proof.run': runProof, 'proof.ran': noteProof, 'brief.copy': copyBrief, 'brief.copied': noteCopied, 'lesson.reset': startOver
+    } }
+  });
+
+  // IMPACT: every way this context touches something that is not itself.
+  const impacts = {
+    RENDER: AXIS.render,
+    PERSIST: (effect) => { World.store.set(effect.target, effect.payload); },
+    LOOK_SWAP: (effect) => { document.documentElement.dataset.look = effect.payload.look; },
+    WORLD_MAIL: (effect) => { World.setMail(effect.payload.up); },
+    LEGACY_CLICK: () => { World.legacy.click(); },
+    LEGACY_RESET: () => { World.legacy.reset(); },
+    RUN_TESTS: () => ({ followUpIntent: { kind: 'proof.ran', payload: Proof.run() } }),
+    COPY_TEXT: async () => {
+      let ok = true;
+      try { await navigator.clipboard.writeText(Brief.text()); } catch (err) { ok = false; }
+      return { followUpIntent: { kind: 'brief.copied', payload: { ok } } };
+    }
+  };
+
+  // Composition-time hydration: what was remembered, the reader's colour preference, and a first look at the world.
+  const saved = World.store.get(KEY);
+  const look = ['paper', 'night'].includes(saved.look) ? saved.look : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper');
+  const sorted = Object.fromEntries(Object.keys(saved.sorted || {}).filter((id) => id in chips).map((id) => [id, true]));
+  const manager = AXIS.createManager({
+    id: 'lesson', form: LessonForm, identity, facets, impacts,
+    selectFacet: () => 'facet.lesson.reading',
+    capabilityOf: (kind) => kind,
+    hydrate: { look, sorted, cell: saved.cell in MODEL.components ? saved.cell : 'form', profile: MODEL.profiles[saved.profile] ? saved.profile : 3, world: World.snapshot() },
+    boundary: {
+      ownedState: 'lesson:reader (LessonForm): place, answers, look, last observation of the world',
+      acceptedIntents: Object.keys(facets['facet.lesson.reading'].delegates).join(' · '),
+      emittedEffects: Object.keys(impacts).join(' · '),
+      returnedOutcomes: 'a new revision, or a follow-up Intent (proof.ran, brief.copied)',
+      policyScope: 'none: one reader, one Facet'
+    }
+  });
+
+  return { manager, LessonForm, facets, impacts, look: manager.view().instance.state.look };
+})();
+AXIS.managers.lesson = Lesson.manager;
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PROOF — the tests chapter 7 runs. They import the units under test, as tests do.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="proof">
+'use strict';
+const Proof = (() => {
+  const { sendInvoice } = Billing.actions;
+  const { facets, selectFacet, bonds } = Billing;
+  const buildController = World.buildController;
+  const assert = (condition, message) => { if (!condition) throw new Error(message || 'assertion failed'); };
+
+  // The rule, tested against the AXIS Action.
+  function sentInvoiceCannotBeSentTwice() {
+    const state = {
+      status: 'sent', total: 240,
+      lineItems: [{ price: 240 }], links: { customer: [] }
+    };
+    const intent = { capability: 'send', payload: {} };
+
+    const { delta, effects } = sendInvoice(state, intent);
+    const [refusal] = effects;
+
+    assert(Object.keys(delta).length === 0);
+    assert(refusal.kind === 'INTENT_REJECTED');
+    assert(refusal.payload.reason === 'invoice_already_sent');
+  }
+
+  // The same rule, tested against the chapter 1 controller.
+  function sentInvoiceCannotBeSentTwice_mvc() {
+    const sent = [], alerts = [];
+    const invoice = {
+      status: 'sent', total: 240, customerId: 'ana', save() {}
+    };
+    const onSendClick = buildController({
+      session:  { role: 'clerk' },                    // 1
+      Invoice:  { find: () => invoice },              // 2
+      Customer: { find: () => ({ email: 'a@b.c' }) }, // 3
+      mailer:   { send: (...a) => sent.push(a) },     // 4
+      view:     { render() {} },                      // 5
+      alert:    (text) => alerts.push(text)           // 6
+    });
+    const click = { target: { dataset: { invoice: '1042' } } }; // 7
+
+    onSendClick(click);
+
+    assert(sent.length === 0);
+    assert(alerts[0] === 'Already sent');
+  }
+
+  const more = [
+    ['sending a draft declares the email, and performs nothing', () => {
+      const state = { status: 'draft', total: 240, lineItems: [{ price: 240 }], links: { customer: [{ email: 'ana@reyes.example' }] } };
+      const { delta, effects } = sendInvoice(state, { capability: 'send', identityRef: 'invoice:1042', payload: {} });
+      assert(delta.status === 'sent');
+      assert(effects[0].kind === 'EMAIL_SEND' && effects[0].target === 'ana@reyes.example');
+      assert(effects[0].retryPolicy.maxRetries === 2 && effects[0].compensatingEffect.kind === 'ROLLBACK_INSTANCE');
+    }],
+    ['an Action leaves the state it was given untouched', () => {
+      const state = AXIS.freeze({ status: 'draft', total: 240, lineItems: [{ price: 240 }], links: { customer: [{ email: 'a@b.example' }] } });
+      const before = JSON.stringify(state);
+      sendInvoice(state, { capability: 'send', identityRef: 'invoice:1042', payload: {} });
+      assert(JSON.stringify(state) === before);
+    }],
+    ['an empty invoice is refused by the rule', () => {
+      const { effects } = sendInvoice({ status: 'draft', total: 0, lineItems: [], links: { customer: [{ email: 'a@b.example' }] } }, { capability: 'send', payload: {} });
+      assert(effects[0].payload.reason === 'invoice_has_no_line_items');
+    }],
+    ['the Bond refuses a total that does not add up', () => {
+      const rule = bonds[0].invariants[0];
+      assert(rule({ total: 240 }, [{ price: 120 }, { price: 120 }]) === true);
+      assert(rule({ total: -260 }, [{ price: 120 }, { price: 120 }]) !== true);
+    }],
+    ['a viewer is routed to a Facet that does not offer send', () => {
+      const facet = selectFacet({ claims: { role: 'viewer' } }, { status: 'draft' });
+      assert(!('send' in facets[facet].delegates));
+      assert('send' in facets[selectFacet({ claims: { role: 'clerk' } }, { status: 'draft' })].delegates);
+    }]
+  ];
+
+  const attempt = (name, fn) => { try { fn(); return { name, ok: true }; } catch (err) { return { name, ok: false, error: err.message }; } };
+  return {
+    axisTest: sentInvoiceCannotBeSentTwice, mvcTest: sentInvoiceCannotBeSentTwice_mvc,
+    run: () => ({
+      axis: attempt('a sent invoice cannot be sent twice', sentInvoiceCannotBeSentTwice),
+      mvc: attempt('a sent invoice cannot be sent twice', sentInvoiceCannotBeSentTwice_mvc),
+      more: more.map(([name, fn]) => attempt(name, fn))
+    })
+  };
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     WRAPPERS — every interactive panel on the page. Each is a custom element with
+     a render function: (what the Manager shows it) → HTML. No Wrapper holds state,
+     makes a decision, or performs IO. Buttons declare their meaning as data-intent.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="wrappers">
+'use strict';
+(() => {
+  const C = MODEL.components;
+  const CHIP = Object.fromEntries(MODEL.chips.map((chip) => [chip.id, chip]));
+  const AXIS_OF = Object.fromEntries(MODEL.axes.map((axis) => [axis.id, axis]));
+
+  /* ── small rendering helpers ───────────────────────────────────────────── */
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const attr = (s) => esc(s).replace(/"/g, '&quot;');
+  const tag = (id, label) => '<span class="' + (C[id].side === 'essence' ? 'ess' : 'exp') + '">' + (label || C[id].name) + '</span>';
+  const words = (s) => String(s).replace(/_/g, ' ');
+  const btn = (intent, label, payload = {}, o = {}) =>
+    '<button type="button" class="btn ' + (o.cls || '') + '" data-intent="' + intent + '" data-k="' + attr(o.k || intent + ':' + Object.values(payload).join(':')) + '"' +
+    Object.entries(payload).map(([k, v]) => ' data-p-' + k + '="' + attr(v) + '"').join('') +
+    (o.auth ? ' data-auth="' + o.auth + '"' : '') + (o.pressed === undefined ? '' : ' aria-pressed="' + !!o.pressed + '"') + (o.title ? ' title="' + attr(o.title) + '"' : '') + '>' + label + '</button>';
+
+  // Source and values, shown as they are.
+  const dedent = (src) => {
+    const lines = src.split('\n');
+    const pad = Math.min(...lines.slice(1).filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length));
+    return lines.map((l, i) => (i && Number.isFinite(pad) ? l.slice(pad) : l)).join('\n');
+  };
+  const hl = (src) => esc(src).replace(/(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*')|\b(const|let|return|if|else|function|for|of|while|new|throw|try|catch|await|async|true|false|null)\b|\b(\d+(?:\.\d+)?)\b/g,
+    (m, c, s, k, n) => (c ? '<i class="c">' + c + '</i>' : s ? '<i class="s">' + s + '</i>' : k ? '<i class="k">' + k + '</i>' : '<i class="n">' + n + '</i>'));
+  const lit = (v) => (typeof v === 'string' ? "'" + v.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'" : String(v));
+  const key = (k) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : lit(k));
+  const fnText = (f) => (/^(async\s+)?function/.test(f.toString()) ? f.name || 'function' : f.toString());
+  const flat = (v) =>
+    typeof v === 'function' ? fnText(v) :
+    v === null || typeof v !== 'object' ? lit(v) :
+    Array.isArray(v) ? (v.length ? '[' + v.map(flat).join(', ') + ']' : '[]') :
+    Object.keys(v).length ? '{ ' + Object.entries(v).map(([k, x]) => key(k) + ': ' + flat(x)).join(', ') + ' }' : '{}';
+  const show = (v, pad = '') => {
+    const one = flat(v);
+    if (v === null || typeof v !== 'object' || one.length + pad.length <= 70) return one;
+    const inner = pad + '  ';
+    return Array.isArray(v)
+      ? '[\n' + v.map((x) => inner + show(x, inner)).join(',\n') + '\n' + pad + ']'
+      : '{\n' + Object.entries(v).map(([k, x]) => inner + key(k) + ': ' + show(x, inner)).join(',\n') + '\n' + pad + '}';
+  };
+  const code = (src, caption) => '<figure class="codefig">' + (caption ? '<figcaption>' + caption + '</figcaption>' : '') + '<pre class="code">' + hl(src) + '</pre></figure>';
+
+  /* ═════════════════════════ LESSON WRAPPERS ═════════════════════════════ */
+
+  AXIS.defineWrapper('les-nav', 'lesson', (v) => {
+    const s = v.instance.state;
+    return '<a class="brand" href="#top"><span>Presenting </span>AXIS</a><nav class="dots" aria-label="Chapters">' +
+      MODEL.chapters.map((c) => '<a class="dot' + (c.n === s.chapter ? ' on' : '') + '" href="#ch-' + c.n + '" title="' + attr(c.n + '. ' + c.title) + '"' + (c.n === s.chapter ? ' aria-current="true"' : '') + '>' + c.n + '</a>').join('') +
+      '</nav>' + btn('look.set', '<span aria-hidden="true">◐</span>', { look: s.look === 'night' ? 'paper' : 'night' }, { cls: 'sm', k: 'look', title: s.look === 'night' ? 'Switch to the light look' : 'Switch to the dark look' });
+  }, ['chapter', 'look']);
+
+  // The outside world, as last observed. Used beside both the MVC app and the AXIS one.
+  const worldCard = (world, from) => {
+    const sent = world.mail.outbox.filter((m) => m.from === from);
+    return '<div class="card out"><h4>Outside the system · the mail server</h4>' +
+      '<div class="row split"><span class="seg">' + btn('lab.mail', 'On', { up: true }, { pressed: world.mail.up }) + btn('lab.mail', 'Off', { up: false }, { pressed: !world.mail.up }) + '</span>' +
+      '<span class="note" style="margin:0">' + (world.mail.up ? 'accepting connections' : 'refusing connections') + (world.mail.refused ? ' · ' + world.mail.refused + ' refused so far' : '') + '</span></div>' +
+      '<ul class="outbox">' + (sent.length
+        ? sent.slice(-3).map((m) => '<li>✉ to ' + esc(m.to) + ' · ' + esc(m.subject) + '</li>').join('') + (sent.length > 3 ? '<li class="note">and ' + (sent.length - 3) + ' earlier</li>' : '')
+        : '<li class="note">Outbox: nothing delivered.</li>') + '</ul></div>';
+  };
+  AXIS.defineWrapper('les-world', 'lesson', (v, el) => worldCard(v.instance.state.world, el.getAttribute('for') || 'billing'), ['world']);
+
+  AXIS.defineWrapper('les-specimen', 'lesson', (v) => {
+    const world = v.instance.state.world, app = world.legacy;
+    const sent = world.mail.outbox.filter((m) => m.from === 'legacy').length;
+    const lying = app.database.status === 'sent' && sent === 0;
+    return '<div class="stack"><div class="card"><h4>The MVC app</h4>' +
+      '<div class="inv-h"><div><b>Invoice 1042</b><small>Ana Reyes · 2 line items</small></div><span class="status" data-s="' + app.screen.status + '">' + app.screen.status + '</span></div>' +
+      '<div class="total"><span>Total</span><span>$' + app.screen.total + '</span></div>' +
+      '<div class="row">' + btn('legacy.click', 'Send invoice', {}, { cls: 'primary' }) + btn('legacy.reset', 'Start over', {}, { cls: 'quiet' }) + '</div>' +
+      (app.alerts.length ? '<div class="msg info">alert: “' + esc(app.alerts[0]) + '”</div>' : '') +
+      (app.error ? '<div class="msg bad">Uncaught Error: ' + esc(app.error) + '</div>' : '') +
+      '<dl class="kv"><dt>Screen says</dt><dd>' + app.screen.status + '</dd><dt>Database says</dt><dd>' + app.database.status + '</dd><dt>Emails delivered</dt><dd>' + sent + '</dd></dl>' +
+      (lying ? '<div class="msg bad">The invoice is recorded as sent. Nothing was sent.</div>' : '') +
+      '</div>' + worldCard(world, 'legacy') + '</div>';
+  }, ['world']);
+
+  AXIS.defineWrapper('les-code', 'lesson', (v, el) => {
+    const axisMode = el.getAttribute('mode') === 'axis', lines = MODEL.specimen.lines, chosen = v.instance.state.line;
+    const line = chosen === null ? null : lines[chosen];
+    return '<div class="card"><h4>' + (axisMode ? 'The chapter 1 controller · click a line to see where it went' : 'The Controller · click a line') + '</h4><div class="lines">' +
+      lines.map((l, i) => (l.job
+        ? '<button type="button" class="ln" data-intent="line.focus" data-p-n="' + i + '" data-k="line-' + i + '" aria-pressed="' + (chosen === i) + '">' + hl(l.code) + '</button>'
+        : '<div class="ln frame">' + hl(l.code) + '</div>')).join('') + '</div><div class="job">' +
+      (!line ? '<span class="note">' + (axisMode ? 'Click a line. The matching cells in the grid above light up too.' : 'Click a line to see which job it is doing.') + '</span>'
+        : axisMode ? '<div class="row">' + line.becomes.map((id) => tag(id)).join('') + '</div><p class="note">' + esc(line.now) + '</p>'
+        : '<b>' + esc(line.job) + '</b><span class="note">One function, nine lines, nine different jobs.</span>') +
+      '</div>' + (axisMode ? '<p class="note">' + esc(MODEL.specimen.unwritten) + '</p>' : '') + '</div>';
+  }, ['line']);
+
+  // Chapter 2: sort statements about each MVC box into "defined ahead" and "live".
+  const boxDone = (box, sorted) => MODEL.chips.filter((c) => c.box === box && !c.leftover).every((c) => sorted[c.id]);
+  AXIS.defineWrapper('les-split', 'lesson', (v) => {
+    const s = v.instance.state;
+    const placed = (chip) => '<div class="placed' + (s.last === chip.id ? ' just' : '') + '">' + esc(chip.text) + '<small>' + esc(chip.why) + '</small></div>';
+    const boxes = MODEL.boxes.map((box) => {
+      const mine = MODEL.chips.filter((c) => c.box === box.id), core = mine.filter((c) => !c.leftover), axis = AXIS_OF[box.axis];
+      const todo = core.filter((c) => !s.sorted[c.id]), done = !todo.length;
+      const half = (side, title, id) => '<div class="half ' + (side === 'essence' ? 'e' : 'x') + '"><h5>' + title + '</h5>' + (done ? '<div class="name">' + C[id].name + '</div>' : '') +
+        core.filter((c) => c.side === side && s.sorted[c.id]).map(placed).join('') + '</div>';
+      return '<div class="box"><div class="box-h"><b>' + box.name + '</b><span>' + esc(box.sub) + '</span></div><div class="pile">' +
+        todo.map((c) => {
+          const miss = s.miss && s.miss.chip === c.id;
+          return '<div class="stmt' + (miss ? ' miss' : '') + '"><span>' + esc(c.text) + '</span><span class="row">' +
+            btn('sort.place', 'Defined ahead', { chip: c.id, side: 'essence' }, { cls: 'sm pe' }) + btn('sort.place', 'Live at runtime', { chip: c.id, side: 'expression' }, { cls: 'sm px' }) + '</span>' +
+            (miss ? '<span class="hint">Not quite. ' + esc(MODEL.hints[c.side]) + '</span>' : '') + '</div>';
+        }).join('') +
+        mine.filter((c) => c.leftover).map((c) => '<div class="stmt left"><span>' + esc(c.text) + '</span><em>fits neither half · later</em></div>').join('') +
+        '</div><div class="halves">' + half('essence', 'Defined ahead of time', axis.essence) + half('expression', 'Live at runtime', axis.expression) + '</div>' +
+        (done
+          ? '<div class="reveal"><p class="slogan">' + esc(axis.slogan) + '</p><div class="cols"><bill-code what="' + axis.essence + '"></bill-code><bill-code what="' + axis.expression + '"></bill-code></div></div>'
+          : '<div class="row" style="margin-top:10px">' + btn('sort.finish', 'Sort these for me', { box: box.id }, { cls: 'quiet' }) + '</div>') + '</div>';
+    }).join('');
+    const all = MODEL.boxes.every((box) => boxDone(box.id, s.sorted));
+    const left = MODEL.chips.filter((c) => c.leftover);
+    return boxes + (all ? '<div class="tray"><div class="cap">Left on the table · ' + left.length + ' statements that fit neither half of their box</div><div class="pile">' +
+      left.map((c) => '<div class="stmt left"><span>' + esc(c.text) + '</span><em>from the ' + c.box + '</em></div>').join('') + '</div></div>' : '');
+  }, ['sorted', 'miss', 'last']);
+
+  // Chapter 5: the leftovers pair up, and the same question sorts each pair.
+  AXIS.defineWrapper('les-pairs', 'lesson', (v) => {
+    const s = v.instance.state;
+    const solved = (pair) => pair.met || pair.chips.every((id) => s.sorted[id]);
+    const rows = MODEL.pairs.map((pair) => {
+      const axis = AXIS_OF[pair.axis], both = pair.chips.map((id) => CHIP[id]);
+      if (!solved(pair)) {
+        const miss = s.miss && pair.chips.includes(s.miss.chip);
+        return '<div class="pair"><div class="cap">Was hiding ' + esc(axis.hiding) + '</div><div class="pair-q">' +
+          both.map((c) => '<button type="button" class="pick' + (s.miss && s.miss.chip === c.id ? ' miss' : '') + '" data-intent="pair.pick" data-p-chip="' + c.id + '" data-k="pick-' + c.id + '">' + esc(c.text) + '</button>').join('') + '</div>' +
+          (miss ? '<p class="hint">Not quite. That one exists only while it is happening. The other is the definition.</p>' : '') + '</div>';
+      }
+      const e = both.find((c) => c.side === 'essence'), x = both.find((c) => c.side === 'expression');
+      const half = (chip, id, cls) => '<div class="half ' + cls + '"><div class="name">' + C[id].name + '</div><div class="placed">' + esc(chip.text) + '<small>' + esc(chip.why) + '</small></div></div>';
+      return '<div class="pair"><div class="row split"><span><b>' + axis.name + '</b> <span class="note">' + esc(axis.asks) + '</span></span><span class="note" style="margin:0">' + (pair.met ? 'placed in chapter 4' : 'was hiding ' + esc(axis.hiding)) + '</span></div>' +
+        '<div class="halves">' + half(e, axis.essence, 'e') + half(x, axis.expression, 'x') + '</div><p class="note">' + esc(axis.slogan) + '</p></div>';
+    }).join('');
+    return rows + (MODEL.pairs.every(solved) ? '' : '<div class="row">' + btn('pair.finish', 'Sort these for me', {}, { cls: 'quiet' }) + '</div>');
+  }, ['sorted', 'miss', 'last']);
+
+  // The grid, and one cell opened up. The cell detail embeds the live object from the billing context.
+  AXIS.defineWrapper('les-grid', 'lesson', (v) => {
+    const s = v.instance.state, hot = s.line === null ? [] : MODEL.specimen.lines[s.line].becomes;
+    const cell = (id) => '<button type="button" class="cell ' + (C[id].side === 'essence' ? 'e' : 'x') + (hot.includes(id) ? ' hot' : '') + '" data-intent="cell.open" data-p-id="' + id + '" data-k="cell-' + id + '" aria-pressed="' + (s.cell === id) + '"><b>' + C[id].name + '</b><small>' + esc(C[id].short) + '</small></button>';
+    const c = C[s.cell], axis = AXIS_OF[c.axis];
+    return '<div class="cols"><div><div class="grid"><div class="hd ax">Concern</div><div class="hd e">Essence · defined ahead</div><div class="hd x">Expression · live at runtime</div>' +
+      MODEL.axes.map((a) => '<div class="axis"><b>' + a.name + '</b><small>' + esc(a.asks) + '</small><small>' + (a.from ? 'split from the ' + a.from : 'unnamed in MVC') + '</small></div>' + cell(a.essence) + cell(a.expression)).join('') +
+      '</div><p class="note">Read down the rows: ' + MODEL.axes.map((a) => esc(a.diagonal)).join(', ') + '.</p></div>' +
+      '<div class="card detail"><div class="row">' + tag(s.cell) + '<span class="note" style="margin:0">' + axis.name + ' · ' + (c.side === 'essence' ? 'Essence' : 'Expression') + '</span></div>' +
+      '<p class="says">“' + esc(c.says) + '”</p><dl class="kv">' +
+      [['The rule', esc(c.rule)], ['You may call it', esc(c.familiar)], ['What AXIS adds', esc(c.adds)], ['Contract', '<code>' + esc(c.contract) + '</code>'], ['In the invoice', esc(c.invoice)], ['Add it when', esc(c.when)]]
+        .map(([k, val]) => '<dt>' + k + '</dt><dd>' + val + '</dd>').join('') +
+      '</dl><div style="margin-top:14px"><bill-code what="' + s.cell + '"></bill-code></div></div></div>';
+  }, ['cell', 'line']);
+
+  AXIS.defineWrapper('les-profiles', 'lesson', (v) => {
+    const n = v.instance.state.profile, profile = MODEL.profiles[n];
+    const cell = (id) => '<div class="cell static ' + (C[id].side === 'essence' ? 'e' : 'x') + (profile.start.includes(id) ? '' : ' dim') + '"><b>' + C[id].name + '</b></div>';
+    return '<div class="card"><div class="row">' + MODEL.profiles.map((p, i) => btn('profile.pick', esc(p.name), { n: i }, { cls: 'sm', pressed: i === n })).join('') + '</div>' +
+      '<div class="cols" style="margin-top:18px"><div class="grid"><div class="hd ax">Concern</div><div class="hd e">Essence</div><div class="hd x">Expression</div>' +
+      MODEL.axes.map((a) => '<div class="axis"><b>' + a.name + '</b></div>' + cell(a.essence) + cell(a.expression)).join('') + '</div>' +
+      '<div><div class="big">' + profile.start.length + '<span class="unit"> of 14 parts to start</span></div><p><b>' + esc(profile.name) + '</b></p>' +
+      '<p class="row">' + profile.start.map((id) => tag(id)).join('') + '</p><p class="note">' + esc(profile.add) + '</p></div></div></div>';
+  }, ['profile']);
+
+  AXIS.defineWrapper('les-proof', 'lesson', (v) => {
+    const proof = v.instance.state.proof;
+    const verdict = (r) => (!r ? '<span class="note" style="margin:0">not run yet</span>' : r.ok ? '<span class="msg ok" style="margin:0">✓ passes</span>' : '<span class="msg bad" style="margin:0">✗ ' + esc(r.error) + '</span>');
+    const side = (title, fn, fakes, r) => '<div class="card"><h4>' + title + '</h4>' + code(dedent(fn.toString())) +
+      '<div class="row split" style="margin-top:12px"><span><span class="big">' + fakes + '</span><span class="unit"> stand-ins needed</span></span>' + verdict(r) + '</div></div>';
+    return '<div class="cols">' + side('AXIS · testing the Action', Proof.axisTest, 0, proof && proof.axis) + side('MVC · testing the controller', Proof.mvcTest, 7, proof && proof.mvc) + '</div>' +
+      '<div class="row" style="margin-top:16px">' + btn('proof.run', proof ? 'Run them again' : 'Run both tests, and five more', {}, { cls: 'primary' }) + '</div>' +
+      (proof ? '<ul class="tests">' + proof.more.map((r) => '<li><span class="' + (r.ok ? 'p">✓' : 'f">✗') + '</span><span>' + esc(r.name) + (r.ok ? '' : ': ' + esc(r.error)) + '</span></li>').join('') +
+        '</ul><p class="note">All of these ran just now, in this page, against the same functions the invoice is using. None of them needed a mail server.</p>' : '');
+  }, ['proof']);
+
+  // Lists rendered straight from the model, so the page and the JSON cannot disagree. Painted once.
+  AXIS.defineWrapper('les-list', 'lesson', (v, el) => {
+    const of = el.getAttribute('of'), table = (rows, cls) => '<table class="where ' + (cls || '') + '"><tbody>' + rows.map((r) => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('') + '</tbody></table>';
+    if (of === 'hardRules')  return '<ol class="rules">' + MODEL.hardRules.map((r) => '<li><b>' + esc(r[0]) + '</b> ' + esc(r[1]) + '</li>').join('') + '</ol>';
+    if (of === 'agentRules') return '<ol class="rules">' + MODEL.agentRules.map((r) => '<li>' + esc(r) + '</li>').join('') + '</ol>';
+    if (of === 'absence')    return table(MODEL.absence.map((r) => [esc(r[0]), '<b>' + esc(r[1]) + '</b>']));
+    if (of === 'placement')  return table([['<b>If it…</b>', '<b>it belongs in</b>'], ...MODEL.placement.map((r) => [esc(r[0]), tag(r[1])])], 'tagged');
+    if (of === 'testPerLayer') return table(MODEL.testPerLayer.map((r) => [esc(r[1]), tag(r[0])]), 'tagged');
+    if (of === 'generationUnits') return table(MODEL.generationUnits.units.map((r) => [esc(r[1]), '<code>' + esc(r[0]) + '</code>']), 'tagged') + '<p class="note">' + esc(MODEL.generationUnits.split) + '</p>';
+    return '';
+  }, []);
+
+  const padTo = (s, n) => (s + ' '.repeat(n)).slice(0, Math.max(n, s.length));
+  window.Brief = { text: () => [
+    'AXIS IN BRIEF', '',
+    'Seven concerns. Each has an Essence part (a definition, true before the program runs)',
+    'and an Expression part (a live thing, existing only at runtime).', '',
+    ...MODEL.axes.map((a) => '  ' + padTo(a.name, 9) + padTo(C[a.essence].name, 9) + '/ ' + padTo(C[a.expression].name, 9) + a.slogan),
+    '', 'The loop:', '  ' + MODEL.loop,
+    '', 'Hard rules (AXIS Lite):', ...MODEL.hardRules.map((r, i) => '  ' + (i + 1) + '. ' + r[0] + ' ' + r[1]),
+    '', 'Where code goes:', ...MODEL.placement.map((r) => '  ' + r[0] + ' → ' + C[r[1]].name),
+    '', 'Contracts:', ...Object.values(C).map((c) => '  ' + padTo(c.name, 9) + c.contract),
+    '', 'Start with the smallest shape that keeps the rules visible. Read ' + MODEL.meta.startWith + ' first.'
+  ].join('\n') };
+  AXIS.defineWrapper('les-brief', 'lesson', (v) => {
+    const copied = v.instance.state.copied;
+    return '<pre class="code wrap">' + esc(Brief.text()) + '</pre><div class="row" style="margin-top:10px">' + btn('brief.copy', 'Copy the brief', {}, { cls: 'primary' }) +
+      (copied === 'copied' ? '<span class="msg ok" style="margin:0">Copied.</span>' : copied === 'failed' ? '<span class="msg info" style="margin:0">The browser refused clipboard access. Select the text above instead.</span>' : '') + '</div>';
+  }, ['copied']);
+
+  // Chapter 10: a context describing itself.
+  const selfCard = (title, manager, v, edges) => {
+    const d = manager.describe(), b = manager.boundary, st = v.instance;
+    const counted = Object.entries(v.wrappers.reduce((acc, name) => ({ ...acc, [name]: (acc[name] || 0) + 1 }), {})).map(([name, n]) => '<' + name + '>' + (n > 1 ? ' ×' + n : '')).join(' ');
+    const rows = [
+      [tag('form'), d.form + ' · ' + manager.spec.form.invariants.length + ' rules'],
+      [tag('instance'), 'revision ' + st.revisionId + ' of ' + st.identityRef],
+      [tag('identity'), d.identity],
+      [tag('token'), d.tokens ? v.token.identityRef + ' · role ' + v.token.claims.role : 'not used'],
+      [tag('facet'), Object.keys(d.facets).length + ' · in force: ' + v.facet],
+      [tag('intent'), v.journal.length + ' received so far'],
+      [tag('bond'), d.bonds.length ? d.bonds.join(', ') : 'not used'],
+      [tag('link'), d.links.length ? d.links.join(', ') : 'not used'],
+      [tag('action'), d.actions.length + ' pure functions'],
+      [tag('manager'), '1 · one boundary'],
+      [tag('effect'), 'declared by Actions as data'],
+      [tag('impact'), d.impacts.length + ' handlers: ' + d.impacts.join(', ')],
+      [tag('wrapper'), v.wrappers.length + ' attached: ' + counted],
+      [tag('adapter'), edges]
+    ];
+    const tail = v.journal.slice(-6).reverse().map((run) => '<li>#' + run.intent.meta.seq + ' ' + esc(run.intent.kind) + (run.action ? ' → ' + esc(run.action) : ' → unroutable') +
+      (run.commit ? (run.commit.ok ? ' → rev ' + run.commit.revisionId : ' → refused') : '') + (run.effects.length ? ' + ' + run.effects.map((e) => e.kind).join(', ') : '') + '</li>').join('');
+    return '<div class="card"><h4>' + title + '</h4><table class="where"><tbody>' + rows.map((r) => '<tr><td style="white-space:nowrap;padding-right:12px">' + r[0] + '</td><td style="text-align:left;white-space:normal">' + esc(r[1]) + '</td></tr>').join('') + '</tbody></table>' +
+      '<div class="cap" style="margin-top:14px">Boundary contract</div><dl class="kv">' +
+      [['Owned state', b.ownedState], ['Accepted intents', b.acceptedIntents], ['Emitted effects', b.emittedEffects], ['Returned outcomes', b.returnedOutcomes], ['Policy scope', b.policyScope]].map(([k, val]) => '<dt>' + k + '</dt><dd>' + esc(val) + '</dd>').join('') + '</dl>' +
+      '<div class="cap" style="margin-top:14px">Intent stream · latest first</div><ul class="log">' + (tail || '<li>nothing yet</li>') + '</ul></div>';
+  };
+  AXIS.defineWrapper('les-self', 'lesson', (v) => selfCard('Lesson · the Lite profile', Lesson.manager, v, '3: clicks, scroll position, news from the outside world') +
+    '<div class="row" style="margin-top:12px">' + btn('lesson.reset', 'Forget my answers and start the lesson over', {}, { cls: 'quiet' }) + '</div>');
+
+  /* ═════════════════════════ BILLING WRAPPERS ════════════════════════════ */
+
+  const CATALOGUE = [['Design review', 120], ['Hosting, one month', 40], ['Support hour', 90]];
+  const BASE = ['present', 'reset', 'replay'];
+  // The most recent request and everything it caused. A request to replay the journal is not counted as a trip.
+  const trip = (v) => {
+    const roots = v.journal.filter((run) => run.root === run.intent.meta.seq && run.intent.kind !== 'journal.replay');
+    return roots.length ? v.journal.filter((run) => run.root === roots[roots.length - 1].root) : [];
+  };
+
+  AXIS.defineWrapper('bill-invoice', 'billing', (v, el) => {
+    const s = v.instance.state, mode = el.getAttribute('show') || 'all', all = mode === 'all';
+    const auth = all ? null : 'clerk';   // the earlier chapters always ask as the clerk
+    const stage = Object.keys(Billing.facets['facet.invoice.' + s.status].delegates);
+    const offered = (cap) => (all ? v.offers : stage).includes(cap);
+    const cls = (cap, base) => (base || '') + (offered(cap) ? '' : ' off');
+    const tip = (cap) => (offered(cap) ? '' : 'not offered by the Facet in force');
+    const act = (kind, label, payload, base) => { const cap = kind.split('.')[1]; return btn(kind, label, payload || {}, { cls: cls(cap, base), auth, title: tip(cap) }); };
+    const customer = v.links.customer[0];
+    const refusal = trip(v).flatMap((run) => run.effects).find((e) => /REJECTED|UNROUTABLE/.test(e.kind));
+    const said = !refusal ? '' :
+      refusal.kind === 'INTENT_UNROUTABLE' ? 'Not offered. ' + refusal.payload.facet + ' has no “' + refusal.payload.capability + '”, so the Manager turned the request away.' :
+      refusal.kind === 'INTENT_REJECTED' ? 'Refused by the rule: ' + words(refusal.payload.reason) + '.' :
+      'Commit refused: ' + refusal.payload.violations.join('; ') + '.';
+    const editable = mode !== 'send';
+    return '<div class="card"><h4>The AXIS invoice · billing context</h4>' +
+      '<div class="inv-h"><div><b>Invoice 1042</b><small>' + esc(customer ? customer.name : 'no customer') + ' · revision ' + v.instance.revisionId + '</small></div><span class="status" data-s="' + s.status + '">' + s.status + '</span></div>' +
+      '<ul class="items">' + (s.lineItems.length ? s.lineItems.map((item) => '<li><span>' + esc(item.desc) + '</span><span class="row">$' + item.price +
+        (editable ? btn('invoice.removeItem', '×', { id: item.id }, { cls: cls('removeItem', 'sm'), auth, title: 'remove this line item' }) : '') + '</span></li>').join('') : '<li class="empty">No line items.</li>') + '</ul>' +
+      '<div class="total"><span>Total</span><span>$' + s.total + '</span></div>' +
+      (editable ? '<div class="row">' + CATALOGUE.map(([desc, price]) => act('invoice.addItem', '+ ' + desc + ' $' + price, { desc, price }, 'sm')).join('') + '</div>' : '') +
+      '<div class="row" style="margin-top:10px">' +
+        (mode !== 'items' ? act('invoice.send', 'Send invoice', {}, 'primary') : '') +
+        (all ? act('invoice.markPaid', 'Mark paid') : '') +
+        (mode === 'items' ? act('invoice.fudge', 'Wrong on purpose: take $500 off the total', {}, 'warn') : '') +
+        btn('invoice.reset', 'Start over', {}, { cls: 'quiet', auth }) + '</div>' +
+      (s.notice ? '<div class="msg info">' + esc(s.notice) + '</div>' : '') +
+      (said ? '<div class="msg bad">' + esc(said) + '</div>' : '') +
+      (!all && s.status !== 'draft' ? '<div class="msg info">This invoice is ' + s.status + ', so the draft capabilities are no longer on offer. Start over for a fresh draft.</div>' : '') +
+      (all ? '<dl class="kv"><dt>Asking as</dt><dd><span class="seg">' +
+          btn('session.present', 'Sam · clerk', {}, { auth: 'clerk', pressed: v.token.claims.role === 'clerk', k: 'as-clerk', cls: 'sm' }) +
+          btn('session.present', 'Kit · viewer', {}, { auth: 'viewer', pressed: v.token.claims.role === 'viewer', k: 'as-viewer', cls: 'sm' }) + '</span></dd>' +
+        '<dt>Facet in force</dt><dd><code>' + v.facet + '</code></dd><dt>It offers</dt><dd>' + (v.offers.filter((c) => !BASE.includes(c)).join(', ') || 'nothing that changes the invoice') + '</dd></dl>' : '') +
+      '</div>';
+  });
+
+  AXIS.defineWrapper('bill-revisions', 'billing', (v) => {
+    const root = trip(v)[0], refused = root && root.commit && !root.commit.ok ? root : null;
+    const recent = v.history.slice(-5).reverse();
+    return '<div class="card"><h4>Instances · newest first</h4><ol class="revs">' +
+      (refused ? '<li class="rev refused"><div class="rev-h">Refused<span>' + esc(refused.intent.kind) + '</span></div><pre>' + esc(show(refused.delta)) + '\n' +
+        refused.commit.violations.map((x) => '✗ ' + esc(x)).join('\n') + '</pre><p class="note">Revision ' + v.instance.revisionId + ' is still the current one.</p></li>' : '') +
+      recent.map((h, i) => '<li class="rev' + (i === 0 ? ' head' : '') + '"><div class="rev-h">Revision ' + h.instance.revisionId + (i === 0 ? ' · current' : '') +
+        '<span>' + esc(h.cause === 'bind' ? 'starting state' : 'after ' + h.cause) + '</span></div><pre>' + (h.delta ? 'delta ' + esc(show(h.delta)) : esc(show(h.instance.state))) + '</pre></li>').join('') +
+      '</ol>' + (v.history.length > 5 ? '<p class="note">' + (v.history.length - 5) + ' older revisions not shown. Each one is still a value the Manager is holding.</p>' : '') + '</div>';
+  });
+
+  // The trip one request took, hop by hop, with the real value at each stop.
+  const hopRow = (cls, i, html, value) => '<li class="hop ' + cls + '" style="--i:' + i + '"><p>' + html + '</p>' +
+    (value === undefined ? '' : '<details><summary>the value</summary><pre class="code">' + hl(show(value)) + '</pre></details>') + '</li>';
+  AXIS.defineWrapper('bill-trace', 'billing', (v, el) => {
+    const loop = el.getAttribute('scope') === 'loop', runs = trip(v), rows = [];
+    const title = loop ? 'The trip the last request took' : 'What happened to the change';
+    if (!runs.length) return '<div class="card"><h4>' + title + '</h4><p class="note">Nothing has happened yet. Press a button on the invoice.</p></div>';
+    let i = 0;
+    const add = (cls, html, value) => rows.push(hopRow(cls, i++, html, value));
+    runs.forEach((run, n) => {
+      const it = run.intent;
+      if (n === 0 && loop) {
+        add('', tag('wrapper') + ' <code>&lt;' + esc(it.wrapperCtx) + '&gt;</code> received a raw event: ' + esc(it.meta.raw || 'an event') + '.');
+        add('', tag('adapter') + ' turned it into an ' + tag('intent') + ': <b>' + esc(it.kind) + '</b>. No decisions, no IO.', it);
+      }
+      if (n > 0) add('back', tag('impact') + ' reported back with a new ' + tag('intent') + ': <b>' + esc(it.kind) + '</b>. It re-enters by the same door.', loop ? it : undefined);
+      run.hops.forEach((hop) => {
+        const val = hop.value;
+        if (hop.node === 'token' && loop && n === 0) {
+          add('', 'The ' + tag('manager') + ' resolved who is asking → ' + tag('token') + ': <b>' + esc(val.identityRef) + '</b>, role <b>' + esc(val.claims.role) + '</b>' + (it.rawAuth ? ', minted from the raw badge the Adapter passed along.' : ', the current session.'), val);
+        } else if (hop.node === 'facet' && loop) {
+          const extra = val.offers.filter((c) => !BASE.includes(c));
+          if (n > 0) add('', 'It arrives with a system ' + tag('token') + ', which selects ' + tag('facet') + ' <code>' + esc(val.facet) + '</code>.', val);
+          else add('', 'That Token and the invoice’s current state select ' + tag('facet') + ' <code>' + esc(val.facet) + '</code>. It offers: ' + (extra.length ? esc(extra.join(', ')) : 'nothing that changes the invoice') + '.', val);
+        } else if (hop.node === 'manager') {
+          add('bad', '<b>Stopped at the ' + tag('manager') + '.</b> This Facet has no <code>' + esc(val.payload.capability) + '</code>, so the Intent is unroutable. No Action ran.', val);
+        } else if (hop.node === 'link' && loop && n === 0) {
+          add('', tag('link', 'Links') + ' resolved before the rule runs: ' + val.map((l) => esc(l.as)).join(', ') + '.', val);
+        } else if (hop.node === 'action') {
+          const no = val.effects.find((e) => e.kind === 'INTENT_REJECTED'), keys = Object.keys(val.delta);
+          if (no) add('bad', '<b>Stopped at the ' + tag('action') + '.</b> <code>' + esc(hop.tag) + '</code> refused: <b>' + esc(words(no.payload.reason)) + '</b>. It returned an ' + tag('effect') + ' saying so, and an empty delta.', val);
+          else add('', tag('action') + ' <code>' + esc(hop.tag) + '</code> returned a description of change: ' + (keys.length ? 'a <b>delta</b> touching ' + esc(keys.join(', ')) : 'no delta') + ', and ' +
+            (val.effects.length ? val.effects.map((e) => tag('effect') + ' <code>' + esc(e.kind) + '</code>').join(', ') : 'no Effects') + '.' + (n === 0 ? ' Nothing has happened yet.' : ''), val);
+        } else if (hop.node === 'commit') {
+          if (val.ok) add('ok', 'Inside: the ' + tag('manager') + ' committed the delta → ' + tag('instance') + ' revision <b>' + val.revisionId + '</b>, after checking ' + val.checked + ' rules from the ' + tag('form') + ' and the ' + tag('bond', 'Bonds') + '.');
+          else add('bad', '<b>Stopped at the commit.</b> The delta breaks ' + val.violations.length + ' rule' + (val.violations.length > 1 ? 's' : '') + ': ' + esc(val.violations.join('; ')) + '. Nothing changed.', val);
+        } else if (hop.node === 'effect') {
+          add('bad', 'Out of attempts. The ' + tag('effect') + ' carried its own plan B: <code>' + esc(val.kind) + '</code>.', val);
+        } else if (hop.node === 'impact') {
+          if (val.kind === 'EMAIL_SEND') add(val.ok ? 'ok' : 'bad', 'Outside: ' + tag('impact') + ' carried out ' + tag('effect') + ' <code>EMAIL_SEND</code>, attempt ' + val.attempt + ' of ' + val.of + ': ' + (val.ok ? '<b>delivered</b>.' : '<b>failed</b> (' + esc(val.error) + ').'));
+          else if (val.kind === 'ROLLBACK_INSTANCE') add('', tag('impact') + ' carried out the plan B. Its result is a new Intent, not a direct change to state.');
+          else if (val.kind === 'REPLAY_JOURNAL') add('ok', tag('impact') + ' rebuilt the invoice from the recorded Intents alone.');
+          else if (loop) add('', tag('impact') + ' delivered the refusal to the caller.');
+        }
+      });
+    });
+    if (loop) add('', tag('wrapper', 'Wrappers') + ' re-rendered from ' + tag('instance') + ' revision ' + v.instance.revisionId + '.');
+    return '<div class="card"><h4>' + title + '</h4><ol class="trace">' + rows.join('') + '</ol></div>';
+  });
+
+  // The map: all fourteen parts on one path. Nodes light up along the route the last request took.
+  const NODES = [['wrapper', 150, 110, 84], ['adapter', 262, 110, 84], ['intent', 374, 110, 84], ['manager', 492, 110, 96], ['action', 616, 110, 84], ['effect', 738, 110, 84], ['impact', 912, 110, 84],
+    ['token', 396, 200, 72], ['facet', 478, 200, 72], ['link', 560, 200, 72], ['instance', 690, 222, 92], ['form', 806, 180, 78], ['bond', 806, 222, 78], ['identity', 806, 264, 78]];
+  AXIS.defineWrapper('bill-map', 'billing', (v) => {
+    const runs = trip(v), lit = new Set();
+    if (!runs.length) NODES.forEach((n) => lit.add(n[0]));
+    else {
+      ['wrapper', 'adapter', 'intent', 'manager'].forEach((n) => lit.add(n));
+      runs.forEach((run) => run.hops.forEach((hop) => {
+        if (hop.node === 'token') { lit.add('token'); lit.add('identity'); }
+        if (['facet', 'link', 'action'].includes(hop.node)) lit.add(hop.node);
+        if (hop.node === 'commit') { lit.add('form'); lit.add('bond'); if (hop.value.ok) lit.add('instance'); }
+        if (hop.node === 'effect' || (hop.node === 'impact' && !/REJECTED|UNROUTABLE/.test(hop.value.kind))) { lit.add('effect'); lit.add('impact'); }
+      }));
+    }
+    const node = ([id, x, y, w]) => { const e = C[id].side === 'essence'; return '<g class="node ' + (e ? 'e' : 'x') + (lit.has(id) ? ' lit' : '') + '"><rect x="' + (x - w / 2) + '" y="' + (y - 17) + '" width="' + w + '" height="34" rx="' + (e ? 3 : 17) + '"/><text x="' + x + '" y="' + (y + 4.5) + '" text-anchor="middle">' + C[id].name + '</text></g>'; };
+    const wire = (d, cls, end) => '<path class="wire ' + (cls || '') + '" d="' + d + '"' + (end === false ? '' : ' marker-end="url(#arrowhead)"') + '/>';
+    return '<div class="map"><svg viewBox="0 0 980 350" role="img" aria-label="The AXIS loop: wrapper, adapter, intent, manager, action, then a fork into delta and effects.">' +
+      '<defs><marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>' +
+      '<rect class="inside" x="322" y="64" width="534" height="232" rx="12"/><text class="lbl" x="334" y="287">inside · no IO happens in here</text>' +
+      '<text class="lbl" x="46" y="96" text-anchor="middle">outside</text><text x="46" y="114" text-anchor="middle">a click</text>' +
+      wire('M76,110 H106') + wire('M192,110 H218') + wire('M304,110 H330') + wire('M416,110 H442') + wire('M540,110 H572') + wire('M658,110 H694') + wire('M780,110 H868') +
+      '<text class="lbl" x="677" y="86" text-anchor="middle">effects</text>' +
+      wire('M492,127 L400,182', 'soft', false) + wire('M492,127 L478,182', 'soft', false) + wire('M492,127 L556,182', 'soft', false) +
+      wire('M616,127 V222 H642') + '<text class="lbl" x="624" y="178">delta → commit</text>' +
+      wire('M736,222 L766,182', 'soft', false) + wire('M736,222 H766', 'soft', false) + wire('M736,222 L766,262', 'soft', false) +
+      wire('M912,127 V158') + '<text x="912" y="178" text-anchor="middle">mail server</text><text class="lbl" x="912" y="194" text-anchor="middle">outside</text>' +
+      wire('M912,93 V34 H374 V91', 'back') + '<text class="lbl" x="643" y="26" text-anchor="middle">what Impact learns comes back as a follow-up Intent</text>' +
+      wire('M690,239 V320 H150 V129') + '<text class="lbl" x="420" y="338" text-anchor="middle">render: the Wrapper redraws from the new Instance</text>' +
+      NODES.map(node).join('') + '</svg></div>' +
+      '<p class="note">' + (runs.length ? 'Lit: the path taken by <b>' + esc(runs[0].intent.kind) + '</b>.' : 'Use the invoice below and the path each request takes will light up.') + '</p>';
+  });
+
+  // The real objects this page is running, for any of the fourteen parts.
+  AXIS.defineWrapper('bill-code', 'billing', (v, el) => {
+    const what = el.getAttribute('what'), s = v.instance.state;
+    const last = [...v.journal].reverse().find((run) => run.intent.meta.origin === 'adapter');
+    const sent = [...v.journal].reverse().flatMap((run) => run.effects).find((e) => e.kind === 'EMAIL_SEND');
+    const wouldSend = () => Billing.actions.sendInvoice({ ...s, status: 'draft', lineItems: s.lineItems.length ? s.lineItems : [{ price: 0 }], links: v.links }, { capability: 'send', identityRef: v.instance.identityRef, payload: {} }).effects[0];
+    switch (what) {
+      case 'form':     return code('const InvoiceForm = ' + show(Billing.InvoiceForm), 'Form · the definition this page uses');
+      case 'instance': return code(show(v.instance), 'Instance · live · revision ' + v.instance.revisionId);
+      case 'identity': return code(show(Billing.invoiceIdentity), 'Identity · never changes');
+      case 'token':    return code(show(v.token), 'Token · the current session');
+      case 'facet':    return code("facets['" + v.facet + "'] = " + show(Billing.facets[v.facet]), 'Facet · the one in force right now');
+      case 'intent':   return code(show(last ? last.intent : { kind: 'invoice.send', capability: 'send', identityRef: 'invoice:1042', payload: {}, rawAuth: null, wrapperCtx: 'bill-invoice' }), 'Intent · ' + (last ? 'the last one this invoice received' : 'what a click on Send becomes'));
+      case 'bond':     return code(show(Billing.bonds[0]), 'Bond · checked on every commit');
+      case 'link':     return code(show({ bondRef: 'bond.invoice.customer', sourceRef: v.instance.identityRef, resolvedRefs: v.links.customer, scope: 'dispatch' }), 'Link · resolved for this invoice');
+      case 'action':   return code(dedent(Billing.actions.sendInvoice.toString()), 'Action · the function this page runs');
+      case 'manager':  return code(MODEL.managerSketch.join('\n'), 'Manager · what the Conductor does with every Intent');
+      case 'effect':   return code(show(sent || wouldSend()), 'Effect · ' + (sent ? 'the last one declared' : 'what sending would declare'));
+      case 'impact':   return code('EMAIL_SEND: ' + dedent(Billing.impacts.EMAIL_SEND.toString()), 'Impact · the only code that reaches the mail server');
+      case 'wrapper':  return code('<bill-invoice show="all">              // a custom element: the boundary\n  render(view) → HTML                  // from the Instance, the Token, the Facet in force\n  <button data-intent="invoice.send">  // an event slot, declared as data\n\n// attached to this context right now: ' + v.wrappers.length, 'Wrapper · this panel is one');
+      case 'adapter':  return code(dedent(AXIS.bindDomAdapter.toString()), 'Adapter · the one handling your clicks');
+      default:         return '';
+    }
+  });
+
+  AXIS.defineWrapper('bill-replay', 'billing', (v) => {
+    const done = [...v.journal].reverse().map((run) => run.outcomes.find((o) => o.kind === 'REPLAY_JOURNAL' && o.replay)).find(Boolean);
+    const r = done && done.replay, same = r && r.live.hash === r.replayed.hash && r.live.revisionId === r.replayed.revisionId;
+    return '<div class="card"><h4>Replay</h4><div class="row">' + btn('journal.replay', 'Replay the invoice’s session', {}, { cls: 'primary' }) +
+      '<span class="note" style="margin:0">' + v.journal.length + ' Intents recorded so far</span></div>' +
+      (r ? '<dl class="kv"><dt>Intents replayed</dt><dd>' + r.intents + '</dd><dt>Live invoice</dt><dd>revision ' + r.live.revisionId + ' · state hash <code>' + r.live.hash + '</code></dd>' +
+        '<dt>Rebuilt invoice</dt><dd>revision ' + r.replayed.revisionId + ' · state hash <code>' + r.replayed.hash + '</code></dd></dl>' +
+        '<div class="msg ' + (same ? 'ok' : 'bad') + '">' + (same ? 'Identical. A fresh Manager, given only the recording and no access to the outside world, arrived at the same invoice.' : 'They differ. Something in an Action is not pure.') + '</div>'
+        : '<p class="note">If you have not touched the invoice yet, go back and send it once or twice first. The more you did, the more there is to replay.</p>') + '</div>';
+  });
+
+  AXIS.defineWrapper('bill-self', 'billing', (v) => selfCard('Billing · all fourteen parts', Billing.manager, v, '1: clicks on data-intent buttons'));
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     COMPOSITION — runs once. After bind() the page only changes through Intents.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script id="composition">
+'use strict';
+// First paint in the reader's look. Composition-time setup, before the pipeline is live.
+document.documentElement.dataset.look = Lesson.manager.view().instance.state.look;
+
+// ADAPTER 1: clicks on anything a Wrapper declared with data-intent.
+AXIS.bindDomAdapter(document);
+
+// ADAPTER 2: the outside world is an event source too. Its news arrives as an Intent, like everything else.
+World.subscribe(() => Lesson.manager.dispatch(
+  Lesson.manager.intent('world.observed', World.snapshot(), { wrapperCtx: 'outside-world', raw: 'change notification from the outside world' })));
+
+// ADAPTER 3: scroll position → "the reader entered chapter n".
+const chapterWatch = new IntersectionObserver((entries) => entries.filter((entry) => entry.isIntersecting).forEach((entry) => Lesson.manager.dispatch(
+  Lesson.manager.intent('chapter.entered', { n: Number(entry.target.dataset.ch) }, { wrapperCtx: 'document', raw: 'section scrolled into view' }))), { rootMargin: '-35% 0px -60% 0px' });
+document.querySelectorAll('section[data-ch]').forEach((section) => chapterWatch.observe(section));
+
+Lesson.manager.bind();
+Billing.manager.bind();
+console.info('AXIS · two contexts bound · lesson (Lite profile) and billing (all fourteen parts). The lesson is in <script id="axis-model">.');
+</script>
+
+<!-- Shared, draggable navigation between AXIS presentations and MENTIC home. -->
+<axis-navigator></axis-navigator>
+<script src="../../../webcomponents/axis-navigator.js" defer></script>
+  <script src="../../devloiter/devloiter.js"></script>
+  <devloiter-widget height="160"></devloiter-widget>
+</body>
+</html>

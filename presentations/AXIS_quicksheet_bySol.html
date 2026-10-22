@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AXIS at a glance: essence and expression, the seven pairs, the flow of change, and practical placement rules for humans and agents.">
+<title>AXIS · Quick sheet · by Sol</title>
+<style>
+:root{color-scheme:light;--paper:#f6f5ef;--surface:#fffef9;--ink:#182b27;--muted:#54645e;--line:#ccd3c7;--static:#704314;--static-bg:#f6ead5;--dynamic:#175449;--dynamic-bg:#e0eee6;--accent:#bd492d}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit;text-underline-offset:3px}a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:4px}button{font:inherit;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);padding:9px 15px;cursor:pointer;min-height:44px}.sheet{max-width:1120px;margin:auto;padding:30px 40px}.toolbar{display:flex;gap:18px;align-items:center;justify-content:flex-end;margin-bottom:20px;font-size:12px}header{border-top:3px solid var(--ink);padding-top:20px;margin-bottom:22px}.title-row{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap}h1{font:56px/1 Georgia,"Times New Roman",serif;letter-spacing:-.05em;margin:0}h1 span{font-style:italic}.eyebrow,.label{font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase}.eyebrow{color:var(--muted);margin:8px 0 12px}.thesis{font-size:19px;line-height:1.4;max-width:930px;margin:14px 0 8px}p{margin:0 0 10px}.muted{color:var(--muted)}.small{font-size:12px}.columns{display:grid;grid-template-columns:1.45fr 1fr;gap:32px}.section-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px;font-weight:700}.section-title .number{color:var(--accent);margin-right:8px}.matrix-head,.pair{display:grid;grid-template-columns:.68fr 1.1fr 1.1fr;gap:8px;align-items:stretch}.matrix-head{font-size:11px;color:var(--muted);padding-bottom:8px}.pair{border-top:1px solid var(--line);padding:8px 0}.concern{font-size:11px;color:var(--muted);align-self:center}.definition,.realization{padding:8px 10px;line-height:1.35}.definition{background:var(--static-bg);color:var(--static);border-radius:2px}.realization{background:var(--dynamic-bg);color:var(--dynamic);border-radius:14px}.pair strong{display:block;font-size:14px;margin-bottom:2px}.pair span:not(.concern){font-size:11px;display:block}.matrix-note{margin-top:8px;font-size:11px;color:var(--muted)}.rules{list-style:none;padding:0;margin:0;counter-reset:rule}.rules li{border-top:1px solid var(--line);padding:9px 0 9px 25px;font-size:13px;position:relative;counter-increment:rule}.rules li::before{content:counter(rule,decimal-leading-zero);position:absolute;left:0;top:11px;color:var(--accent);font:10px ui-monospace,monospace}.rules strong{display:block;font-size:14px}.rules .inline{display:inline}.flow-section{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:18px 0;margin-top:21px}.flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0;font-size:13px}.node{padding:7px 11px;background:var(--dynamic-bg);color:var(--dynamic);border-radius:14px}.node.static{background:var(--static-bg);color:var(--static);border-radius:2px}.arrow{color:var(--muted)}.branch-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.branch{border-left:2px solid var(--accent);padding-left:13px;font-size:13px}.branch p{margin-bottom:3px}.branch strong{font-weight:700}.contract{font:13px ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--ink);color:var(--paper);padding:9px 12px;border-radius:3px;margin-top:10px;overflow-wrap:anywhere}.bottom{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:20px 0 15px}.adoption{font-size:13px}.adoption p{margin:0 0 6px}.guardrails{font-size:12px;line-height:1.6}.guardrails strong{font-weight:700}.boundary{font-size:12px;border-top:1px solid var(--line);padding-top:12px}.boundary b{color:var(--accent)}footer{border-top:1px solid var(--line);padding-top:12px;margin-top:15px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.source-links{display:flex;gap:12px;flex-wrap:wrap}code{font: .9em ui-monospace,SFMono-Regular,Consolas,monospace}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--paper:#12211e;--surface:#192d27;--ink:#edf1e5;--muted:#b4c4b9;--line:#3b5148;--static:#efbf80;--static-bg:#3e3023;--dynamic:#9bd9bf;--dynamic-bg:#244338;--accent:#ffab88}}
+@media(max-width:740px){.sheet{padding:20px}.columns,.bottom{grid-template-columns:1fr;gap:24px}h1{font-size:43px}.title-row{gap:10px}.thesis{font-size:17px}.branch-grid{grid-template-columns:1fr;gap:15px}.toolbar{justify-content:space-between}.matrix-head,.pair{grid-template-columns:.65fr 1fr 1fr;gap:6px}.definition,.realization{padding:8px}.flow{gap:7px}.node{padding:6px 9px}.pair strong{font-size:13px}}
+@page{size:letter portrait;margin:12mm}
+@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}:root{color-scheme:light;--paper:#fff;--surface:#fff;--ink:#182b27;--muted:#46564f;--line:#ccd3c7;--static:#704314;--static-bg:#f6ead5;--dynamic:#175449;--dynamic-bg:#e0eee6;--accent:#a63f26}body{font-size:10px;line-height:1.35}.sheet{padding:0;max-width:none}.toolbar{display:none}header{padding-top:10px;margin-bottom:13px}h1{font-size:35px}.eyebrow{font-size:8px;margin:5px 0 8px}.thesis{font-size:13px;margin:8px 0 5px}.small{font-size:9px}.columns{grid-template-columns:1.45fr 1fr;gap:18px}.section-title{font-size:9px;margin-bottom:7px}.matrix-head{font-size:8px;padding-bottom:4px}.pair{padding:5px 0;gap:5px;break-inside:avoid}.concern{font-size:8px}.definition,.realization{padding:5px 6px}.pair strong{font-size:10px;margin-bottom:1px}.pair span:not(.concern){font-size:8px}.matrix-note{font-size:8px;margin-top:5px}.rules li{font-size:9px;padding:6px 0 6px 20px;break-inside:avoid}.rules strong{font-size:10px}.rules li::before{font-size:8px;top:8px}.flow-section{padding:11px 0;margin-top:12px;break-inside:avoid}.flow{font-size:9px;margin:8px 0;gap:6px}.node{padding:5px 7px}.branch-grid{grid-template-columns:1fr 1fr;gap:15px}.branch{font-size:9px;padding-left:9px}.contract{font-size:9px;padding:6px 9px;margin-top:7px}.bottom{grid-template-columns:1fr 1fr;gap:18px;margin:12px 0 10px;break-inside:avoid}.adoption{font-size:9px}.adoption p{margin-bottom:4px}.guardrails{font-size:9px}.boundary{font-size:9px;padding-top:8px;break-inside:avoid}footer{font-size:8px;padding-top:8px;margin-top:10px}.source-links{gap:8px}a{text-decoration:none}}
+</style>
+</head>
+<body>
+<main class="sheet">
+<div class="toolbar"><a href="Presenting_AXIS_bySol.html">Explore the interactive guide ↗</a><button id="print" type="button">Print / save PDF</button></div>
+<header>
+<div class="title-row"><h1>AXIS <span>quick sheet.</span></h1><span class="label muted">For humans & agents / page by Sol, archtecture from MENTIC</span></div>
+<p class="eyebrow">Agentically eXtensible Instruction Structures</p>
+<p class="thesis"><strong>Separate what is defined from what happens at runtime.</strong><br>Normalize meaning → calculate change → validate state → execute declared work.</p>
+<p class="small muted">A vocabulary for placing responsibilities. Start with AXIS Lite; add structure when it removes ambiguity.</p>
+</header>
+<div class="columns">
+<section aria-labelledby="pairs-title">
+<h2 class="section-title" id="pairs-title"><span class="number">01</span>The seven pairs</h2>
+<div class="matrix-head"><span>Concern</span><span>Essence / definition</span><span>Expression / runtime</span></div>
+<div class="pair"><span class="concern">Being</span><div class="definition"><strong>Form</strong><span>Shape, defaults, invariants</span></div><div class="realization"><strong>Instance</strong><span>Current values + revision</span></div></div>
+<div class="pair"><span class="concern">Identity</span><div class="definition"><strong>Identity</strong><span>Stable sameness / address</span></div><div class="realization"><strong>Token</strong><span>Scoped, temporal projection</span></div></div>
+<div class="pair"><span class="concern">Meaning</span><div class="definition"><strong>Facet</strong><span>Capability → Action map</span></div><div class="realization"><strong>Intent</strong><span>What the caller meant</span></div></div>
+<div class="pair"><span class="concern">Relating</span><div class="definition"><strong>Bond</strong><span>Ownership & relation rules</span></div><div class="realization"><strong>Link</strong><span>Resolved runtime relation</span></div></div>
+<div class="pair"><span class="concern">Doing</span><div class="definition"><strong>Action</strong><span>Pure transition logic</span></div><div class="realization"><strong>Manager</strong><span>Route, coordinate, commit</span></div></div>
+<div class="pair"><span class="concern">Changing</span><div class="definition"><strong>Effect</strong><span>Work described as data</span></div><div class="realization"><strong>Impact</strong><span>Concrete execution / IO</span></div></div>
+<div class="pair"><span class="concern">Bridging</span><div class="definition"><strong>Wrapper</strong><span>Interaction boundary / host</span></div><div class="realization"><strong>Adapter</strong><span>Raw input → Intent</span></div></div>
+<p class="matrix-note">“Static” describes a role: an Effect may be created at runtime and still remain an inert declaration.</p>
+</section>
+<section aria-labelledby="rules-title">
+<h2 class="section-title" id="rules-title"><span class="number">02</span>Where the responsibility goes</h2>
+<ol class="rules">
+<li><strong>Normalize at the edge.</strong>Adapters produce Intents; raw credentials pass through. The Manager resolves authority.</li>
+<li><strong>Keep Actions pure.</strong>No IO, mutation, clock, randomness, or global reads. Supply all inputs explicitly.</li>
+<li><strong>Give state one owner.</strong>The Manager validates Form and Bond invariants, then commits a new Instance.</li>
+<li><strong>Describe work before doing it.</strong>Effects are data. Only Impact performs network, disk, database, DOM, or queue IO.</li>
+<li><strong>Make relationships explicit.</strong>Bonds declare rules; Links resolve related state outside Actions. Remote loading uses Impact.</li>
+<li><strong>Keep coordination bounded.</strong>One Manager per consistency boundary. Cross-boundary work travels through Effects and Intents.</li>
+</ol>
+</section>
+</div>
+<section class="flow-section" aria-labelledby="flow-title">
+<h2 class="section-title" id="flow-title"><span class="number">03</span>How change happens</h2>
+<div class="flow" aria-label="Input flow"><span>Raw event</span><span class="arrow">→</span><span class="node">Adapter</span><span class="arrow">→</span><span class="node">Intent</span><span class="arrow">→</span><span class="node">Manager</span><span class="arrow">→</span><span class="node static">Action</span><span class="small muted">Token + context select the Facet; Links supply related state.</span></div>
+<div class="branch-grid"><div class="branch"><p><strong>Delta → Manager.commit → new Instance</strong></p><p>Validate invariants; adopt state; render its projection.</p></div><div class="branch"><p><strong>Effects → Impact → follow-up Intent</strong></p><p>Attempt external work; route the outcome through the pure core.</p></div></div>
+<div class="contract">Action(stateSnapshot, intent) → { delta, effects[] }</div>
+<p class="small muted" style="margin:8px 0 0">An Action proposes. A commit changes owned state. Impact changes the outside world. These are separate steps.</p>
+</section>
+<div class="bottom">
+<section aria-labelledby="start-title">
+<h2 class="section-title" id="start-title"><span class="number">04</span>Choose the smallest useful shape</h2>
+<div class="adoption"><p><strong>Calculation:</strong> Action; add a Form when a contract helps.</p><p><strong>Owned state:</strong> Form, Instance, Action, Manager; Effect / Impact for IO.</p><p><strong>Roles or lifecycle:</strong> add Facets; Tokens when scope matters.</p><p><strong>Relationships:</strong> add Bonds / Links.</p><p><strong>Async workflow:</strong> explicit outcomes, retries, compensation.</p></div>
+</section>
+<section aria-labelledby="remember-title">
+<h2 class="section-title" id="remember-title"><span class="number">05</span>Keep these distinctions clear</h2>
+<p class="guardrails"><strong>MVC bridge:</strong> Model → Form / Instance; Controller → Action / Manager. Facet / Intent describes the View’s meaning; the actual screen is hosted by a Wrapper.<br><strong>Names:</strong> Redux reducer ≈ Action; Redux action ≈ Intent. Token includes revision and workflow handles, not just auth.<br><strong>Failure:</strong> rejection is data; failed IO follows retry / compensation policy. Local commit does not prove remote success.</p>
+</section>
+</div>
+<p class="boundary"><b>For your next handoff:</b> name the boundary’s owned state, accepted Intents, emitted Effects, returned outcomes, and policy scope. Map each role to actual paths and symbols. Preserve native names; fourteen roles do not require fourteen files.</p>
+<footer><span>AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems · © 2026 MENTIC LLC · <a href="https://mentic.com/AXIS">mentic.com/AXIS</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a><br>If you found these ideas useful you could <a href="https://buymeacoffee.com/mattq4">Buy Me a Coffee</a> to show your support.</span><div class="source-links"><a href="../AXIS-Lite.md">Lite</a><a href="../AXIS-Specification.md">Specification</a><a href="../AXIS-Code.md">Code</a><a href="Presenting_AXIS_bySol.html">Interactive guide</a></div></footer>
+</main>
+<script>
+// Impact: the only runtime operation is the browser's print dialog.
+document.getElementById('print').addEventListener('click',()=>window.print());
+</script>
+
+<!-- Shared, draggable navigation between AXIS presentations and MENTIC home. -->
+<axis-navigator></axis-navigator>
+<script src="../../../webcomponents/axis-navigator.js" defer></script>
+  <script src="../../devloiter/devloiter.js"></script>
+  <devloiter-widget height="160"></devloiter-widget>
+</body>
+</html>

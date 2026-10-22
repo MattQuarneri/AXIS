@@ -1,0 +1,3503 @@
+# AXIS: everything in one file
+
+> The AXIS skill as a single page: the core document, then every reference. Prefer llms.txt and fetch only what a task needs.
+
+AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC. Originally published at https://mentic.com/AXIS. This skill is licensed under Apache 2.0 (axis/LICENSE.txt); the AXIS documents under CC BY 4.0 (../LICENSE.md).
+
+If you found these ideas useful you could [Buy Me a Coffee](https://buymeacoffee.com/mattq4) to show your support.
+
+# AXIS
+
+AXIS (Agentically eXtensible Instruction Structures) is a placement grammar: a way to decide where a piece of code belongs, so that business rules stay pure, IO stays at the edge, and every piece of state has one owner. It is a discipline first and a topology second. Use the names to reason and to place code. Do not rename a host codebase to match them.
+
+## The model
+
+Every concern has a definition and a live counterpart. **Essence** is the definition: true before the program runs. **Expression** is the live thing: it exists only at runtime. Seven concerns, fourteen parts.
+
+| Axis | Essence: defined ahead | Expression: live at runtime |
+|---|---|---|
+| Being | **Form**: shape, defaults, invariants | **Instance**: the values now, with a revision |
+| Identity | **Identity**: permanent, addressable sameness | **Token**: that identity here and now, with scope, expiry, claims |
+| Meaning | **Facet**: a map of capability → Action | **Intent**: a normalized statement of what was meant |
+| Relating | **Bond**: relationship rules and cross-entity invariants | **Link**: a relationship resolved for one request |
+| Doing | **Action**: pure `(state, intent) → { delta, effects[] }` | **Manager**: routes, commits and hands effects on, for one boundary |
+| Changing | **Effect**: a side effect described as data | **Impact**: the only code that performs IO |
+| Bridging | **Wrapper**: a boundary that hosts a surface | **Adapter**: raw edge input → Intent |
+
+One path runs through all of them:
+
+```
+raw event → Adapter → Intent → Manager [ Token → Facet → Link ] → Action → { delta, effects }
+
+  delta   → Manager.commit (checks Form and Bond invariants) → new Instance → Wrapper renders
+  effects → Impact → outside world → follow-up Intent → back in by the same door
+```
+
+## The rules that do not bend
+
+These hold in every profile, including the smallest. Each has a reason; when a situation is not covered here, reason from the reason.
+
+1. **Actions stay pure.** No IO, no mutation, no clock, no randomness, no global reads. A rule you can call with two plain objects is a rule you can test, replay, and hand to a small model.
+2. **Effects are data.** Actions return them; nothing executes itself. You can assert on, batch, retry, log and replay a description. You can do none of that to something that has already happened.
+3. **Only Impact performs IO.** Network, disk, database, queues, DOM, storage, timers. A reviewer should be able to list every place the system touches the world.
+4. **Adapters normalize and decide nothing.** They turn raw input into an Intent and pass raw auth material through untouched. They never mint Tokens, route, or apply business rules, because a decision made at the edge is a decision no other edge shares.
+5. **Mutable state has one owner.** Only the boundary's Manager commits, and a commit produces a new Instance instead of editing the old one.
+6. **Invariants are checked at commit.** Form and Bond rules, every time, even when the Action already checked. The commit is the safety net for the Action that forgets.
+7. **Boundaries talk through Effects and Intents.** Managers never call each other and never share mutable state.
+8. **Relationships are explicit.** Bonds declare them. Links resolve them, outside Actions.
+
+Failure is data as well. An Action that cannot proceed returns `{ delta: {}, effects: [{ kind: 'INTENT_REJECTED', … }] }`. A failed Effect follows its own `retryPolicy` and `compensatingEffect`. An Intent nobody can handle becomes an Effect from the Manager. Exceptions are not used for control flow.
+
+## Where does this code go?
+
+Find every row that applies. One row: that is its home. More than one: the code is mixed, and the split between those rows is usually the whole refactor.
+
+| If the code… | It is… |
+|---|---|
+| touches anything outside the process: network, disk, database, queue, DOM, storage, a timer | an **Impact** handler |
+| describes something that should happen outside, without doing it | an **Effect** (plain data returned by an Action) |
+| reads raw input at an edge (request, DOM event, queue message) and reshapes it | an **Adapter** |
+| hosts a surface (route, screen, component shell, consumer) and draws from state | a **Wrapper** |
+| works out who is asking, which capabilities apply, what runs next, or commits state | the **Manager** (its Conductor half) |
+| wires parts together at start-up | the **Manager** (its Composer half) |
+| computes a new state, or decides whether an operation is allowed, from its arguments alone | an **Action** |
+| lists which operations are available to a role or a lifecycle stage | a **Facet** |
+| names what a caller wants, in domain terms | an **Intent** |
+| declares what valid state looks like | a **Form** |
+| holds the current values | an **Instance** |
+| is a stable id or address | an **Identity** |
+| is a session, claim set, revision handle or cursor | a **Token** |
+| declares how two kinds of thing relate, or what must hold across them | a **Bond** |
+| loads, joins or hydrates related things for one request | a **Link** |
+
+## Use the smallest shape that keeps the rules visible
+
+Do not introduce fourteen parts for a feature that needs three. Add a part when its absence starts to hurt.
+
+| Building… | Start with | Add when |
+|---|---|---|
+| Pure computation | Action | Form, when shape or invariants need to be explicit |
+| Read-only display | Wrapper | Form, Instance or Identity, when rendering owned or versioned state |
+| Stateless endpoint | Wrapper, Adapter, Action; Effect and Impact if there is IO | Intent or Facet, when normalization or capability selection must be explicit |
+| CRUD with owned state | Form, Instance, Action, Manager, Effect, Impact | Identity, Token or Facet, when addressing, scope or permissions matter |
+| Roles or lifecycle stages | add Facets, selected by Token claims or by state | a second Manager only when state boundaries or workflows diverge |
+| Aggregates and relationships | add Bond and Link | |
+| Async workflow, retries, compensation, replay | the full chain | |
+
+Signs a part is missing: a permission `if` inside an Action wants a Facet and Token claims. A `fetch` inside an Action wants an Effect and an Impact handler. A Manager whose dispatch branches across unrelated domains wants more Facets, or a second Manager. Raw state passed around with no schema wants a Form.
+
+If adopting a part adds more ceremony than it removes ambiguity, leave it out. In small services, collapse folders and keep native names freely, provided IO, state ownership and policy seams stay obvious in the code.
+
+## Names that mislead
+
+- An AXIS **Action** is a pure function, which Redux calls a reducer. What Redux calls an action is an AXIS **Intent**.
+- An AXIS **Effect** is inert data. It is not React's `useEffect`, which runs.
+- A **Token** is any scoped projection of an identity (session, revision handle, workflow handle), not only an auth token.
+- A **Manager** is narrow: routing, workflow and commit for one boundary. Logic that can be tested without orchestration does not belong in it.
+- A **Facet** is a capability map. It is not a UI component and not a type.
+
+## Working in an existing repository
+
+Most repositories do not use AXIS names and should not be made to. The roles are a lens on the code that is there.
+
+1. Look for `codemaps/axis-map.json` and its rendering, `codemaps/AXIS-MAP.md`. If they exist, read `AXIS-MAP.md` first: it says where each role lives in this repo, who owns which state, where IO happens, and the house rules. Run `axis.py stale` to see whether the files you are about to touch changed since it was written. (`axis.py` is in this skill's `scripts/` folder; run it from the repository root.)
+2. If there is no map and the change is more than a line or two, map before you edit, at least the part you will touch. `references/mapping.md` has the procedure. A scoped map takes minutes and pays for itself the first time it stops a misplaced change.
+3. Place new code using the repo's own homes for each role, in the repo's own naming and style.
+4. After the change, update the map entries you invalidated and render again, so the next agent starts from the truth.
+
+## What to read next
+
+Read only what the task needs.
+
+| Task | Read |
+|---|---|
+| Add a feature or a capability | `references/recipe.md`: build order, type contracts, what to test at each layer |
+| Write tests | `references/tests.md`: worked test files for Actions, Adapters, commit, Impact |
+| Review or fix code | `references/mistakes.md`, then `axis.py lint <paths>` |
+| Decide a boundary: split a Manager or a Facet, handle failure, design reads | `references/boundaries.md` |
+| Check a precise definition, or relate AXIS to MVC, Redux, CQRS, event sourcing | `references/components.md` |
+| Browser UI work | `references/frontend.md` |
+| Understand a repository you do not know | `references/mapping.md`: the AXIS repo mapper |
+| Break a change into small, checkable units | `references/generation-units.md` |
+| See a complete example | `references/example-spa.md` (browser), `references/example-server.md` (Node server) |
+| Build broad navigation maps of a large repo | `references/codemaps.prompt.md` |
+
+## Reporting AXIS work
+
+When you add or move code, say which role each piece plays and why, in the repo's own names: "`priceOrder()` is the Action; `repo.insertOrder()` is the Impact; the route handler stays the Wrapper and its body parsing becomes the Adapter." When you find mixed code, name the mixture ("Manager + Action") instead of calling it wrong, and propose the smallest split that restores the rule. Say how sure you are and what you did not check.
+
+## The bundled tool
+
+`scripts/axis.py` runs anywhere Python 3.8+ does and has no dependencies. Run it from the root of the repository you are working on, giving the path to this skill's copy: `python <this skill>/scripts/axis.py --help` lists the options.
+
+- `scan [dir]`: per-file signals (IO, DOM, clock, mutation, entry points, schemas) and a first guess at roles. The start of a mapping pass.
+- `lint <paths>` or `lint --map`: flags IO, async, clock and randomness in code that is claimed to be pure. Accepts `file.js:fnA,fnB` to check single functions.
+- `validate`, `render`, `where <path>`, `stale`: check, publish, query and age-check a repo's `codemaps/axis-map.json`.
+
+The tool reads text. It finds the obvious and proves nothing about what it cannot see: a function that calls a helper that calls `fetch` passes the lint. Treat its output as leads to confirm.
+
+## Attribution
+
+AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC. Originally published at [mentic.com/AXIS](https://mentic.com/AXIS).
+
+If you found these ideas useful you could [Buy Me a Coffee](https://buymeacoffee.com/mattq4) to show your support.
+
+
+====================================================================================================
+FILE: axis/references/recipe.md
+====================================================================================================
+
+# Adding a capability
+
+> Assembled by `build.py` from AXIS-Code.md, AXIS-Lite.md. To change it, edit the source document and rebuild.
+
+The order to build in, the shape of each part, and what to test at each layer. Skip the steps the feature does not need: see "Use the smallest shape" in SKILL.md. The worked test files the recipe mentions are in `tests.md`.
+
+## Contents
+
+- Feature Recipe: Adding a New Capability
+- Type Contracts (Language-Agnostic)
+- What To Test At Each Layer
+- Folder Structure
+- Credibility Tests
+
+## Feature Recipe: Adding a New Capability
+
+When a feature truly benefits from the fuller AXIS chain, create files in this order. Skip the pieces that AXIS Lite or Partial AXIS do not require. Each step produces one testable artifact.
+
+### Step 1 — Form (if new entity or new shape)
+
+Define the shape, defaults, and invariants. Skip if the feature operates on an existing Form.
+
+### Step 1b — Bond (if new relationship)
+
+Define ownership, target, cardinality, and relational invariants.
+
+```js
+// bonds/invoiceCustomer.js
+export const InvoiceCustomerBond = {
+  ownerRef: "InvoiceForm",
+  targetRef: "CustomerForm",
+  cardinality: "one-to-one",
+  invariants: [
+    (invoice, customer) => !invoice.isTaxable || customer.taxId || "Taxable invoice requires customer tax ID",
+  ],
+};
+```
+
+```js
+// forms/invoice.js
+export const InvoiceForm = {
+  shape: {
+    lineItems: { type: "array", required: true },
+    total:     { type: "number", required: true },
+    status:    { type: "string", enum: ["draft", "sent", "paid"], required: true },
+  },
+  defaults: { lineItems: [], total: 0, status: "draft" },
+  invariants: [
+    (s) => s.total >= 0 || "total must not be negative",
+    (s) => s.lineItems.length > 0 || "invoice must have at least one line item",
+  ],
+};
+```
+
+### Step 2 — Identity (if new entity)
+
+Define stable addressing. Skip if the feature operates on an existing Identity.
+
+```js
+// identity/invoiceIdentity.js
+export function createInvoiceIdentity(invoiceId) {
+  return Object.freeze({
+    entityId: `invoice:${invoiceId}`,
+    formRef: "InvoiceForm",
+    versioningPolicy: "counter",
+  });
+}
+```
+
+### Step 3 — Intent
+
+Define the semantic description of the new capability.
+
+```js
+// intents/invoiceIntents.js
+export function sendInvoiceIntent(identityRef, payload, wrapperCtx) {
+  return Object.freeze({
+    kind: "invoice.send",
+    capability: "send",
+    identityRef,
+    payload,
+    wrapperCtx,
+    meta: { timestamp: Date.now() },
+  });
+}
+```
+
+### Step 4 — Action
+
+Write the pure function. This is where you spend most of your design effort.
+
+```js
+// actions/invoiceActions.js
+export function sendInvoice(state, intent) {
+  if (state.status !== "draft") {
+    return {
+      delta: {},
+      effects: [{
+        kind: "INTENT_REJECTED",
+        target: "caller",
+        payload: { reason: "invoice_already_sent" },
+      }],
+    };
+  }
+
+  return {
+    delta: { status: "sent" },
+    effects: [{
+      kind: "EMAIL_SEND",
+      target: intent.payload.recipientEmail,
+      payload: { invoiceId: intent.identityRef, total: state.total },
+      retryPolicy: { maxRetries: 3, backoff: "exponential" },
+    }],
+  };
+}
+```
+
+### Step 5 — Effect (declared by the Action above)
+
+No separate file needed — Effects are the data values returned by Actions. Document the new Effect kind if it requires a new Impact handler.
+
+### Step 6 — Impact handler (if new Effect kind)
+
+Register a handler for the new Effect kind.
+
+```js
+// impacts/emailImpact.js
+export const emailHandlers = {
+  EMAIL_SEND: async (effect) => {
+    const res = await fetch("/api/email", {
+      method: "POST",
+      body: JSON.stringify({ to: effect.target, ...effect.payload }),
+    });
+    if (!res.ok) throw new Error(`Email failed: ${res.status}`);
+    return { ok: true };
+  },
+};
+```
+
+### Step 7 — Facet (add delegate)
+
+Register the new capability in the appropriate Facet.
+
+```js
+// facets/invoiceFacets.js
+import { sendInvoice } from "../actions/invoiceActions.js";
+
+export const draftFacet = {
+  delegates: {
+    send: sendInvoice,
+    // ... other draft-stage capabilities
+  },
+};
+```
+
+### Step 8 — Adapter (if new event source)
+
+Wire the new Intent to a Wrapper event. Skip if reusing an existing Adapter.
+
+### Step 8b — Link (if traversing relationships runtime)
+
+Implement dynamic traversal and graph hydration.
+
+```js
+// links/invoiceCustomerLink.js
+import { InvoiceCustomerBond } from "../bonds/invoiceCustomer.js";
+
+export function createInvoiceCustomerLink(invoiceIdentity, customerIdentity = null) {
+  return {
+    bondRef: "InvoiceCustomerBond",
+    sourceRef: invoiceIdentity.entityId,
+    resolvedRefs: customerIdentity ? [customerIdentity.entityId] : [],
+    scope: "request",
+  };
+}
+
+export async function resolveInvoiceCustomerLink(link, loadInstanceFn) {
+  // Runtime resolver fetches related aggregate entity
+  const customerInstance = await loadInstanceFn(link.sourceRef);
+  return {
+    ...link,
+    resolvedRefs: [customerInstance],
+  };
+}
+```
+
+### Step 9 — Manager (register the new Facet + Impact handler)
+
+Wire the new capability into the Manager's Composer (bind-time) and ensure the Conductor can route to it.
+
+### Step 10 — Tests
+
+Write one test per layer. See the **Test File Examples** section below.
+
+## Type Contracts (Language-Agnostic)
+
+### Form
+```
+{
+    shape,
+    defaults,
+    invariants[],
+    transitions?      // optional: named delta shapes for strict state machines
+}
+```
+
+### Instance
+```
+{
+    formRef,
+    identityRef,
+    revisionId,
+    state
+}
+```
+
+### Identity
+```
+{
+    entityId,
+    formRef,
+    versioningPolicy
+}
+```
+
+### Token
+```
+{
+    identityRef,
+    scope,
+    expiry,
+    claims
+}
+```
+
+Canonical full-profile token shape. Practical implementations often narrow this into session tokens, revision references, workflow handles, or other scoped identity projections. Use only the subtypes your boundary actually needs.
+
+### Bond
+```js
+{
+    ownerRef,         // Form or Identity of the owner
+    targetRef,        // Form or Identity of the target
+    cardinality,      // 'one-to-one' | 'one-to-many' | 'many-to-many'
+    invariants[]      // relational constraint validation functions
+}
+```
+
+### Link
+```js
+{
+    bondRef,          // stable reference to the Bond definition
+    sourceRef,        // Identity being traversed from
+    resolvedRefs,     // resolved target Identities or pre-hydrated target Instances
+    scope             // query boundary metadata
+}
+```
+
+### Facet
+```
+{
+    delegates: {
+        capability: Action | ActionPipeline
+    }
+}
+```
+
+### Intent
+```
+{
+    kind,
+    capability,
+    identityRef?,
+    payload,
+    rawAuth?,         // raw auth material extracted by Adapter
+    wrapperCtx,
+    meta
+}
+```
+
+### Action
+```
+(state, intent) → {
+    delta,
+    effects[]
+}
+```
+
+### Effect
+```
+{
+    kind,
+    target,
+    payload,
+    retryPolicy?,
+    compensatingEffect?
+}
+```
+
+### Manager
+
+The Manager is a boundary-scoped coordinator, not a catch-all service class. In full AXIS it owns one consistency boundary and decomposes into two conceptual roles:
+
+- **Composer** (Binder): Wires structure at setup time — Adapters to Wrappers, Facets to capabilities. Runs when composition changes.
+- **Conductor** (Router + Workflow + Committer): Drives execution at runtime — routes Intents, coordinates workflows, commits deltas with invariant validation.
+
+```
+// Composer (structure)
+bind(wrapper)
+registerFacet(facet)
+registerBond(bond)
+
+// Conductor (performance)
+dispatch(intent)
+commit(delta) → Instance   // validates Form and Bond invariants; rejects on violation
+issueToken(identity, scope, rawAuth) → Token
+revokeToken(token)
+resolveLink(link) → Link   // traverses relationship at runtime
+```
+
+### Impact
+```
+execute(effects[]) → outcomes[]
+compensate(effects[])
+```
+
+## What To Test At Each Layer
+- **Actions**: unit test with snapshot state + intent → assert delta + effects
+- **Adapters**: raw event → assert correct Intent produced (including rawAuth extraction)
+- **Manager commit**: delta + Form invariants → assert commit accepted or rejected
+- **Manager routing**: intent + token → assert correct Facet selected
+- **Effects**: assert Action declares expected Effect data
+- **Impact**: integration test with mocked targets → assert side effects executed
+- **Tokens**: assert scoping, expiry, and claim propagation
+
+## Folder Structure
+
+Reference layout for the fuller AXIS profile. In smaller services or lite implementations, collapse directories when the same state ownership, IO boundaries, and policy seams remain clear.
+
+```
+/forms          # Generative structure (schemas, types, templates)
+/instances      # Live state + versioning
+/identity       # Stable references + addressing
+/tokens         # Temporal identity projections
+/bonds          # Static relationship definitions
+/links          # Dynamic reference traversers
+/facets         # Capability maps
+/intents        # Intent schemas
+/actions        # Pure logic
+/manager        # Binding / routing / workflow
+/effects        # Effect declarations + schemas
+/impacts        # Effect executors + handlers
+/wrappers       # Structural boundaries
+/adapters       # Event → Intent transformers
+/tests          # Unit + integration tests
+```
+
+## Credibility Tests
+
+AXIS Lite is helping only if it makes the codebase easier to change.
+
+Use these checks:
+
+1. Can a business rule be unit tested without network or database mocks?
+2. Can reviewers quickly tell where IO happens and where it does not?
+3. Can a new feature be added without touching unrelated workflows?
+4. Can one bounded context change without silently corrupting another?
+5. Did adopting AXIS reduce ambiguity more than it increased ceremony?
+
+If the answer to `5` is no, simplify the shape.
+
+
+====================================================================================================
+FILE: axis/references/tests.md
+====================================================================================================
+
+# Worked test files
+
+> Assembled by `build.py` from AXIS-Code.md. To change it, edit the source document and rebuild.
+
+One test file per layer, for the user profile editor in `example-spa.md`. Note what the Action tests do not need: no mocks, no DOM, no network.
+
+## Test File Examples
+
+### Testing an Action
+
+```js
+// tests/actions/profileActions.test.js
+import { validateAndSave, cancelEdit } from "../../actions/profileActions.js";
+
+describe("validateAndSave", () => {
+  const validState = {
+    displayName: "Alice",
+    email: "alice@example.com",
+    bio: "",
+    avatarUrl: null,
+  };
+
+  test("returns delta and HTTP_PUT effect for valid input", () => {
+    const intent = {
+      identityRef: "u-1234",
+      payload: { displayName: "Bob", email: "bob@example.com" },
+    };
+
+    const { delta, effects } = validateAndSave(validState, intent);
+
+    expect(delta.displayName).toBe("Bob");
+    expect(delta.email).toBe("bob@example.com");
+    expect(delta._validationErrors).toEqual([]);
+    expect(effects).toHaveLength(1);
+    expect(effects[0].kind).toBe("HTTP_PUT");
+    expect(effects[0].target).toBe("/api/users/u-1234/profile");
+    expect(effects[0].retryPolicy).toBeDefined();
+    expect(effects[0].compensatingEffect).toBeDefined();
+  });
+
+  test("returns validation errors for empty displayName", () => {
+    const intent = {
+      identityRef: "u-1234",
+      payload: { displayName: "", email: "bob@example.com" },
+    };
+
+    const { delta, effects } = validateAndSave(validState, intent);
+
+    expect(delta._validationErrors).toContain("displayName must not be empty");
+    expect(effects).toHaveLength(0);
+  });
+
+  test("is pure — does not modify input state", () => {
+    const state = { ...validState };
+    const frozen = JSON.stringify(state);
+    const intent = { identityRef: "u-1234", payload: { displayName: "Bob" } };
+
+    validateAndSave(state, intent);
+
+    expect(JSON.stringify(state)).toBe(frozen);
+  });
+});
+
+describe("cancelEdit", () => {
+  test("returns empty delta and RESTORE_COMMITTED effect", () => {
+    const intent = { identityRef: "u-1234" };
+    const { delta, effects } = cancelEdit({}, intent);
+
+    expect(Object.keys(delta)).toHaveLength(0);
+    expect(effects).toHaveLength(1);
+    expect(effects[0].kind).toBe("RESTORE_COMMITTED");
+    expect(effects[0].target).toBe("u-1234");
+  });
+});
+```
+
+### Testing an Adapter
+
+```js
+// tests/adapters/profileAdapter.test.js
+import { bindProfileAdapter } from "../../adapters/profileAdapter.js";
+
+describe("profileAdapter", () => {
+  test("dispatches saveProfileIntent on form submit", () => {
+    const dispatched = [];
+    const mockWrapper = {
+      eventSlots: {
+        submit: () => {
+          const el = document.createElement("form");
+          el.innerHTML = `<input name="displayName" value="Alice">`;
+          return el;
+        },
+        cancel: () => document.createElement("button"),
+      },
+      readInputs: () => ({ displayName: "Alice" }),
+    };
+
+    bindProfileAdapter(mockWrapper, "u-1234", (intent) => dispatched.push(intent));
+
+    const form = mockWrapper.eventSlots.submit();
+    form.dispatchEvent(new Event("submit"));
+
+    expect(dispatched).toHaveLength(1);
+    expect(dispatched[0].kind).toBe("profile.save");
+    expect(dispatched[0].capability).toBe("save");
+    expect(dispatched[0].identityRef).toBe("u-1234");
+    expect(dispatched[0].payload.displayName).toBe("Alice");
+  });
+});
+```
+
+### Testing Manager Commit Validation
+
+```js
+// tests/manager/commitValidation.test.js
+import { UserProfileForm } from "../../forms/userProfile.js";
+import { applyDelta, createProfileInstance } from "../../instances/profileInstance.js";
+import { createUserIdentity } from "../../identity/userIdentity.js";
+
+// Extract the commit logic for unit testing
+function commit(instance, delta, form) {
+  const proposed = { ...instance.state, ...delta };
+  const violations = form.invariants
+    .map((inv) => inv(proposed))
+    .filter((r) => r !== true);
+  if (violations.length > 0) return { ok: false, violations };
+  return { ok: true, instance: applyDelta(instance, delta) };
+}
+
+describe("Manager commit validation", () => {
+  const identity = createUserIdentity("u-1234");
+  const instance = createProfileInstance(identity, {
+    displayName: "Alice",
+    email: "alice@example.com",
+    bio: "",
+    avatarUrl: null,
+  });
+
+  test("accepts valid delta", () => {
+    const result = commit(instance, { bio: "Engineer" }, UserProfileForm);
+    expect(result.ok).toBe(true);
+    expect(result.instance.state.bio).toBe("Engineer");
+  });
+
+  test("rejects delta that violates invariants", () => {
+    const result = commit(instance, { displayName: "" }, UserProfileForm);
+    expect(result.ok).toBe(false);
+    expect(result.violations).toContain("displayName must not be empty");
+  });
+
+  test("rejects delta with invalid email", () => {
+    const result = commit(instance, { email: "not-an-email" }, UserProfileForm);
+    expect(result.ok).toBe(false);
+    expect(result.violations).toContain("invalid email");
+  });
+});
+```
+
+### Testing Impact with Mocked Targets
+
+```js
+// tests/impacts/httpImpact.test.js
+import { execute } from "../../impacts/httpImpact.js";
+
+describe("Impact execution", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  test("HTTP_PUT calls fetch and returns ok on success", async () => {
+    globalThis.fetch = async () => ({ ok: true, status: 200 });
+
+    const outcomes = await execute([{
+      kind: "HTTP_PUT",
+      target: "/api/users/u-1234/profile",
+      payload: { displayName: "Bob" },
+    }]);
+
+    expect(outcomes[0].ok).toBe(true);
+  });
+
+  test("FETCH_PROFILE returns follow-up intent with data", async () => {
+    const mockData = { displayName: "Alice", email: "alice@example.com" };
+    globalThis.fetch = async () => ({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const outcomes = await execute([{
+      kind: "FETCH_PROFILE",
+      target: "/api/users/u-1234/profile",
+      payload: null,
+    }]);
+
+    expect(outcomes[0].ok).toBe(true);
+    expect(outcomes[0].followUpIntent.kind).toBe("profile.fetched");
+    expect(outcomes[0].followUpIntent.payload.data).toEqual(mockData);
+  });
+});
+```
+
+
+====================================================================================================
+FILE: axis/references/mistakes.md
+====================================================================================================
+
+# Common mistakes and review checklist
+
+> Assembled by `build.py` from AXIS-Code.md, AXIS-Specification.md. To change it, edit the source document and rebuild.
+
+Ten wrong-and-right pairs, then a checklist. When reviewing, name the mixture you found and the smallest change that restores the rule. After reading, run `python scripts/axis.py lint <paths>` on anything claimed to be pure.
+
+## Common Mistakes Checklist
+
+Use this to detect and reject anti-patterns during code review or generation.
+
+### 1. IO in an Action
+```js
+// WRONG — Action performs IO
+export function loadUser(state, intent) {
+  const data = await fetch(`/api/users/${intent.identityRef}`);  // ← IO!
+  return { delta: data, effects: [] };
+}
+
+// RIGHT — Action declares an Effect; Impact does the IO
+export function loadUser(state, intent) {
+  return {
+    delta: {},
+    effects: [{ kind: "FETCH_USER", target: `/api/users/${intent.identityRef}` }],
+  };
+}
+```
+
+### 2. Token Minting in an Adapter
+```js
+// WRONG — Adapter resolves identity
+export function bindHttpAdapter(wrapper, dispatch) {
+  wrapper.onRequest(async (req, res) => {
+    const token = issueRequestToken(req);  // ← identity resolution!
+    dispatch(intent, { res, token });
+  });
+}
+
+// RIGHT — Adapter extracts raw auth; Manager mints Token
+export function bindHttpAdapter(wrapper, dispatch) {
+  wrapper.onRequest(async (req, res) => {
+    const rawAuth = { authHeader: req.headers["authorization"] || "" };
+    const intent = requestIntent(req.method, req.url, body, rawAuth, "http");
+    dispatch(intent, { res });
+  });
+}
+```
+
+### 3. Magic Delta Keys (Control Flow Through State)
+```js
+// WRONG — smuggles a control instruction through the delta channel
+export function cancelEdit(state, intent) {
+  return { delta: { _resetToCommitted: true }, effects: [] };
+  // ↑ applyDelta spread-merges this into Instance state, corrupting it
+}
+
+// RIGHT — declares a workflow Effect; Manager handles restoration
+export function cancelEdit(state, intent) {
+  return {
+    delta: {},
+    effects: [{ kind: "RESTORE_COMMITTED", target: intent.identityRef }],
+  };
+}
+```
+
+### 4. Skipping Invariant Validation at Commit
+```js
+// WRONG — commits delta without checking invariants
+const { delta, effects } = action(currentInstance.state, intent);
+currentInstance = applyDelta(currentInstance, delta);  // ← no validation!
+
+// RIGHT — validate Form invariants before committing
+const proposed = { ...currentInstance.state, ...delta };
+const violations = Form.invariants.map(inv => inv(proposed)).filter(r => r !== true);
+if (violations.length > 0) {
+  // Reject commit, emit structured failure Effect
+  return;
+}
+currentInstance = applyDelta(currentInstance, delta);
+```
+
+### 5. Business Logic in the Wrapper
+```js
+// WRONG — Wrapper makes business decisions
+render(instance) {
+  const canSave = instance.state.role === "admin";  // ← business logic!
+  this.shadowRoot.innerHTML = `${canSave ? '<button>Save</button>' : ''}`;
+}
+
+// RIGHT — Wrapper renders state; Facet controls capabilities
+// The Manager selects readOnlyFacet when Token lacks save permission.
+// The Wrapper always renders the save button. If the user clicks it,
+// dispatch finds no "save" capability in readOnlyFacet and warns.
+```
+
+### 6. Routing Logic in the Adapter
+```js
+// WRONG — Adapter decides what to do with the event
+export function bindAdapter(wrapper, dispatch) {
+  wrapper.onClick(async (e) => {
+    if (e.target.id === "save") dispatch(saveIntent(...));
+    else if (e.target.id === "delete") dispatch(deleteIntent(...));  // ← routing!
+  });
+}
+
+// RIGHT — Adapter binds specific events to specific Intents
+export function bindAdapter(wrapper, dispatch) {
+  wrapper.eventSlots.save().addEventListener("click", () => dispatch(saveIntent(...)));
+  wrapper.eventSlots.delete().addEventListener("click", () => dispatch(deleteIntent(...)));
+}
+```
+
+### 7. Effects That Execute Themselves
+```js
+// WRONG — Effect is a function, not data
+const effect = {
+  kind: "SEND_EMAIL",
+  execute: async () => await sendEmail(to, body),  // ← self-executing!
+};
+
+// RIGHT — Effect is pure data; Impact has the handler
+const effect = { kind: "SEND_EMAIL", target: to, payload: { body } };
+// Impact: handlers["SEND_EMAIL"] = async (effect) => sendEmail(...)
+```
+
+### 8. Identity Carrying Live State
+```js
+// WRONG — Identity holds mutable values
+const identity = {
+  entityId: "u-1234",
+  formRef: "UserForm",
+  currentEmail: "alice@example.com",  // ← live state in Identity!
+};
+
+// RIGHT — Identity is immutable addressing; Instance holds live values
+const identity = Object.freeze({
+  entityId: "u-1234",
+  formRef: "UserForm",
+  versioningPolicy: "hash",
+});
+```
+
+### 9. Facets Used as Type Guards
+```js
+// WRONG — Facet used for type checking
+const userFacet = { type: "User", fields: ["name", "email"] };  // ← Form's job
+
+// RIGHT — Facet maps capabilities to Actions
+const userFacet = {
+  delegates: {
+    "user.save":   saveUser,
+    "user.delete": deleteUser,
+  },
+};
+```
+
+### 10. Manager Growing Without Bounds
+```js
+// SMELL — Manager dispatch has many domain-specific branches
+async function dispatch(intent) {
+  if (intent.kind === "user.save") { ... }
+  else if (intent.kind === "billing.charge") { ... }    // different domain
+  else if (intent.kind === "inventory.check") { ... }   // different domain
+}
+
+// RIGHT — separate Managers per bounded context, communicating through Effects
+// User Manager, Billing Manager, Inventory Manager each with their own
+// Instances, Facets, and Actions. Cross-context communication via Effects.
+```
+
+## Code Review Checklist
+- Is code in the correct component?
+- Are Actions pure (no IO, no mutation)?
+- Are Effects declared as data, not executed inline?
+- Is mutable state only in Instances?
+- Is Identity immutable (no live values)?
+- Are Tokens scoped and expirable?
+- Are Tokens minted only by the Manager (not Adapters)?
+- Does the Manager validate Form invariants on commit?
+- Is side-effect execution only in Impact?
+- Is orchestration centralized in the Manager?
+- Are Facets capability maps (not type annotations)?
+- Are Forms purely structural (no behavior)?
+- Do Adapters only extract raw auth (no identity resolution)?
+
+## Constraints For Agents
+1. Never mutate state outside Instance
+2. Never perform IO outside Impact
+3. Identity is immutable — only Tokens project it into runtime contexts
+4. Effects are data — never self-executing
+5. Prefer the explicit chain when the feature crosses normalization, policy, owned state, or IO boundaries: Adapter → Intent → Manager → Facet → Action → Effect → Impact. Collapse pieces only when the same guarantees remain obvious in code.
+6. Prefer **new capabilities** (new Facet entries) over conditionals
+7. Forms define shape — never embed behavior in a Form
+8. Adapters normalize only — they extract raw auth and include it in the Intent or equivalent command object; they never mint Tokens or resolve identity
+9. Manager validates Form invariants on commit — rejecting invalid deltas
+10. Manager Composer grows complex? → add Facets, not wiring logic
+11. Manager Conductor grows complex? → add Workflow sub-component, not branches
+12. Conductor coordinates multiple domains? → separate Managers via Effects
+13. Actions signal workflow operations (cancel, restore) through Effects — never through magic delta keys
+
+
+====================================================================================================
+FILE: axis/references/boundaries.md
+====================================================================================================
+
+# Boundaries: Managers, Facets, failure and reads
+
+> Assembled by `build.py` from AXIS-Design.md, AXIS-Lite.md, AXIS-Specification.md. To change it, edit the source document and rebuild.
+
+Design decisions that the core rules do not settle on their own: how wide a Manager should be, when to split a Facet, how failure travels, and how reads work when Actions cannot fetch.
+
+## Contents
+
+- Manager, Narrowed
+- When To Create A New Manager
+- Manager Split Heuristics
+- Interfaces Between Managers
+- Managers Never Call Each Other
+- Recommended Code Shape
+- Facet Decomposition
+- Capability Overlays
+- Token-Scoped Views
+- Roles, Responsibilities, and Capabilities
+- Failure Patterns
+- Read Path: The Two-Pass Pattern
+- Read Path: Graph Hydration via Links
+- Relational Composition (Bonds & Links)
+- Bonds & Links in AXIS Lite
+- Action Pipelines
+- Effect Batching
+- Event Sourcing
+
+## Manager, Narrowed
+
+The full AXIS documents are right that orchestration needs a home. The risk is that **Manager** becomes a renamed god object.
+
+In AXIS Lite, a Manager is a **boundary-scoped coordinator**, not a general-purpose service class.
+
+The term **Manager** can still work, but only if the code makes the role narrow and inspectable. If "Manager" becomes a vague bucket for orchestration, policy, domain logic, and integration details, rename or split it. In many codebases, `Coordinator`, `Workflow`, or `Runtime` is clearer for the runtime half.
+
+### A Manager may do these things
+
+- receive normalized Intents or commands
+- select the right Action or Facet delegate
+- coordinate workflow steps
+- commit deltas to owned state
+- enforce commit-time invariants
+- issue or revoke Tokens if that boundary owns auth/session projection
+- hand declared Effects to Impact
+
+### A Manager must not do these things
+
+- contain core business calculations that belong in Actions
+- perform IO directly
+- own unrelated domains in one class or module
+- format transport-specific data for Wrappers
+- reach into another Manager's state store
+- encode permissions inline when a Facet or policy map would do
+
+### Composer and Conductor
+
+The Composer/Conductor distinction is useful, but by itself it is not enough.
+
+It becomes credible only when it is enforced in code structure:
+
+- **Composer** should be setup-only: binding wrappers, registering adapters, wiring facet registries, installing handlers.
+- **Conductor** should be runtime-only: dispatch, routing, workflow progression, commit.
+- If both roles grow large, split them into separate modules even if they are still presented as one conceptual Manager.
+
+**Practical rule:** do not let "Manager" be the place where leftover logic goes. If logic can be tested without orchestration, it does not belong in the Manager.
+
+## When To Create A New Manager
+
+Create a new Manager when one or more of these become true:
+
+1. The code is coordinating a different domain language or business capability.
+2. The code owns a different consistency boundary or state store.
+3. The workflow can evolve independently of the current one.
+4. The deployment boundary or team ownership is different.
+5. The existing Manager would need to directly know about another domain's invariants.
+6. The dispatch path is branching across unrelated domains rather than related capabilities.
+
+Do **not** create a new Manager just because:
+
+1. the same entity has different roles or permissions; use Facets first.
+2. the same workflow gained another step; add or split Workflow logic first.
+3. the same state boundary gained more commands; add Actions first.
+
+## Manager Split Heuristics
+
+If a Manager shows these symptoms, split it:
+
+- it owns more than one unrelated state store
+- it imports Actions from unrelated domains
+- it contains routing branches for unrelated business areas
+- it needs different release cadence than part of its own logic
+- it is accumulating workflow state machines that do not share commit rules
+- changes to one capability routinely risk regressions in another unrelated capability
+
+If a Manager shows these symptoms, keep it whole:
+
+- all Actions operate on the same state boundary
+- all workflows share the same invariants and commit rules
+- capabilities differ mainly by role or lifecycle state
+- the "split" would only replace function calls with noisy cross-boundary messages
+
+## Interfaces Between Managers
+
+The current AXIS guidance that Managers should not call each other directly is directionally right. The missing piece is a more concrete interface contract.
+
+For AXIS Lite, each Manager boundary should define:
+
+- **owned state**: which Forms, Instances, and Identities it is allowed to commit
+- **accepted intents**: the commands or intent kinds it accepts
+- **emitted effects/events**: the only outward requests it can make of other boundaries
+- **returned outcomes**: acknowledgements, failures, and follow-up intents/events
+- **policy scope**: which claims, roles, or token scopes it is allowed to interpret
+
+If those five things are not clear, the boundary is not clear.
+
+## Managers Never Call Each Other
+
+Both worked examples use a single Manager. Real systems have multiple bounded contexts, each with its own Manager. The rule:
+
+**Managers never call each other directly. They communicate through Effects and Intents.**
+
+A Manager in one context produces an Effect (e.g., `{ kind: "EMIT_EVENT", target: "order-service" }`). Impact executes it. The receiving context's Adapter normalizes it into a local Intent, and that context's Manager routes it through its own Facets and Actions.
+
+This means:
+- Each Manager owns its own Instances — no shared mutable state
+- Each Manager has its own Facet registry — capabilities are local
+- Cross-context communication is always asynchronous and explicit
+- Failure at the boundary is handled by Effect retry/compensation, not distributed transactions
+
+**One Manager per bounded context. One Instance store per Manager. Effects are the only bridges.**
+
+```
+[ Context A ]                    [ Context B ]
+Manager A                        Manager B
+  ↓                                ↑
+Action → Effect                  Adapter → Intent
+  ↓                                ↑
+Impact ──── (queue/API/store) ────→ Wrapper
+```
+
+In practical terms, a believable Manager boundary makes five things explicit: owned state, accepted intents, emitted effects or events, returned outcomes, and policy scope.
+
+How to decide Manager boundaries:
+- Different domain language? Different Manager.
+- Different deployment unit? Different Manager.
+- Different team? Almost certainly different Manager.
+- Same entity viewed differently? Same Manager, different Facets.
+
+## Recommended Code Shape
+
+For services that need a Manager, prefer this internal split even if you keep the AXIS name:
+
+- `manager/composer.*` for setup and registrations
+- `manager/conductor.*` for dispatch and workflow progression
+- `manager/commit.*` for delta application and invariant validation
+- `manager/policy.*` for facet or permission selection
+
+This keeps the architecture legible without forcing every concern into a single file.
+
+## Facet Decomposition
+
+A Facet exists because a specific kind of viewer needs a specific capability surface of an Identity's Form. Use this decision tree:
+
+1. **Do different viewers (roles, scopes, contexts) need different capabilities for this entity?** → Different Facets, selected by Token claims.
+2. **Does the same viewer need different capabilities at different lifecycle stages?** → Different Facets, selected by Instance state or workflow phase (e.g., `draftFacet` vs. `publishedFacet`).
+3. **Does the same viewer with the same role just need more operations on the same surface?** → Same Facet, add new delegate entries.
+4. **Is the Manager's routing growing branchy to select the right Facet?** → You may have too few Facets. Split by the natural boundary (the Token claim or state value that drives the branch).
+
+## Capability Overlays
+Facets compose via layers:
+- Base capabilities
+- Role-based capabilities (driven by Token claims)
+- Feature-flag capabilities
+- Experiment / A/B capabilities
+
+## Token-Scoped Views
+Different Tokens for the same Identity can yield different Facets:
+- Admin Token → full capability Facet
+- Read-only Token → restricted Facet
+- Expired Token → re-authentication Intent
+
+## Roles, Responsibilities, and Capabilities
+
+These three concepts are already fully expressed across the existing grid:
+
+| Concept | AXIS component | How |
+|---------|----------------|-----|
+| **Role** (who) | TOKEN claims | A role is a claim carried by a Token |
+| **Capability** (what) | FACET delegate keys | A capability is an entry in a Facet |
+| **Responsibility** (how) | ACTION | A responsibility is a pure function |
+| **Authorization** (when/where) | MANAGER routing | The Manager selects a Facet based on Token claims |
+
+A role is not its own architectural component — it's a *value* in a Token that drives Facet selection. Adding a ROLE axis would pull apart what the Token→Facet→Action chain already expresses cleanly.
+
+Example: "Admin can delete users" means:
+- Token carries `claims: { role: "admin" }` (Identity axis)
+- Manager selects `adminFacet` when it sees that claim (Doing axis)
+- `adminFacet.delegates["user.delete"]` points to the `deleteUser` Action (Meaning axis)
+- The Action is pure logic (Doing axis)
+
+No new axis needed. The existing grid composes roles, capabilities, and responsibilities from its fundamental parts.
+
+## Failure Patterns
+
+Every Intent expresses a desired outcome. When the outcome diverges from the desire, the divergence itself is expressible in AXIS — not as an exception, but as a structured flow through the same components.
+
+**Principle: failures are alternate Effects, not exceptions.**
+
+There are three failure points in the canonical flow, and each has a distinct AXIS treatment:
+
+### 1. Action-level failure (validation, business rule violation)
+
+The Action is pure — it doesn't "fail" in the runtime sense. It returns a delta and effects that *describe* the failure:
+
+```
+function transferFunds(state, intent) {
+  if (state.balance < intent.payload.amount) {
+    return {
+      delta: {},  // no state change
+      effects: [{
+        kind: "INTENT_REJECTED",
+        target: "caller",
+        payload: {
+          originalIntent: intent,
+          reason: "insufficient_funds",
+          details: { available: state.balance, requested: intent.payload.amount },
+        },
+      }],
+    };
+  }
+  // ... happy path
+}
+```
+
+The rejection is an Effect. Impact delivers it. The caller receives a structured rejection, not a thrown error.
+
+### 2. Impact-level failure (IO error, timeout, external system down)
+
+When Impact cannot execute an Effect, it follows the Effect's declared recovery strategy:
+
+```
+// The Effect declares its own failure plan:
+{
+  kind: "HTTP_POST",
+  target: "/api/payments",
+  payload: { ... },
+  retryPolicy: { maxRetries: 3, backoff: "exponential" },
+  compensatingEffect: {
+    kind: "ROLLBACK_TRANSFER",
+    target: "ledger",
+    payload: { reverseOf: originalDelta },
+  },
+}
+
+// Impact's responsibility:
+// 1. Attempt execution
+// 2. Retry per retryPolicy
+// 3. On exhaustion, execute compensatingEffect
+// 4. Emit a follow-up Intent describing the outcome:
+//    { kind: "impact.failed", payload: { effect, error, compensated: true } }
+```
+
+The follow-up Intent re-enters the system through the Manager, which can route it to an error-handling Facet — logging, user notification, dead-letter queuing, or escalation.
+
+### 3. Manager-level failure (unroutable Intent, missing Facet, expired Token)
+
+The Manager is the only component that can detect structural failures — an Intent that doesn't match any route, a Token that has expired, a Facet that was unregistered. These are handled by producing Effects directly:
+
+```
+// In the Manager's dispatch:
+if (!facet) {
+  await runImpact([{
+    kind: "INTENT_UNROUTABLE",
+    target: "caller",
+    payload: { intent, reason: "no_matching_facet" },
+  }], ctx);
+  return;
+}
+```
+
+**The key insight: at every failure point, the system produces *data* (Effects, follow-up Intents) rather than throwing exceptions.** This makes failures:
+- **Loggable** — the same Intent stream captures successes and failures
+- **Replayable** — retry a failed Intent against fixed state
+- **Testable** — assert that an Action returns the correct rejection Effect without performing IO
+- **Composable** — error-handling Facets can be layered just like capability Facets
+
+### Designing for failure in AXIS
+
+| Concern | Where it lives |
+|---------|----------------|
+| "Can this operation succeed?" | **Action** — validates and returns a rejection Effect if not |
+| "What if IO fails?" | **Effect** — declares retryPolicy + compensatingEffect |
+| "What if IO fails after retries?" | **Impact** — executes compensation, emits follow-up Intent |
+| "What do we tell the user/caller?" | **Facet** — an error-handling Facet maps failure Intents to notification Actions |
+| "What if the Intent can't be routed?" | **Manager** — produces an INTENT_UNROUTABLE Effect |
+| "What's the permanent record?" | **Intent stream** — all Intents (successful and failed) are logged |
+
+## Read Path: The Two-Pass Pattern
+
+Actions are pure — they can't fetch data. So how do reads work?
+
+**The two-pass pattern: "ask to know, tell to show."**
+
+1. **Pass 1 — Request the read:** An Event (e.g., "show profile X") becomes an Intent. The Manager routes it to an Action. The Action can't fetch, so it returns `{ delta: {}, effects: [{ kind: "FETCH_PROFILE", target: "/api/users/123" }] }`.
+
+2. **Impact executes the fetch:** Impact performs the IO and emits a *follow-up Intent* carrying the fetched data.
+
+3. **Pass 2 — Apply the result:** The follow-up Intent re-enters the Manager, routes to an Action that applies the data as a delta, the Instance is updated, and the Wrapper renders.
+
+```
+Pass 1:  Event → Adapter → Intent → Action → { delta: {}, effects: [FETCH] }
+                                                              ↓
+                                                          Impact (fetch)
+                                                              ↓
+Pass 2:  Follow-up Intent → Action → { delta: fetchedData, effects: [] }
+                                              ↓
+                                        Instance updated
+                                              ↓
+                                        Wrapper renders
+```
+
+**Why two passes?** This might seem surprising, but allowing reads to be async two-phase flows rather than synchronous pipelines enables:
+- **Retry** — failed fetches can be retried per Effect policy
+- **Bundling** — multiple fetch Effects can be batched for efficiency
+- **Auditing** — both the request and the result are logged as Intents
+
+**Composition-time hydration:** For initial data loading, a pragmatic shortcut is available: the Manager can hydrate the Instance directly during its `bind()` phase — before the pipeline is live. This is not a violation of AXIS; it's composition-time setup, not a runtime flow. Document both patterns:
+- **Runtime fetch:** Two-pass via Effect → Impact → follow-up Intent
+- **Composition-time hydration:** Manager loads initial data during bind, before events flow
+
+## Read Path: Graph Hydration via Links
+
+While the two-pass pattern is ideal for executing async queries that depend on action results, many read paths simply require traversing existing relationships (e.g., fetching a Flow and its Tasks).
+
+Using **Links** streamlines this:
+1. The client requests a parent Instance (e.g., Flow).
+2. The Manager checks registered **Bonds** to find associated entities.
+3. The Manager resolves the **Link** (either eagerly or on demand) to populate the related child Instances.
+4. The unified, pre-hydrated graph is returned or passed directly to the Action.
+
+This eliminates the need for async two-pass flows on standard reads, keeping Actions focused entirely on state transformations without bloating them with graph traversal logic.
+
+## Relational Composition (Bonds & Links)
+* **Aggregate Invariant Enforcement**: The Committer uses registered **Bonds** to walk the tree of related entity Instances on each transaction commit. If a related entity's invariants are broken by the delta (e.g., parent total doesn't match sum of child items), the commit is rejected.
+* **Declarative Graph Hydration**: The Manager uses **Links** to hydrate relationships prior to Action execution. Instead of making the Action perform asynchronous two-pass loading, the Manager pre-hydrates the aggregate tree using dynamic Links and hands the pre-hydrated state aggregate directly to the Action.
+* **Bonds as DDD Aggregate Boundaries**: In Domain-Driven Design (DDD), an Aggregate Root ensures consistency of changes within its boundary. Bonds formally specify these relationships and invariants externally, keeping individual Forms clean and focused on local schema structure.
+
+## Bonds & Links in AXIS Lite
+
+Bonds and Links prevent relationship logic from bloating Forms (schemas) and Actions (logic).
+- **Use a Bond** when one entity owns another (multiplicity/cardinality) or when you must enforce consistency invariants across multiple entities during a commit.
+- **Use a Link** to pre-hydrate entity references prior to dispatching to an Action. Instead of making an Action perform an async two-pass read to load related state, let the Manager resolve a Link at composition/request boundaries.
+
+## Action Pipelines
+Pure action chains:
+```
+validate → compute → transform → declare effects
+```
+
+## Effect Batching
+Effects declared by multiple Actions within a single workflow can be:
+- batched for efficiency
+- ordered by dependency
+- rolled back atomically via compensating Effects
+
+## Event Sourcing
+Store Intents or committed deltas to enable:
+- replay
+- audit
+- undo/redo
+- temporal queries
+
+
+====================================================================================================
+FILE: axis/references/components.md
+====================================================================================================
+
+# The fourteen components
+
+> Assembled by `build.py` from AXIS-Design.md, AXIS-Specification.md. To change it, edit the source document and rebuild.
+
+Precise definitions of each part, the familiar term each one corresponds to, and how AXIS relates to patterns you may already use. Read the entry you need; you rarely need the whole file.
+
+## Contents
+
+- AXIS in conventional engineering terms
+- Canonical Meanings
+- Core Mental Shifts
+- Relationship to Existing Patterns
+- Non-Goals
+
+## AXIS in conventional engineering terms
+
+| AXIS term | Closest familiar term | What AXIS adds |
+|-----------|-----------------------|----------------|
+| **Form** | schema, type, model shape | separates structural definition from live mutable state |
+| **Instance** | entity record, aggregate state, document | makes mutable state explicit and versionable |
+| **Identity** | id, key, stable reference | separates enduring sameness from runtime-scoped projections |
+| **Token** | session, revision handle, workflow handle, scoped reference | treats runtime-scoped identity projection as a first-class design concern |
+| **Facet** | capability map, policy surface, role overlay | makes available operations explicit without burying them in conditionals |
+| **Intent** | command, request DTO, semantic event | captures normalized meaning instead of raw transport data |
+| **Bond** | schema relationship, foreign key rule, aggregate boundary | defines ownership and composition rules between Forms |
+| **Link** | hydrated reference, join, graph query result | traverses and resolves relationships dynamically |
+| **Action** | pure domain function, reducer, use-case step | must stay deterministic and side-effect free |
+| **Manager** | coordinator, application service, orchestrator | owns routing, workflow, and commit for one boundary |
+| **Effect** | side-effect descriptor, infrastructure command | keeps IO as data until execution time |
+| **Impact** | effect handler, infrastructure executor | is the only place where IO actually occurs |
+| **Wrapper** | endpoint, screen, route, consumer host | names the structural boundary separately from business capability |
+| **Adapter** | controller, input mapper, request normalizer | converts raw edge input into stable internal meaning |
+
+## Canonical Meanings
+
+### FORM — Immutable Essence of Being
+
+Forms are the **generative definitions** that determine what state *can* be: schemas, types, templates, structural contracts.
+
+A Form defines:
+- `shape` — the structure of valid state (fields, types, constraints)
+- `defaults` — initial values and factory patterns
+- `invariants` — conditions that must always hold
+
+**Forms generate; they do not hold.**
+
+A Form is to an Instance as a class is to an object, a schema is to a record, a template is to a document. But unlike a class, a Form carries no behavior — only structure.
+
+### INSTANCE — Projected Expression of Being
+
+An Instance is the **materialized state** generated from a Form within a runtime context.
+
+An Instance holds:
+- `formRef` — back-reference to the Form it was generated from
+- `identityRef` — the Identity this Instance belongs to
+- `revisionId` — current version/hash
+- `state` — the live value snapshot
+
+**All mutable state lives here.**
+
+Multiple Instances of the same Identity may coexist:
+- the committed head
+- an optimistic branch (during async workflows)
+- a stale cache (in another Wrapper)
+- an undo stack entry
+
+### IDENTITY — Immutable Essence of Identity
+
+Identity is the **stable reference** that names and addresses state. It is the principle of *sameness across time*.
+
+An Identity is:
+- `entityId` — a stable, immutable key (string, URI, composite key)
+- `formRef` — which Form governs this entity's shape
+- `versioning policy` — how revisions are tracked (hash, counter, timestamp)
+
+**Identity defines *what* something is and how to find it. It does not hold live values.**
+
+### TOKEN — Projected Expression of Identity
+
+A Token is the **temporal projection** of an Identity into a specific runtime context. It is how an Identity appears as it moves through time, sessions, and scopes.
+
+A Token carries:
+- `identityRef` — the Identity it represents
+- `scope` — where this token is valid (session, request, transaction)
+- `expiry` — when it ceases to be authoritative
+- `claims` — contextual attributes (permissions, roles, capabilities)
+
+**Tokens are issued, scoped, and revocable. Identities are none of these.**
+
+**Who mints Tokens?** The Manager (or a dedicated sub-component it delegates to). Adapters extract raw auth material and pass it through in the Intent; the Manager resolves that material into a Token with appropriate claims based on system state. This centralizes identity resolution and claim assignment in one place.
+
+`Token` is a family name, not a requirement that every projection share one concrete implementation. In practice, the family commonly shows up as session tokens, revision cursors, workflow handles, and wrapper- or cache-scoped references. Most systems need only one or two of these. AXIS groups them because they all answer the same design question: how does this Identity appear here, now, with what scope or authority?
+
+### FACET — Immutable Essence of Meaning
+
+Facets define **capability surfaces** — the ways something may be viewed or interacted with.
+
+A Facet is:
+- `capability` → `Action` delegate (or pipeline)
+
+Facets are:
+- static definitions
+- data structures (maps of function references)
+- dynamically selected by the Manager based on context
+
+**Facets define policy affordances, not UI widgets.** They answer: "given this context, what can be done?"
+
+### INTENT — Projected Expression of Meaning
+
+Intent is a normalized description of *meaning*:
+> "What someone meant to do."
+
+An Intent carries:
+- `kind` — the type of intent
+- `capability` — which Facet capability this targets
+- `identityRef` — the entity being acted upon
+- `payload` — the data of the intent
+- `wrapperCtx` — which Wrapper context originated this
+- `meta` — timestamps, correlation IDs, provenance
+
+**Intents are loggable, replayable, testable artifacts.** They are the system's semantic event stream.
+
+### BOND — Immutable Essence of Relating (Having)
+
+Bonds define **static relationship and composition rules** between different Forms or Identities.
+
+A Bond defines:
+- `ownerRef` — which Form or Identity owns the relationship
+- `targetRef` — which Form or Identity is targeted by the relationship
+- `cardinality` — the nature of the association (`one-to-one` | `one-to-many` | `many-to-many`)
+- `invariants[]` — relational constraints that must hold true between related states
+
+**Bonds structure topology; they do not hold references or resolve graphs.**
+
+### LINK — Projected Expression of Relating (Having)
+
+A Link is the **materialized traversal** of a Bond within a runtime context.
+
+A Link holds:
+- `bondRef` — back-reference to the Bond it was generated from
+- `sourceRef` — the source Identity being traversed from
+- `resolvedRefs` — the resolved target Identities or pre-hydrated target Instances
+- `scope` — where this link is valid (transaction, request, cache boundary)
+
+**Links resolve, hydrate, and traverse relationships at runtime.**
+
+### ACTION — Immutable Essence of Doing
+
+Actions are **pure functions**. They transform state and declare effects without performing either.
+
+Signature:
+```
+(stateSnapshot, intent) → { delta, effects[] }
+```
+
+**Rules:**
+- No IO
+- No mutation
+- No global reads
+- Deterministic
+
+Actions may be composed into pipelines: validate → compute → transform → declare effects.
+
+### MANAGER — Projected Expression of Doing
+
+The Manager is the **runtime orchestrator**. It is the only component that wires other components together and drives execution.
+
+It has four internal responsibilities:
+
+- **Binder**: Wrapper events → Adapters → Manager dispatch
+- **Router**: Intent → Facet → Action delegate (policy- and context-driven)
+- **Workflow**: Multi-step async orchestration, sagas, token lifecycle
+- **Committer**: Applies deltas to produce new Instances, issues and revokes Tokens
+
+**Within a given boundary, the Manager is the place where state transitions and orchestration are coordinated.**
+
+**Boundary discipline:** In practice, a Manager must stay boundary-scoped. If it becomes a vague bucket for policy, domain calculations, transport formatting, and integration details, it has stopped being a Manager and started being an unowned application blob. Move pure logic into Actions, transport logic into Wrappers or Adapters, and IO into Impact.
+
+Note: The Manager does *not* execute effects. That belongs to Impact.
+Also; if your Manager's dispatch function has more than 3–4 branching paths, you may need multiple Facets rather than more Manager logic.
+
+**Commit validation:** The Manager's commit path should validate Form invariants after applying a delta. If invariants fail, the commit is rejected and the Manager emits a structured failure Effect (e.g., `{ kind: "COMMIT_REJECTED", payload: { violations, delta } }`). This requires no changes to how Actions produce deltas — it's a safety net that ensures deltas never leave state in an invariant-violating condition.
+
+#### The Composer–Conductor Decomposition
+
+A Manager has two distinct roles: composing the system's structure and conducting its runtime performance.
+
+**The Composer** (Binder) is concerned with *structure*: what instruments (components) exist, what the score (bindings) looks like, what sections play together. The Composer wires Adapters to Wrappers, registers Facets, and establishes the composition. It runs at setup time and when the system's structure changes (a new service registers, a feature flag flips). The Composer decides *what's possible*.
+
+**The Conductor** (Router + Workflow + Committer) is concerned with *performance*: when a particular Intent arrives, which section picks it up, at what tempo (sync vs. async), with what dynamics (retry policy, timeout). The Conductor decides *what happens now*.
+
+In an orchestra, the conductor doesn't tell each violinist which notes to play — the section handles that. Similarly, the Manager shouldn't contain routing logic for every capability inline. Instead, each "section" is a Facet (or a cluster of related Facets), and the Manager's routing is just: "this Intent goes to this section." The section (Facet → Action chain) handles the details.
+
+**When to decompose:**
+
+- **The Composer grows complex?** You need more Facets, not more wiring logic.
+- **The Conductor grows complex?** You likely need a Workflow sub-component (saga/process manager), not more conditional branches.
+- **The Conductor coordinates across fundamentally different domains?** You need separate Managers communicating through Effects.
+
+The metric for splitting: if two concerns in the Manager don't share state transitions or workflow coordination, they belong in different sections. If dispatch has a branch for "user management" and a branch for "billing," and those branches never interact within a single dispatch cycle, they should be separate Facets (sections) — or potentially separate Managers (bounded contexts) if they also have different Instance stores.
+
+### EFFECT — Immutable Essence of Changing
+
+An Effect is a **declared description of a side effect** — a pure value that describes what *should* happen in the world, without doing it.
+
+An Effect carries:
+- `kind` — the type of effect (IO, emit, notify, persist, schedule)
+- `target` — what system/resource is affected
+- `payload` — the data to carry
+- `retryPolicy` — how failures should be handled
+- `compensatingEffect` — what to do on rollback
+
+**Effects are data, not execution.** They are produced by Actions, collected by the Manager, and handed to Impact for execution.
+
+### IMPACT — Projected Expression of Changing
+
+Impact is the **runtime execution of declared Effects** — the point where the system actually touches the outside world.
+
+Impact responsibilities:
+- Execute Effects against real targets (network, disk, external APIs)
+- Handle retries, timeouts, and failure recovery
+- Execute compensating Effects on rollback
+- Emit follow-up Intents when an Effect's result requires further processing
+- Report outcomes back to the Manager
+
+**Impact is the only place where side effects actually occur.**
+
+### WRAPPER — Immutable Essence of Bridging
+
+Wrappers are **structural boundaries** that host interaction surfaces.
+
+Examples:
+- Screens, panels, routes
+- API endpoint definitions
+- DOM roots, canvas contexts
+- Message queue consumers
+
+**Wrappers host interaction surfaces but do not contain business logic.**
+
+### ADAPTER — Projected Expression of Bridging
+
+Adapters convert **raw events + runtime context** into Intents.
+
+**Responsibilities:**
+- Read Wrapper-local inputs (forms, selections, request bodies)
+- Extract raw authentication material (headers, cookies, API keys) and pass it through in the Intent
+- Normalize raw events into stable Intents
+
+**Rules:**
+- No IO
+- No state mutation
+- No identity resolution (extracting raw auth material is not resolving identity — minting a Token is)
+- No business decisions
+
+Adapters are the *only* path from the outside world into the system's Intent stream.
+
+**On Tokens:** Adapters should never issue Tokens. A Token is a scoped, temporal projection of Identity with claims (permissions, roles, expiry) — that's a security decision. The Adapter's job is normalization: extract the raw auth material (the header value, the cookie, the API key string) and include it in the Intent via a `rawAuth` field or in the payload. The Manager (or a dedicated sub-component it delegates to) mints the Token, because only the Manager understands what claims to grant given the current system state. This also centralizes Token validation in one place rather than scattering it across Adapters for different Wrappers.
+
+## Core Mental Shifts
+
+1. Events don't do work — **they express intent**
+2. Effects are data — **Impact is execution**
+3. State changes are values — **not mutations**
+4. Identity is permanent — **Tokens are temporary**
+5. Forms generate — **Instances hold**
+6. Facets are data — **not type annotations**
+7. Composition is **runtime responsibility** (the Manager's job)
+8. Side effects have **two phases**: declaration (Effect) and execution (Impact)
+9. Relationships are declared — **Bonds structure, Links traverse**
+
+## Relationship to Existing Patterns
+
+### MVC → AXIS
+
+| MVC | AXIS Essence | AXIS Expression | What changed |
+|-----|--------------|-----------------|--------------|
+| Model | FORM (shape) | INSTANCE (state) | Model split into definition vs. live values |
+| View | FACET (capabilities) | INTENT (meaning) | View split into "what can be seen" vs. "what was meant" |
+| Controller | ACTION (logic) | MANAGER (orchestration) | Controller split into pure logic vs. runtime wiring |
+| *(none)* | IDENTITY | TOKEN | Identity axis is new — MVC doesn't address it |
+| *(none)* | BOND | LINK | Relating (Having) axis is new — MVC leaves relationships implicit |
+| *(none)* | EFFECT | IMPACT | Changing axis is new — MVC conflates effects into Controller |
+| *(none)* | WRAPPER | ADAPTER | Bridging axis is new — MVC assumes a single context |
+
+### Flux / Redux → AXIS
+
+Flux introduced the unidirectional data flow: Action → Dispatcher → Store → View. AXIS preserves this flow but decomposes it further:
+
+- **Flux Action** ≈ AXIS Intent (a description of what happened)
+- **Flux Dispatcher** ≈ AXIS Manager (routes intents to logic)
+- **Flux Store** ≈ AXIS Instance (holds state)
+- **Flux Reducer** ≈ AXIS Action (pure state transformation)
+
+The key difference: Redux thunks and middleware conflate effect declaration with effect execution. AXIS separates them into EFFECT (data) and IMPACT (execution), making side effects testable without mocking middleware.
+
+### CQRS → AXIS
+
+CQRS separates commands (writes) from queries (reads). In AXIS, this separation emerges naturally from the Facet system:
+
+- A **command** is an Intent whose capability maps to a state-mutating Action in a write Facet
+- A **query** is an Intent whose capability maps to a read-only Action in a read Facet
+- Different Tokens can grant access to different Facets — command access vs. query access
+
+CQRS is not a separate pattern to adopt; it's a Facet configuration.
+
+### Event Sourcing → AXIS
+
+AXIS's Intent stream *is* an event source. Store Intents (or committed deltas) and you get replay, audit, and temporal queries for free. The difference: AXIS names all the other components around the event stream (Forms validate, Actions transform, Effects declare consequences), while Event Sourcing as typically described leaves those as implementation details.
+
+### Events and Handlers
+
+The generic "event → handler" pattern is the most common abstraction in software. AXIS decomposes it into *specific, testable seams*:
+
+```
+Generic:     Event  →  Handler
+AXIS:        Event  →  Adapter  →  Intent  →  Manager  →  Facet  →  Action
+             (raw)     (normalize)  (meaning)   (route)    (select)   (execute)
+```
+
+Each step is independently testable. The generic pattern gives you one seam; AXIS gives you five.
+
+## Non-Goals
+
+AXIS does not prescribe:
+- A specific programming language or framework
+- UI component structure or rendering strategy
+- A particular database or persistence technology
+- Deployment topology or infrastructure patterns
+
+AXIS is a **thinking tool** — a structural vocabulary that turns architecture into enforceable, composable, testable layers for both humans and machine agents.
+
+
+====================================================================================================
+FILE: axis/references/frontend.md
+====================================================================================================
+
+# AXIS in the browser
+
+> Assembled by `build.py` from AXIS-FrontEnd-Web.md. To change it, edit the source document and rebuild.
+
+How the fourteen parts map onto front-end code, without forcing a one-to-one mapping onto every DOM node. For most browser work, keep to the Lite discipline.
+
+## Contents
+
+- What AXIS Helps With In The Browser
+- Recommended Front-End Mapping
+- Browser-Specific Guidance
+- Event Flow In A Small SPA
+- About The Static/Dynamic Pairings
+- Recommended Front-End Rules
+
+## What AXIS Helps With In The Browser
+
+AXIS is useful for frontend code when the application has:
+
+- non-trivial local state
+- multiple interaction modes
+- async work
+- styling variants
+- a need for clearer seams between DOM, state, and effects
+
+The strongest frontend benefits are:
+
+- event normalization through Adapters
+- pure state transitions through Actions
+- one explicit state owner through a Manager
+- effect isolation for DOM, storage, and network work
+- explicit visual facet composition instead of giant CSS bundles
+
+It is less useful when a page is mostly static or only needs a handful of direct DOM listeners.
+
+## Recommended Front-End Mapping
+
+This mapping is the most useful practical translation of AXIS into browser code:
+
+| AXIS term | Front-end meaning |
+|-----------|-------------------|
+| `Form` | component state shape, props contract, invariants |
+| `Instance` | live in-memory state snapshot |
+| `Identity` | stable id for an entity, component, or session |
+| `Token` | scoped runtime handle such as route, view, selection, or render token |
+| `Wrapper` | custom element boundary, route shell, panel host, or other UI boundary |
+| `Adapter` | raw DOM event, URL change, or storage input normalized into an `Intent` |
+| `Facet` | capability or presentation surface, including layout and visual variants |
+| `Intent` | stable description of what the user or system meant to do |
+| `Action` | pure state transition logic that returns `{ delta, effects[] }` |
+| `Manager` | orchestrator that routes intents, commits state, and dispatches effects |
+| `Effect` | declarative description of DOM, storage, or network work |
+| `Impact` | concrete execution of those effects |
+
+## Browser-Specific Guidance
+
+### 1. Wrappers Are UI Boundaries
+
+In frontend code, a `Wrapper` is usually a custom element or route-level host. It owns:
+
+- a stable DOM boundary
+- event attachment points
+- rendering slots
+- component-local structure
+
+It should not own business rules.
+
+### 2. Adapters Normalize Browser Noise
+
+Raw DOM events are noisy and inconsistent. Adapters convert them into stable intent objects such as:
+
+- `todo.add`
+- `todo.toggle`
+- `route.change`
+- `theme.set`
+
+This makes UI flows replayable and testable.
+
+### 3. Actions Stay Pure
+
+Actions should not:
+
+- touch the DOM
+- call `fetch`
+- read from `localStorage`
+- mutate shared state directly
+
+They should only compute:
+
+```js
+{ delta, effects }
+```
+
+### 4. Impact Is Where Browser IO Happens
+
+In browser code, `Impact` typically handles:
+
+- DOM rendering
+- stylesheet swaps
+- `localStorage` or IndexedDB persistence
+- network requests
+- timers
+
+### 5. Use Facets For Visual Composition
+
+The browser gives a very concrete meaning to `Facet`: visible variants.
+
+For CSS, split layout and look into separate facet families.
+
+Recommended naming:
+
+- `{component}.{layoutKind}.layout.css`
+- `{component}.{lookName}.look.css`
+
+Examples:
+
+- `app.columnar.layout.css`
+- `app.mobile.layout.css`
+- `todo-list.rowified.layout.css`
+- `app.dark.look.css`
+- `app.cyberpunk.look.css`
+- `todo-form.dark.look.css`
+
+This lets one layout facet mix with a different look facet without collapsing everything into one stylesheet.
+
+### 6. Treat Divs As Projection, Not The Domain Object
+
+A raw `div` is usually not the `Instance` itself.
+
+It is more useful to think of the DOM as a rendered projection of the current `Instance` inside a `Wrapper`.
+
+That distinction matters:
+
+- `Instance` is the authoritative state snapshot
+- DOM is a visible projection of that state
+- Adapters translate DOM interaction back into `Intent`
+
+### 7. Tokens In The Browser
+
+A useful browser token family might look like:
+
+- `sessionToken`
+- `routeToken`
+- `viewToken`
+- `selectionToken`
+
+A concrete format like `GUID.name.value` is reasonable when it helps make scope and meaning explicit.
+
+Examples:
+
+- `5d9f...route.inbox`
+- `a12c...look.cyberpunk`
+- `ff31...selection.todo-17`
+
+These are not always required, but they are useful when runtime scope matters.
+
+## Event Flow In A Small SPA
+
+Typical AXIS browser flow:
+
+1. `Wrapper` hosts the UI boundary.
+2. `Adapter` converts a raw event into an `Intent`.
+3. `Manager` routes the `Intent`.
+4. `Action` returns `{ delta, effects[] }`.
+5. `Manager` commits the new `Instance`.
+6. `Impact` executes the `Effect`s.
+7. DOM, styles, storage, or network state changes become visible.
+
+This creates a browser architecture that is composable without being framework-heavy.
+
+## About The Static/Dynamic Pairings
+
+The pairings below are interesting as an exploratory lens:
+
+- static model / dynamic model
+- static controller / dynamic controller
+- static identity / dynamic identity
+
+But they should not become the main frontend teaching model. Some of the pairings can become forced if applied too literally.
+
+For practical browser work, the most reliable distinctions are:
+
+- structure vs runtime
+- state vs projection
+- pure logic vs effectful execution
+- layout facet vs look facet
+
+That framing is easier for agents to apply consistently.
+
+## Recommended Front-End Rules
+
+Use these rules by default:
+
+1. Normalize browser input at the edge.
+2. Keep view-state transitions pure.
+3. Let one boundary own mutable state.
+4. Make DOM and storage work explicit through effects.
+5. Separate layout facets from look facets.
+6. Start with AXIS Lite discipline and escalate only when the app truly needs more structure.
+
+
+====================================================================================================
+FILE: axis/references/mapping.md
+====================================================================================================
+
+# Mapping a repository in AXIS terms
+
+The AXIS repo mapper produces a small, durable map that tells any agent, including you next session, where each AXIS role lives in one particular codebase, who owns which state, where IO happens, and what the house rules are.
+
+This is a mapping pass, not a rewrite pass. Most repositories do not use AXIS names and should not be forced to. You are identifying the roles the native architecture already plays, by evidence, and naming honestly where one piece of code plays several.
+
+## Contents
+
+- What you produce
+- Choose a depth
+- Procedure (eight steps)
+- Classifying conservatively
+- The map format
+- Using and maintaining a map
+- How this relates to CodeMaps
+
+## What you produce
+
+Two files, in the repository's `codemaps/` folder:
+
+- `codemaps/axis-map.json`: the map. You write this.
+- `codemaps/AXIS-MAP.md`: rendered from the JSON by `axis.py render`. Never edit it by hand.
+
+The JSON can be validated and queried. The markdown is what an agent reads at the start of a task, about two thousand tokens for a mid-sized repo. Rendering one from the other means they cannot disagree.
+
+Run `axis.py` from the repository root, giving the path to this skill's `scripts/axis.py`.
+
+## Choose a depth
+
+| Depth | When | Reading budget | Covers |
+|---|---|---|---|
+| `scoped` | You have a specific change to make | The scan summary and at most about ten files | The boundary you will touch, its edges and its IO |
+| `standard` | Onboarding onto a repo | The scan summary, entry points, and the central file of each boundary | Every boundary, three to ten flows, the audit, placement and rules |
+| `deep` | Preparing reuse or a larger refactor | As standard, plus the files behind each finding | Adds `recompositionNotes` on every role. Pair with the CodeMaps navigation maps |
+
+Record the depth and the scope in `meta`. A scoped map is a legitimate result; list what it leaves out in `unmapped`. Stop expanding when new files stop changing the picture.
+
+## Procedure
+
+**1. Scan.**
+
+```bash
+python <skill>/scripts/axis.py scan . --out codemaps/axis-scan.json
+```
+
+Read the printed summary first, not the JSON. It lists entry points, IO sites, files where logic and IO sit together, pure candidates, declarations, policy and auth mentions, relationships, orchestration, and a per-directory tally. The scan is a lead generator: names and signals suggest, source confirms. If `codemaps/` already holds navigation maps (`01-architecture.md` and so on) or a repo digest, read those before opening source. If it holds output from the earlier CodeMaps AXIS pipeline (`axis-role-map.json`, `axis-shape.md`, `axis-boundary-audit.md`), start from that: its role descriptors carry over field for field, and its audit becomes `findings`.
+
+**2. Walk the seven axes, from the outside in.** For each axis, answer its question for this repo, confirm the central items in source, and record role entries. Following a request inward is the cheapest way to find everything.
+
+| Axis | The question for this repo | Look for |
+|---|---|---|
+| Bridging | Where does the outside come in? | **Wrapper**: routes, CLI commands, UI shells, message consumers, schedulers, worker hosts. **Adapter**: request mappers, DOM event normalizers, payload parsers, DTO converters |
+| Meaning | What can be asked of it, and who may ask what? | **Intent**: command objects, semantic events, normalized requests. **Facet**: role or capability maps, policy tables, feature gates, plugin registries |
+| Identity | What are the stable things, and who is asking? | **Identity**: ids, keys, URIs, record locators. **Token**: sessions, claim sets, revision handles, cursors, transaction or workflow handles |
+| Doing | Where are the rules, and who coordinates? | **Action**: pure reducers, validators, pricing rules, parser cores, state transitions. **Manager**: coordinators, application services, dispatchers, process managers, commit points |
+| Changing | What does it do to the world, and where? | **Effect**: side-effect descriptors, job envelopes, outbound commands. **Impact**: repositories, HTTP clients, file writers, queue producers, mailers, renderers |
+| Being | What state exists, and what shape must it have? | **Form**: schemas, types, validation contracts, config shapes. **Instance**: records, aggregate state, store values, caches, documents |
+| Relating | What belongs to what? | **Bond**: foreign-key rules, aggregate boundaries, ownership relations. **Link**: joins, hydrated graphs, lazy loads, resolved references |
+
+Each Manager-equivalent that owns state is a **boundary**. Record it in `boundaries` with what it owns, what it accepts, and what it emits. For every piece of state, be able to say which boundary writes it. State with two writers, or none you can name, is a finding.
+
+**3. Classify conservatively.** See the next section.
+
+**4. Trace the top flows.** Pick three to ten that an agent is likely to extend. For each: the trigger, then the steps in order, each with its AXIS role, where it happens, and what it does. Say plainly where a role is skipped ("there is no explicit Intent object").
+
+**5. Audit the boundaries.** Record each problem as a finding, with paths, evidence, a risk, and the smallest separation that would restore the rule.
+
+| Kind | What you saw |
+|---|---|
+| `io-in-logic` | Business rules and IO in the same function |
+| `policy-in-logic` | Role or permission checks written inline in rules or handlers |
+| `adapter-decides` | An edge handler routing, applying rules, or reaching past the coordinator |
+| `manager-too-broad` | One coordinator spanning unrelated domains or stores |
+| `hidden-state` | Shared mutable state with no clear owner |
+| `traversal-in-logic` | Lazy loads, joins or fetches of related entities inside business logic |
+| `self-executing-effect` | A "description" of work that performs the work |
+| `framework-coupling` | Framework types threaded through logic, blocking test or reuse |
+| `other` | Anything else an agent changing this code should know |
+
+Do not recommend a large rewrite unless a boundary problem directly damages testability, reuse, or the safety of an agent working there.
+
+**6. Write `placement` and `rules`.** These are what an agent uses most.
+
+- `placement` answers "where does new code of this role go, in this repo?" For each of the fourteen roles give the native files or folders, or `null` when the repo has no home for that role.
+- `rules` are five to twelve imperative sentences for anyone changing this repo: boundaries not to cross, the single place each kind of IO lives, what to do instead of repeating a known mixture, which tests to run. Write them in the repo's own names.
+
+**7. Validate, lint, render.**
+
+```bash
+python <skill>/scripts/axis.py validate
+python <skill>/scripts/axis.py lint --map
+python <skill>/scripts/axis.py render
+```
+
+Fix what `validate` reports. `lint --map` checks every role you recorded as a pure Action; a failure means the entry is misclassified or you have found a real problem, and either way the map should say so.
+
+**8. Leave a pointer.** So that later agents find the map, add a short note to the repo's `AGENTS.md`, `CLAUDE.md` or README. Ask before editing a file that is not yours to change.
+
+```markdown
+## Architecture map
+`codemaps/AXIS-MAP.md` describes where each kind of code lives here, who owns which state, and where IO happens.
+Read it before changing code. It is rendered from `codemaps/axis-map.json`; update the JSON, then re-render.
+```
+
+## Classifying conservatively
+
+- **Evidence over names.** A file called `actions.ts` that calls `fetch` is not an Action. Record what the code does.
+- **Name mixtures.** Give the role the code mostly plays as `primaryAxisRole`, the others as `secondaryAxisRoles`, and set `purity` to `mixed` when logic and IO share a function.
+  - Business logic that also performs IO: `Action` + `Impact`, never a pure Action.
+  - A controller that parses input and runs the workflow: `Wrapper` + `Adapter` + `Manager`.
+  - A repository that validates rules and writes: `Impact` + `Action`.
+  - A service that sequences calls and contains the rules: `Manager` + `Action`.
+  - Framework lifecycle glue: `Wrapper` or `Manager`, with a note about the coupling.
+- **Absent is an answer.** If the repo has no declared Effects, say so (`"Effect": null` in `placement`) and say what plays that part. Do not invent roles for symmetry.
+- **Mark your confidence.** `high` when you read the source, `medium` when signatures and call paths agree, `low` when you are going by signals alone. Set `evidenceBasis` to `source-confirmed` or `scan`.
+- **Every role needs evidence.** At least one concrete observation: an import, a signature, a call, a write.
+- **Do not claim compliance.** Say "already AXIS-shaped" only where the evidence is strong.
+
+## The map format
+
+A complete, validated example for a small service is in `assets/axis-map.example.json`. Read it before writing your first map. The skeleton:
+
+```json
+{
+  "meta": {
+    "axisMapVersion": 1,
+    "repo": "name",
+    "generatedAt": "YYYY-MM-DD",
+    "commit": "the HEAD commit when mapped, so staleness can be computed",
+    "depth": "scoped | standard | deep",
+    "scope": ["src"],
+    "languages": ["typescript"]
+  },
+  "summary": "Two to four sentences: what the system is, how it is organised natively, where it is clean and where it is mixed.",
+  "boundaries": [
+    { "id": "orders", "name": "Orders", "nativeName": "OrderService", "paths": ["src/orders"],
+      "ownedState": ["orders table"], "acceptedIntents": ["create order"], "emittedEffects": ["confirmation email"],
+      "policyScope": "which roles or claims it interprets" }
+  ],
+  "roles": [
+    { "id": "unique-id",
+      "nativeName": "what this repo calls it",
+      "nativeKind": "route-handler | service | repository | schema | …",
+      "paths": ["src/orders/controller.ts"],
+      "symbols": ["create"],
+      "boundary": "orders",
+      "primaryAxisRole": "Wrapper",
+      "secondaryAxisRoles": ["Adapter", "Manager"],
+      "purity": "pure | reads-state | io | mixed",
+      "stateOwnership": "none | reads | owns",
+      "sideEffects": ["writes HTTP responses"],
+      "confidence": "high | medium | low",
+      "evidenceBasis": "source-confirmed | scan",
+      "evidence": ["(req, res) handlers", "calls OrderService.create"],
+      "inboundEdges": ["POST /orders"],
+      "outboundEdges": ["OrderService.create"],
+      "boundaryNotes": ["what is clean, what is mixed"],
+      "recompositionNotes": ["what to preserve, extract or leave in place"] }
+  ],
+  "flows": [
+    { "name": "Create an order", "trigger": "POST /orders",
+      "steps": [ { "role": "Adapter", "ref": "a role id", "does": "what happens at this step" } ] }
+  ],
+  "findings": [
+    { "kind": "io-in-logic", "risk": "low | medium | high", "paths": ["src/orders/service.ts"],
+      "evidence": "what you saw", "separation": "the smallest change that restores the rule" }
+  ],
+  "placement": { "Form": ["src/schemas"], "Action": ["src/domain"], "Impact": ["src/infra"], "Effect": null },
+  "rules": ["Imperative sentences for anyone changing this repo."],
+  "unmapped": ["path — why it was left out"]
+}
+```
+
+Required: `meta`, and `roles` with `id`, `nativeName`, `paths`, `primaryAxisRole`, `confidence` and `evidence`. `purity` is required for the roles that run (Action, Manager, Impact, Wrapper, Adapter, Link). A flow step may use `where` (a path) instead of `ref` when it has no role entry. Paths are relative to the repository root and must exist. The role descriptors keep the field names of the earlier `axis-role-map.json`, so prompts written for that file can read `roles` directly.
+
+## Using and maintaining a map
+
+At the start of a task:
+
+```bash
+python <skill>/scripts/axis.py stale                 # what changed since the map was written
+python <skill>/scripts/axis.py where src/orders/service.ts
+```
+
+Read `codemaps/AXIS-MAP.md`, then ask `where` about each file you expect to touch. It prints the roles, the boundary, the notes, and any findings that cover it.
+
+After a change, update the entries you invalidated: roles whose behaviour moved, findings you fixed or introduced, `placement` if a role gained a home, and `meta.commit` and `meta.generatedAt`. Then validate and render. A map that is known to be stale in three places is still worth more than no map, provided `stale` can tell the next reader which three.
+
+## How this relates to CodeMaps
+
+`references/codemaps.prompt.md` builds navigation maps: it reads a repo as a tree (entry points, runtime, components, state, public surface) and marks which subsystems could be harvested for reuse. The AXIS map reads the same repo by role. They answer different questions and compose well. CodeMaps calls the pair Stage 1 (map and understand) and Stage 2 (clarify and refactor); this procedure is the first step of Stage 2.
+
+| CodeMaps file | Feeds this axis |
+|---|---|
+| `02-entry-points.md`, `08-public-surface.md` | Bridging: Wrappers and Adapters |
+| `03-runtime-topology.md`, `04-components.md` | Doing: Managers and boundaries |
+| `05-state-and-persistence.md` | Being and Changing: Instances, who owns them, Impacts |
+| `06-domain-model.md` | Being, Relating, Meaning: Forms, Bonds, Intents |
+| `10-guardrails-and-workflows.md` | `rules` |
+| `11-recomposer-anchors.md` | `recompositionNotes` at `deep` depth |
+
+On a large or unfamiliar repo, run CodeMaps first and build the AXIS map from its output. On a small repo, or for a scoped map, the scan is enough.
+
+
+====================================================================================================
+FILE: axis/references/generation-units.md
+====================================================================================================
+
+# Generation units: breaking a change into small contracts
+
+Use this when a change is larger than one function, or when parts of it will be handed to other agents or smaller models. The aim is a set of narrow implementation contracts, each of which can be written and checked without redesigning the system. Planning the units is a separate step from implementing them.
+
+Work from the repository's map when there is one (`codemaps/axis-map.json`; see `mapping.md`). Without a map, do a scoped mapping pass over the area you will touch first.
+
+## Decomposition order
+
+Work from the inside out. Starting at the UI or the Manager produces units that have to be redone once the state and rules are settled.
+
+1. Restate the request in one or two sentences, unchanged in meaning.
+2. Identify the native components it touches and the AXIS role each plays (`axis.py where <path>`).
+3. New or changed Intents: commands, events, requests.
+4. Form changes: schema, state shape, invariants.
+5. Pure Actions, including logic that can be extracted from mixed code.
+6. Effects to declare.
+7. Impact handlers or infrastructure adapters.
+8. Facet or capability registration, and any Manager routing change.
+9. Wrapper and Adapter changes at the edge.
+10. Tests and scenario traces.
+11. Migration and compatibility checks.
+
+Depart from this order only when the task is purely presentation or purely orchestration.
+
+## The unit contract
+
+| Field | Meaning |
+|---|---|
+| `id` | Stable, readable: `gen-action-declare-goal` |
+| `kind` | `axis.form`, `axis.intent`, `axis.action`, `axis.effect`, `axis.impact`, `axis.adapter`, `axis.wrapper`, `axis.manager`, `axis.facet`, `axis.test`, or `native.other` |
+| `targetFiles`, `symbols` | Where it goes, using the repo's `placement` |
+| `purpose` | One sentence |
+| `inputs`, `outputContract` | What it receives and what it must return |
+| `constraints` | The rules that apply to this unit |
+| `allowedDependencies`, `forbiddenDependencies` | What it may and may not import or call |
+| `sideEffectPolicy` | `pure`, `declares-effects`, or `performs-io` |
+| `acceptanceChecks` | Observable behaviours that prove it is done |
+| `risk` | `low`, `medium`, `high` |
+| `dependsOn` | Unit ids that must land first |
+| `recommendedModel` | `small-local`, `strong-agent`, or `human-review` |
+
+Choose `recommendedModel` by what can go wrong:
+
+- `small-local`: tightly bounded pure logic, object literals, Adapters with explicit fields, tests written from examples.
+- `strong-agent`: Manager routing, cross-file refactors, Effect and Impact integration, framework lifecycle work.
+- `human-review`: security-sensitive policy, auth and claims, migrations, irreversible data changes, unclear invariants.
+
+## Example unit
+
+```json
+{
+  "id": "gen-action-declare-goal",
+  "kind": "axis.action",
+  "targetFiles": ["src/app/actions/goal.actions.js"],
+  "symbols": ["declareGoal"],
+  "purpose": "Add a new goal to workspace state and declare persistence.",
+  "inputs": { "state": "Workspace state snapshot", "intent": "goal.declare intent" },
+  "outputContract": { "delta": "new state delta with appended goal", "effects": ["PERSIST_WORKSPACE"] },
+  "constraints": [
+    "Do not mutate input state",
+    "Do not perform IO",
+    "Return effects as data only",
+    "Reject empty goal text with an INTENT_REJECTED effect"
+  ],
+  "allowedDependencies": ["createGoalId", "normalizeGoalText"],
+  "forbiddenDependencies": ["fetch", "localStorage", "fs", "Date.now", "Math.random"],
+  "sideEffectPolicy": "pure",
+  "acceptanceChecks": [
+    "appends valid goal",
+    "does not mutate original state",
+    "declares persistence effect",
+    "rejects empty goal"
+  ],
+  "risk": "low",
+  "dependsOn": ["gen-intent-goal-declare"],
+  "recommendedModel": "small-local"
+}
+```
+
+## What to hand back
+
+Unless asked for files, present the plan in your reply: the request as you understood it, the affected roles, the units in dependency order (id, kind, target, one-line purpose, recommended model), the risk areas that need a person, and how the whole change will be verified. When files are wanted, write `codemaps/axis-generation-units.json` (an array of units) and a short `codemaps/axis-generation-plan.md`.
+
+After implementing a unit marked `pure`, run `axis.py lint <file>:<symbol>` on it.
+
+## Rules
+
+- Preserve the repo's native conventions where they are clear. AXIS roles guide placement; they are not a reason to rename files.
+- Keep units small. A unit that needs the word "and" in its purpose is probably two.
+- Mark ambiguous units for a strong agent or a person instead of guessing.
+- Never hide IO inside a unit marked `pure`.
+- Adapters do not make business decisions.
+- Managers do not absorb logic that could be tested as an Action.
+
+
+====================================================================================================
+FILE: axis/references/example-spa.md
+====================================================================================================
+
+# Worked example: a user profile editor (browser)
+
+> Assembled by `build.py` from AXIS-Code.md. To change it, edit the source document and rebuild.
+
+One feature traced through twelve of the fourteen parts in vanilla JavaScript, one file per part. It is a full-profile example, shown for clarity; it is not the required layout for every codebase.
+
+## The Example
+
+This traces editing a user profile through 12 of the 14 AXIS components. The feature has no relationships between entities, so it needs no Bond or Link. Every file maps to exactly one component. For a server-side AXIS example (extensible web server with dynamic service registration), see the AXIS specification document.
+
+> **Shadow DOM is a Wrapper** (structural encapsulation), not a Facet (business capability surface).
+
+### FORM — `forms/userProfile.js`
+
+```js
+export const UserProfileForm = {
+  shape: {
+    displayName: { type: "string", maxLength: 100, required: true },
+    email:       { type: "string", pattern: /^[^@]+@[^@]+$/, required: true },
+    bio:         { type: "string", maxLength: 500, required: false },
+    avatarUrl:   { type: "string", required: false },
+  },
+  defaults: {
+    displayName: "",
+    email: "",
+    bio: "",
+    avatarUrl: null,
+  },
+  invariants: [
+    (state) => state.displayName.length > 0 || "displayName must not be empty",
+    (state) => !state.email || /^[^@]+@[^@]+$/.test(state.email) || "invalid email",
+  ],
+};
+```
+
+### IDENTITY — `identity/userIdentity.js`
+
+```js
+export function createUserIdentity(userId) {
+  return Object.freeze({
+    entityId: userId,
+    formRef: "UserProfileForm",
+    versioningPolicy: "hash",
+  });
+}
+```
+
+### INSTANCE — `instances/profileInstance.js`
+
+```js
+import { UserProfileForm } from "../forms/userProfile.js";
+
+export function createProfileInstance(identity, state = null) {
+  const liveState = state ?? { ...UserProfileForm.defaults };
+  return {
+    formRef: identity.formRef,
+    identityRef: identity.entityId,
+    revisionId: hash(liveState),
+    state: liveState,
+  };
+}
+
+export function applyDelta(instance, delta) {
+  const next = { ...instance.state, ...delta };
+  return {
+    ...instance,
+    state: next,
+    revisionId: hash(next),
+  };
+}
+```
+
+### TOKEN — `tokens/sessionToken.js`
+
+```js
+export function issueSessionToken(identity, claims = {}) {
+  return {
+    identityRef: identity.entityId,
+    scope: "session",
+    expiry: Date.now() + 30 * 60 * 1000,
+    claims: {
+      canEdit: true,
+      role: "owner",
+      ...claims,
+    },
+  };
+}
+
+export function isExpired(token) {
+  return Date.now() > token.expiry;
+}
+```
+
+### FACET — `facets/profileFacets.js`
+
+```js
+import { validateAndSave, cancelEdit, loadProfile, applyFetchedProfile }
+  from "../actions/profileActions.js";
+
+export const editableFacet = {
+  delegates: {
+    save:       validateAndSave,
+    cancel:     cancelEdit,
+    load:       loadProfile,
+    applyFetch: applyFetchedProfile,
+  },
+};
+
+export const readOnlyFacet = {
+  delegates: {
+    load:       loadProfile,
+    applyFetch: applyFetchedProfile,
+  },
+};
+```
+
+### INTENT — `intents/profileIntents.js`
+
+```js
+export function saveProfileIntent(identityRef, payload, wrapperCtx) {
+  return Object.freeze({
+    kind: "profile.save",
+    capability: "save",
+    identityRef,
+    payload,
+    wrapperCtx,
+    meta: { timestamp: Date.now() },
+  });
+}
+
+export function cancelEditIntent(identityRef, wrapperCtx) {
+  return Object.freeze({
+    kind: "profile.cancel",
+    capability: "cancel",
+    identityRef,
+    payload: null,
+    wrapperCtx,
+    meta: { timestamp: Date.now() },
+  });
+}
+
+export function loadProfileIntent(identityRef, wrapperCtx) {
+  return Object.freeze({
+    kind: "profile.load",
+    capability: "load",
+    identityRef,
+    payload: null,
+    wrapperCtx,
+    meta: { timestamp: Date.now() },
+  });
+}
+```
+
+### ACTION — `actions/profileActions.js`
+
+```js
+import { UserProfileForm } from "../forms/userProfile.js";
+
+export function validateAndSave(state, intent) {
+  const next = { ...state, ...intent.payload };
+  const violations = UserProfileForm.invariants
+    .map((inv) => inv(next))
+    .filter((r) => r !== true);
+
+  if (violations.length > 0) {
+    // Action-level validation: return specific errors for the UI
+    return {
+      delta: { _validationErrors: violations },
+      effects: [],
+    };
+  }
+
+  return {
+    delta: { ...intent.payload, _validationErrors: [] },
+    effects: [
+      {
+        kind: "HTTP_PUT",
+        target: `/api/users/${intent.identityRef}/profile`,
+        payload: intent.payload,
+        retryPolicy: { maxRetries: 2, backoff: "exponential" },
+        compensatingEffect: {
+          kind: "ROLLBACK_INSTANCE",
+          target: intent.identityRef,
+          payload: { restoreTo: state },
+        },
+      },
+    ],
+  };
+}
+
+export function cancelEdit(state, intent) {
+  // Cancel declares a workflow effect — the Manager restores committed state.
+  // No magic delta keys. The Effect is data describing what should happen.
+  return {
+    delta: {},
+    effects: [{ kind: "RESTORE_COMMITTED", target: intent.identityRef }],
+  };
+}
+
+export function loadProfile(state, intent) {
+  // Pass 1 of two-pass read: declare the fetch, can't execute it
+  return {
+    delta: { _loading: true },
+    effects: [{
+      kind: "FETCH_PROFILE",
+      target: `/api/users/${intent.identityRef}/profile`,
+      payload: null,
+    }],
+  };
+}
+
+export function applyFetchedProfile(state, intent) {
+  // Pass 2 of two-pass read: apply fetched data as delta
+  return {
+    delta: { ...intent.payload.data, _loading: false },
+    effects: [],
+  };
+}
+```
+
+### EFFECT — (declared inline by Actions)
+
+```js
+// Effects are pure data returned by Actions. Two categories:
+
+// IO Effects — executed by Impact
+{ kind: "HTTP_PUT", target: "/api/users/u-1234/profile", payload: { ... }, retryPolicy: { ... } }
+{ kind: "FETCH_PROFILE", target: "/api/users/u-1234/profile", payload: null }
+
+// Workflow Effects — handled by Manager's Conductor before reaching Impact
+{ kind: "RESTORE_COMMITTED", target: "u-1234" }
+```
+
+### IMPACT — `impacts/httpImpact.js`
+
+```js
+const handlers = {
+  HTTP_PUT: async (effect) => {
+    const res = await fetch(effect.target, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(effect.payload),
+    });
+    if (!res.ok) throw new Error(`PUT failed: ${res.status}`);
+    return { ok: true, status: res.status };
+  },
+
+  FETCH_PROFILE: async (effect) => {
+    const res = await fetch(effect.target);
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+    const data = await res.json();
+    return {
+      ok: true,
+      followUpIntent: {
+        kind: "profile.fetched",
+        capability: "applyFetch",
+        identityRef: effect.target.split("/")[3],
+        payload: { data },
+      },
+    };
+  },
+
+  ROLLBACK_INSTANCE: async (effect) => {
+    return {
+      ok: true,
+      followUpIntent: {
+        kind: "instance.restore",
+        identityRef: effect.target,
+        payload: effect.payload,
+      },
+    };
+  },
+};
+
+export async function execute(effects) {
+  const outcomes = [];
+  for (const effect of effects) {
+    const handler = handlers[effect.kind];
+    if (!handler) throw new Error(`No impact handler for: ${effect.kind}`);
+    try {
+      outcomes.push(await handler(effect));
+    } catch (err) {
+      if (effect.compensatingEffect) {
+        await execute([effect.compensatingEffect]);
+      }
+      outcomes.push({ ok: false, error: err.message });
+    }
+  }
+  return outcomes;
+}
+```
+
+### WRAPPER — `wrappers/profileEditor.js`
+
+```js
+class ProfileEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  render(instance) {
+    const s = instance.state;
+    const errors = s._validationErrors || [];
+    this.shadowRoot.innerHTML = `
+      <form id="profile-form">
+        <label>Name
+          <input name="displayName" value="${s.displayName}" />
+        </label>
+        <label>Email
+          <input name="email" type="email" value="${s.email}" />
+        </label>
+        <label>Bio
+          <textarea name="bio">${s.bio}</textarea>
+        </label>
+        ${errors.length ? `<div class="errors">${errors.join(", ")}</div>` : ""}
+        <button type="submit">Save</button>
+        <button type="button" id="cancel">Cancel</button>
+      </form>
+    `;
+  }
+
+  get eventSlots() {
+    return {
+      submit: () => this.shadowRoot.querySelector("#profile-form"),
+      cancel: () => this.shadowRoot.querySelector("#cancel"),
+    };
+  }
+
+  readInputs() {
+    const form = this.shadowRoot.querySelector("#profile-form");
+    return Object.fromEntries(new FormData(form));
+  }
+}
+
+customElements.define("profile-editor", ProfileEditor);
+export { ProfileEditor };
+```
+
+### ADAPTER — `adapters/profileAdapter.js`
+
+```js
+import { saveProfileIntent, cancelEditIntent } from "../intents/profileIntents.js";
+
+export function bindProfileAdapter(wrapper, identityRef, dispatch) {
+  const slots = wrapper.eventSlots;
+
+  slots.submit().addEventListener("submit", (e) => {
+    e.preventDefault();
+    const payload = wrapper.readInputs();
+    dispatch(saveProfileIntent(identityRef, payload, "profile-editor"));
+  });
+
+  slots.cancel().addEventListener("click", () => {
+    dispatch(cancelEditIntent(identityRef, "profile-editor"));
+  });
+}
+```
+
+### MANAGER — `manager/profileManager.js`
+
+This Manager demonstrates all four responsibilities: Binder, Router, Workflow (committed state tracking), and Committer (invariant validation).
+
+```js
+import { editableFacet, readOnlyFacet } from "../facets/profileFacets.js";
+import { UserProfileForm } from "../forms/userProfile.js";
+import { applyDelta } from "../instances/profileInstance.js";
+import { isExpired } from "../tokens/sessionToken.js";
+import { execute as runImpact } from "../impacts/httpImpact.js";
+import { bindProfileAdapter } from "../adapters/profileAdapter.js";
+
+export function createProfileManager(wrapper, identity, token, instance) {
+  // Workflow: track committed vs. working state
+  let committedInstance = instance;
+  let currentInstance = instance;
+  let currentToken = token;   // composition-time bootstrap (see entry point)
+
+  // --- Router: select Facet based on Token ---
+  function selectFacet() {
+    if (!currentToken || isExpired(currentToken) || !currentToken.claims.canEdit) {
+      return readOnlyFacet;
+    }
+    return editableFacet;
+  }
+
+  // --- Committer: apply delta with invariant validation ---
+  function commit(delta) {
+    const proposed = { ...currentInstance.state, ...delta };
+    const violations = UserProfileForm.invariants
+      .map((inv) => inv(proposed))
+      .filter((r) => r !== true);
+    if (violations.length > 0) {
+      return { ok: false, violations };
+    }
+    currentInstance = applyDelta(currentInstance, delta);
+    return { ok: true };
+  }
+
+  // --- Conductor: dispatch loop ---
+  async function dispatch(intent) {
+    const facet = selectFacet();
+    const action = facet.delegates[intent.capability];
+
+    if (!action) {
+      console.warn(`No capability "${intent.capability}" in current facet`);
+      return;
+    }
+
+    // Run pure Action
+    const { delta, effects } = action(currentInstance.state, intent);
+
+    // Workflow: separate workflow effects from IO effects
+    const ioEffects = [];
+    for (const effect of effects) {
+      if (effect.kind === "RESTORE_COMMITTED") {
+        currentInstance = committedInstance;
+      } else {
+        ioEffects.push(effect);
+      }
+    }
+
+    // Committer: validate and apply delta
+    if (Object.keys(delta).length > 0) {
+      const result = commit(delta);
+      if (!result.ok) {
+        // Safety net: reject delta that violates invariants
+        await runImpact([{
+          kind: "COMMIT_REJECTED",
+          target: "caller",
+          payload: { violations: result.violations, delta },
+        }]);
+        return;
+      }
+    }
+
+    // Re-render Wrapper with new Instance
+    wrapper.render(currentInstance);
+
+    // Hand IO effects to Impact for execution
+    if (ioEffects.length > 0) {
+      const outcomes = await runImpact(ioEffects);
+
+      // Workflow: promote to committed on successful IO with state changes
+      if (outcomes.every((o) => o.ok) && Object.keys(delta).length > 0) {
+        committedInstance = currentInstance;
+      }
+
+      // Process follow-up Intents from Impact outcomes
+      for (const outcome of outcomes) {
+        if (outcome.followUpIntent) {
+          await dispatch(outcome.followUpIntent);
+        }
+      }
+    }
+  }
+
+  // --- Binder (Composer): wire Wrapper → Adapter → dispatch ---
+  function bind() {
+    wrapper.render(currentInstance);
+    bindProfileAdapter(wrapper, identity.entityId, dispatch);
+  }
+
+  return { bind, dispatch };
+}
+```
+
+### Entry Point — `app.js`
+
+```js
+import { createUserIdentity } from "./identity/userIdentity.js";
+import { createProfileInstance } from "./instances/profileInstance.js";
+import { issueSessionToken } from "./tokens/sessionToken.js";
+import { createProfileManager } from "./manager/profileManager.js";
+
+// 1. Identity — stable reference
+const identity = createUserIdentity("u-1234");
+
+// 2. Token — composition-time bootstrap
+//    At runtime, Tokens are minted by the Manager from raw auth material.
+//    At composition time, the entry point may provide an initial Token directly.
+//    This is setup, not a runtime violation — same as Instance hydration below.
+const token = issueSessionToken(identity, { canEdit: true, role: "owner" });
+
+// 3. Instance — composition-time hydration (from API, cache, or defaults)
+const instance = createProfileInstance(identity, {
+  displayName: "Alice",
+  email: "alice@example.com",
+  bio: "Software engineer",
+  avatarUrl: null,
+});
+
+// 4. Wrapper — structural boundary (already in DOM)
+const wrapper = document.querySelector("profile-editor");
+
+// 5. Manager — wire and go
+const manager = createProfileManager(wrapper, identity, token, instance);
+manager.bind();
+```
+
+**Key observations:**
+- In this worked example, every file maps to exactly one AXIS component. That layout makes the architecture explicit, but it is a full-profile example rather than a mandatory topology for every codebase.
+- **Composition-time bootstrapping:** The entry point creates the Token and Instance directly. At runtime, Tokens are minted by the Manager and data is loaded via the two-pass read path. Both are documented AXIS patterns.
+- **Invariant validation at commit:** The Manager's `commit()` validates Form invariants as a safety net — even though `validateAndSave` already validates. The safety net catches bugs in Actions that forget.
+- **Cancel without magic deltas:** `cancelEdit` returns `{ delta: {}, effects: [RESTORE_COMMITTED] }`. The Manager's Workflow handles restoration. No magic keys corrupt Instance state.
+- **Committed state tracking:** The Manager maintains `committedInstance` vs. `currentInstance`. On successful save IO, committed promotes. On cancel, working restores to committed.
+- Testing is trivial per layer: call `validateAndSave()` with test data → assert delta and effects. No mocking fetch, no rendering DOM.
+
+
+====================================================================================================
+FILE: axis/references/example-server.md
+====================================================================================================
+
+# Worked example: an extensible web server (Node)
+
+> Assembled by `build.py` from AXIS-Specification.md. To change it, edit the source document and rebuild.
+
+A server where routes and services are registered at runtime. The point to notice: dynamic extension is an ordinary state change, handled by the same dispatch, Action, delta and commit as a request.
+
+## The Example
+
+This example traces the design of a web server where **new routes and services can be dynamically added at runtime** — without restarting, without modifying core files. Vanilla Node.js (`http` module) is used to keep AXIS as the sole architecture.
+
+The key insight: dynamic extensibility is not a special mechanism — it's just the Manager binding new Identities, Forms, and Facets into an already-running composition. The same AXIS flow handles the first route and the hundredth.
+
+---
+
+### FORM — `forms/serviceForm.js`
+
+The generative definition of what a valid service plugin looks like, and what a route registration looks like.
+
+```js
+// forms/serviceForm.js
+
+// Every service must conform to this shape
+export const ServiceForm = {
+  shape: {
+    name:        { type: "string", required: true },
+    version:     { type: "string", pattern: /^\d+\.\d+\.\d+$/, required: true },
+    routes:      { type: "array", items: "RouteForm", required: true },
+    healthCheck: { type: "function", required: false },
+  },
+  defaults: {
+    routes: [],
+    healthCheck: null,
+  },
+  invariants: [
+    (s) => s.name.length > 0 || "service name must not be empty",
+    (s) => s.routes.length > 0 || "service must declare at least one route",
+    (s) => s.routes.every(r => r.path.startsWith("/")) || "all routes must start with /",
+  ],
+};
+
+// Each route within a service
+export const RouteForm = {
+  shape: {
+    method:     { type: "string", enum: ["GET", "POST", "PUT", "DELETE", "PATCH"], required: true },
+    path:       { type: "string", required: true },
+    capability: { type: "string", required: true },  // maps to a Facet delegate key
+  },
+  defaults: {
+    method: "GET",
+  },
+  invariants: [],
+};
+```
+
+---
+
+### IDENTITY — `identity/serviceIdentity.js`
+
+Each service gets a stable identity. Routes are addressed through their parent service.
+
+```js
+// identity/serviceIdentity.js
+export function createServiceIdentity(serviceName) {
+  return Object.freeze({
+    entityId: `service:${serviceName}`,
+    formRef: "ServiceForm",
+    versioningPolicy: "semver",
+  });
+}
+
+// Routes are sub-identities — addressed as service:name/route:path
+export function createRouteIdentity(serviceIdentity, method, path) {
+  return Object.freeze({
+    entityId: `${serviceIdentity.entityId}/route:${method}:${path}`,
+    formRef: "RouteForm",
+    versioningPolicy: "hash",
+  });
+}
+```
+
+---
+
+### INSTANCE — `instances/serverInstance.js`
+
+The live routing table. This is the dynamic state of the entire server — a map of registered services and their resolved routes.
+
+```js
+// instances/serverInstance.js
+export function createServerInstance() {
+  return {
+    formRef: "ServerForm",
+    identityRef: "server:main",
+    revisionId: 0,
+    state: {
+      services: {},     // { [serviceId]: serviceConfig }
+      routeTable: [],   // [{ method, path, serviceId, capability }]
+    },
+  };
+}
+
+export function applyDelta(instance, delta) {
+  const next = { ...instance.state };
+
+  if (delta.registerService) {
+    const svc = delta.registerService;
+    next.services = { ...next.services, [svc.identity.entityId]: svc };
+    next.routeTable = [
+      ...next.routeTable,
+      ...svc.routes.map((r) => ({
+        method: r.method,
+        path: r.path,
+        serviceId: svc.identity.entityId,
+        capability: r.capability,
+      })),
+    ];
+  }
+
+  if (delta.unregisterService) {
+    const id = delta.unregisterService;
+    const { [id]: _, ...rest } = next.services;
+    next.services = rest;
+    next.routeTable = next.routeTable.filter((r) => r.serviceId !== id);
+  }
+
+  return {
+    ...instance,
+    state: next,
+    revisionId: instance.revisionId + 1,
+  };
+}
+```
+
+---
+
+### TOKEN — `tokens/requestToken.js`
+
+Each incoming HTTP request gets a Token representing the caller's identity and permissions in this request scope.
+
+```js
+// tokens/requestToken.js
+export function issueRequestToken(rawAuth) {
+  return {
+    identityRef: extractCallerId(rawAuth.authHeader, rawAuth.apiKey),
+    scope: "request",
+    expiry: Date.now() + 30_000,   // 30 seconds — request-scoped
+    claims: {
+      roles: extractRoles(rawAuth.authHeader),
+      rateLimit: { remaining: 100, window: 60_000 },
+    },
+  };
+}
+
+function extractCallerId(authHeader, apiKey) {
+  // Simplified — real implementation verifies JWT / API key
+  if (apiKey) return `apikey:${apiKey.slice(0, 8)}`;
+  if (authHeader) return `bearer:${hashToken(authHeader)}`;
+  return "anonymous";
+}
+
+function extractRoles(authHeader) {
+  if (!authHeader) return ["public"];
+  // Simplified — real implementation decodes JWT claims
+  return ["authenticated"];
+}
+
+function hashToken(s) { return s.slice(-8); }
+```
+
+---
+
+### FACET — `facets/serviceFacets.js`
+
+Capability maps. Each service registers its own Facet. The management API has a separate Facet for service lifecycle operations.
+
+```js
+// facets/serviceFacets.js
+import { registerService, unregisterService } from "../actions/managementActions.js";
+
+// Management Facet — for adding/removing services at runtime
+export const managementFacet = {
+  delegates: {
+    "service.register":   registerService,
+    "service.unregister": unregisterService,
+  },
+};
+
+// Service Facets are registered dynamically. This is the registry.
+const serviceFacets = {};
+
+export function registerServiceFacet(serviceId, facet) {
+  serviceFacets[serviceId] = facet;
+}
+
+export function getServiceFacet(serviceId) {
+  return serviceFacets[serviceId] || null;
+}
+
+// Example: a "greeter" service registers its own Facet
+// registerServiceFacet("service:greeter", {
+//   delegates: {
+//     "greet": greeterAction,
+//     "greet.personalized": personalizedGreeterAction,
+//   },
+// });
+```
+
+---
+
+### INTENT — `intents/serverIntents.js`
+
+Normalized descriptions of what a request or management operation means.
+
+```js
+// intents/serverIntents.js
+
+// An inbound HTTP request, normalized
+export function requestIntent(method, path, body, rawAuth, wrapperCtx) {
+  return Object.freeze({
+    kind: "http.request",
+    capability: null,        // resolved by Manager via route table
+    identityRef: null,       // resolved by Manager when minting Token
+    payload: { method, path, body },
+    rawAuth,                 // raw auth material for Manager to resolve
+    wrapperCtx,
+    meta: { timestamp: Date.now() },
+  });
+}
+
+// Register a new service at runtime
+export function registerServiceIntent(serviceConfig, token) {
+  return Object.freeze({
+    kind: "management.register",
+    capability: "service.register",
+    identityRef: token.identityRef,
+    payload: serviceConfig,
+    wrapperCtx: "management",
+    meta: { timestamp: Date.now() },
+  });
+}
+
+// Unregister a service
+export function unregisterServiceIntent(serviceId, token) {
+  return Object.freeze({
+    kind: "management.unregister",
+    capability: "service.unregister",
+    identityRef: token.identityRef,
+    payload: { serviceId },
+    wrapperCtx: "management",
+    meta: { timestamp: Date.now() },
+  });
+}
+```
+
+---
+
+### ACTION — `actions/managementActions.js`
+
+Pure functions for service lifecycle. Also, the pattern for service-specific actions.
+
+```js
+// actions/managementActions.js
+import { ServiceForm } from "../forms/serviceForm.js";
+
+export function registerService(state, intent) {
+  const config = intent.payload;
+
+  // Validate against Form
+  const violations = ServiceForm.invariants
+    .map((inv) => inv(config))
+    .filter((r) => r !== true);
+
+  if (violations.length > 0) {
+    return {
+      delta: {},
+      effects: [{
+        kind: "HTTP_RESPONSE",
+        target: "caller",
+        payload: { status: 400, body: { errors: violations } },
+      }],
+    };
+  }
+
+  // Check for conflicts
+  if (state.services[config.identity.entityId]) {
+    return {
+      delta: {},
+      effects: [{
+        kind: "HTTP_RESPONSE",
+        target: "caller",
+        payload: { status: 409, body: { error: "service already registered" } },
+      }],
+    };
+  }
+
+  return {
+    delta: { registerService: config },
+    effects: [
+      {
+        kind: "HTTP_RESPONSE",
+        target: "caller",
+        payload: { status: 201, body: { registered: config.identity.entityId } },
+      },
+      {
+        kind: "LOG",
+        target: "audit",
+        payload: { event: "service.registered", serviceId: config.identity.entityId },
+      },
+    ],
+  };
+}
+
+export function unregisterService(state, intent) {
+  const { serviceId } = intent.payload;
+
+  if (!state.services[serviceId]) {
+    return {
+      delta: {},
+      effects: [{
+        kind: "HTTP_RESPONSE",
+        target: "caller",
+        payload: { status: 404, body: { error: "service not found" } },
+      }],
+    };
+  }
+
+  return {
+    delta: { unregisterService: serviceId },
+    effects: [
+      {
+        kind: "HTTP_RESPONSE",
+        target: "caller",
+        payload: { status: 200, body: { unregistered: serviceId } },
+      },
+      {
+        kind: "LOG",
+        target: "audit",
+        payload: { event: "service.unregistered", serviceId },
+      },
+    ],
+  };
+}
+```
+
+```js
+// actions/greeterActions.js — example service-specific Action
+export function greet(state, intent) {
+  return {
+    delta: {},
+    effects: [{
+      kind: "HTTP_RESPONSE",
+      target: "caller",
+      payload: { status: 200, body: { message: "Hello, world!" } },
+    }],
+  };
+}
+
+export function personalizedGreet(state, intent) {
+  const name = intent.payload.body?.name || "stranger";
+  return {
+    delta: {},
+    effects: [{
+      kind: "HTTP_RESPONSE",
+      target: "caller",
+      payload: { status: 200, body: { message: `Hello, ${name}!` } },
+    }],
+  };
+}
+```
+
+---
+
+### EFFECT — (declared inline by Actions above)
+
+Restated for clarity — the two primary Effect kinds in this server:
+
+```js
+// HTTP_RESPONSE — send a response to the caller
+{
+  kind: "HTTP_RESPONSE",
+  target: "caller",
+  payload: { status: 200, body: { message: "Hello!" } },
+}
+
+// LOG — emit an audit log entry
+{
+  kind: "LOG",
+  target: "audit",
+  payload: { event: "service.registered", serviceId: "service:greeter" },
+}
+```
+
+---
+
+### IMPACT — `impacts/serverImpact.js`
+
+Executes Effects. The HTTP_RESPONSE handler writes to the actual `res` object. This is the *only* place IO occurs.
+
+```js
+// impacts/serverImpact.js
+const handlers = {
+  HTTP_RESPONSE: async (effect, ctx) => {
+    const { res } = ctx;
+    res.writeHead(effect.payload.status, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(effect.payload.body));
+    return { ok: true };
+  },
+
+  LOG: async (effect) => {
+    // In production, this writes to a log service
+    console.log(`[AUDIT] ${JSON.stringify(effect.payload)}`);
+    return { ok: true };
+  },
+};
+
+export async function execute(effects, ctx) {
+  const outcomes = [];
+  for (const effect of effects) {
+    const handler = handlers[effect.kind];
+    if (!handler) {
+      console.error(`No impact handler for: ${effect.kind}`);
+      outcomes.push({ ok: false, error: `unknown effect kind: ${effect.kind}` });
+      continue;
+    }
+    outcomes.push(await handler(effect, ctx));
+  }
+  return outcomes;
+}
+```
+
+---
+
+### WRAPPER — `wrappers/httpWrapper.js`
+
+The HTTP server itself — a structural boundary that listens for connections and exposes events towards Adapters. It does not parse, route, or respond.
+
+```js
+// wrappers/httpWrapper.js
+import { createServer } from "node:http";
+
+export function createHttpWrapper(port) {
+  const server = createServer();
+  let requestHandler = null;
+
+  // Event slot — the Adapter binds here
+  function onRequest(handler) {
+    requestHandler = handler;
+  }
+
+  server.on("request", (req, res) => {
+    if (requestHandler) {
+      requestHandler(req, res);
+    } else {
+      res.writeHead(503);
+      res.end("Server not ready");
+    }
+  });
+
+  function start() {
+    return new Promise((resolve) => {
+      server.listen(port, () => {
+        console.log(`Wrapper listening on :${port}`);
+        resolve();
+      });
+    });
+  }
+
+  function stop() {
+    return new Promise((resolve) => server.close(resolve));
+  }
+
+  return { onRequest, start, stop };
+}
+```
+
+---
+
+### ADAPTER — `adapters/httpAdapter.js`
+
+Converts raw `(req, res)` into Intents. Reads headers, parses body, extracts raw auth material. No routing, no identity resolution, no business logic.
+
+```js
+// adapters/httpAdapter.js
+import { requestIntent }
+  from "../intents/serverIntents.js";
+
+export function bindHttpAdapter(wrapper, dispatch) {
+  wrapper.onRequest(async (req, res) => {
+    // Parse body for non-GET requests
+    const body = await readBody(req);
+
+    // Extract raw auth material — Adapter does NOT mint Tokens
+    const rawAuth = {
+      authHeader: req.headers["authorization"] || "",
+      apiKey: req.headers["x-api-key"] || "",
+    };
+
+    // Normalize into Intent — the Adapter doesn't decide what to do with it
+    const intent = requestIntent(
+      req.method,
+      req.url,
+      body,
+      rawAuth,
+      "httpWrapper"
+    );
+
+    // Dispatch to Manager, passing res as context for Impact
+    await dispatch(intent, { res });
+  });
+}
+
+function readBody(req) {
+  return new Promise((resolve) => {
+    if (req.method === "GET" || req.method === "DELETE") return resolve(null);
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => {
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+      catch { resolve(null); }
+    });
+  });
+}
+```
+
+---
+
+### MANAGER — `manager/serverManager.js`
+
+Orchestrates routing, dynamic service registration, and the request lifecycle.
+
+```js
+// manager/serverManager.js
+import { managementFacet, getServiceFacet, registerServiceFacet }
+  from "../facets/serviceFacets.js";
+import { createServerInstance, applyDelta } from "../instances/serverInstance.js";
+import { execute as runImpact } from "../impacts/serverImpact.js";
+import { bindHttpAdapter } from "../adapters/httpAdapter.js";
+import { issueRequestToken } from "../tokens/requestToken.js";
+
+export function createServerManager(wrapper) {
+  let instance = createServerInstance();
+
+  // --- Route resolution ---
+  function resolveRoute(method, path) {
+    return instance.state.routeTable.find(
+      (r) => r.method === method && matchPath(r.path, path)
+    );
+  }
+
+  function matchPath(pattern, actual) {
+    // Simplified — production would handle params like /users/:id
+    return pattern === actual;
+  }
+
+  // --- Dispatch ---
+  async function dispatch(intent, ctx) {
+    // Manager mints the Token from raw auth material
+    const token = issueRequestToken(intent.rawAuth);
+    ctx.token = token;
+
+    let facet, capability;
+
+    if (intent.kind.startsWith("management.")) {
+      // Management Intents route to the management Facet
+      facet = managementFacet;
+      capability = intent.capability;
+    } else if (intent.kind === "http.request") {
+      // Resolve route from the live routing table
+      const route = resolveRoute(intent.payload.method, intent.payload.path);
+
+      if (!route) {
+        return await runImpact([{
+          kind: "HTTP_RESPONSE",
+          target: "caller",
+          payload: { status: 404, body: { error: "not found" } },
+        }], ctx);
+      }
+
+      facet = getServiceFacet(route.serviceId);
+      capability = route.capability;
+
+      if (!facet) {
+        return await runImpact([{
+          kind: "HTTP_RESPONSE",
+          target: "caller",
+          payload: { status: 502, body: { error: "service facet not loaded" } },
+        }], ctx);
+      }
+    }
+
+    const action = facet.delegates[capability];
+    if (!action) {
+      return await runImpact([{
+        kind: "HTTP_RESPONSE",
+        target: "caller",
+        payload: { status: 405, body: { error: `no capability: ${capability}` } },
+      }], ctx);
+    }
+
+    // Run pure Action
+    const { delta, effects } = action(instance.state, intent);
+
+    // Commit delta
+    if (Object.keys(delta).length > 0) {
+      instance = applyDelta(instance, delta);
+    }
+
+    // If we just registered a service, also register its Facet
+    if (delta.registerService) {
+      const svc = delta.registerService;
+      registerServiceFacet(svc.identity.entityId, svc.facet);
+    }
+
+    // Hand effects to Impact
+    await runImpact(effects, ctx);
+  }
+
+  // --- Binder ---
+  function bind() {
+    bindHttpAdapter(wrapper, dispatch);
+  }
+
+  // --- Dynamic registration API (for programmatic use) ---
+  function registerServiceDirect(serviceConfig, facet) {
+    serviceConfig.facet = facet;
+    const { delta, effects } = managementFacet.delegates["service.register"](
+      instance.state,
+      { payload: serviceConfig }
+    );
+    if (Object.keys(delta).length > 0) {
+      instance = applyDelta(instance, delta);
+      registerServiceFacet(serviceConfig.identity.entityId, facet);
+    }
+    return delta;
+  }
+
+  return { bind, dispatch, registerServiceDirect };
+}
+```
+
+---
+
+### Putting It Together — `server.js`
+
+```js
+// server.js — the entry point
+import { createHttpWrapper } from "./wrappers/httpWrapper.js";
+import { createServerManager } from "./manager/serverManager.js";
+import { createServiceIdentity } from "./identity/serviceIdentity.js";
+import { greet, personalizedGreet } from "./actions/greeterActions.js";
+
+// 1. Wrapper — structural boundary
+const wrapper = createHttpWrapper(3000);
+
+// 2. Manager — orchestrator
+const manager = createServerManager(wrapper);
+manager.bind();
+
+// 3. Register a service dynamically (programmatic)
+manager.registerServiceDirect(
+  {
+    name: "greeter",
+    version: "1.0.0",
+    identity: createServiceIdentity("greeter"),
+    routes: [
+      { method: "GET",  path: "/hello",      capability: "greet" },
+      { method: "POST", path: "/hello/name",  capability: "greet.personalized" },
+    ],
+  },
+  {
+    delegates: {
+      "greet":              greet,
+      "greet.personalized": personalizedGreet,
+    },
+  }
+);
+
+// 4. Start listening
+await wrapper.start();
+
+// Server is live:
+//   GET  /hello       → "Hello, world!"
+//   POST /hello/name  → "Hello, Alice!"
+//
+// To add a new service at runtime, POST to a management endpoint
+// or call manager.registerServiceDirect() from a plugin loader.
+//
+// No restart. No recompile. No core file changes.
+// The Manager simply binds a new Identity + Facet into the live Instance.
+```
+
+---
+
+### What to notice
+
+1. **Dynamic extensibility is just state.** Registering a service = committing a delta to the server Instance. The same `dispatch → Action → delta → commit` flow handles user requests and service registration.
+2. **No framework, no magic.** The routing table is a plain array in Instance state. Adding a route appends to it. Removing a service filters it out. Entirely transparent.
+3. **The Wrapper never routes.** The `http.createServer` callback just hands `(req, res)` to the Adapter. All routing logic lives in the Manager, informed by the Instance's route table.
+4. **Each service is an Identity + Facet pair.** The service's *existence* is its Identity. Its *capabilities* are its Facet. Its *runtime state* (if any) would be its Instance. The service doesn't need to know about the server, HTTP, or other services.
+5. **Impact carries the response context.** The `res` object is passed through as `ctx` — never seen by Actions (pure) or Facets (data). Only Impact's `HTTP_RESPONSE` handler touches it.
+6. **Testing remains trivial.** Test `registerService()` with mock state → assert delta contains the new service. Test `greet()` → assert it returns an HTTP_RESPONSE effect. No server, no sockets, no HTTP.
+
+
+====================================================================================================
+FILE: axis/references/codemaps.prompt.md
+====================================================================================================
+
+# CodeMaps Navigation Prompt
+
+> Canonical source: `architectures/CodeMaps/codemaps.prompt.md` (relative to the MENTIC/Core repository root).
+> `CodeGen/codemaps.prompt.md` and `agent/memory/codemap.prompt.md` are standalone mirrors of this prompt.
+> Make shared changes in the canonical source first, then synchronize both mirrors verbatim. If copies diverge, the canonical source takes precedence.
+
+You are our codebase cartographer. Help us build a “navigation map” for this repository which will be used by cognitive agents (organic or synthetic) to understand the code for support and development to enable recursive self improvement.
+The goal is to create a set of maps that balance breadth and depth, providing enough detail to be actionable without overwhelming them with information.
+We want to keep our cognitive context clear for easy reference and recomposition.
+
+Files may already exist in the /codemaps directory that describe the codebase. If so, look at when they were last modified and check the Git logs from then forward to make sure they're up to date and accurately reflect the changes made since then and now.
+
+**Traverse Like a Tree (Embeddedness & Composition)**:
+Start your analysis at the main entry points (the roots). Trace the execution graph downwards into the core runtime loop (the trunk), out into the major components (thick branches), and finally to the decoupled plugins and public interfaces (leaves/canopy). Avoid cyclic reference loops by focusing on structural composition and bounded contexts. Distinguish clearly between the tightly coupled structural core and the loosely coupled additive extensions.
+
+Goals:
+- Make it easy for an agent to find: entry points, runtime services, major components, and public APIs.
+- The file paths and names are the stable "logical material" territory. Now the agent needs maps to navigate and understand the shape of that territory so it can make plans for how to achieve its goals.
+- we prefer high-signal maps over exhaustive class listings.
+- Every item must include: (a) what it is, (b) why it matters, (c) where it lives (file path), and (d) how to trace execution from an entry point into it.
+- Keep the primary emphasis on structural analysis, but leave behind stable anchor points for a later recomposition/harvest pass.
+
+Recomposer anchor hints:
+- For every major component or subsystem, note whether it appears to be `core-bound`, `adapter-friendly`, or a `candidate reusable subsystem`.
+- When a component looks harvestable, capture the likely capability it provides, the smallest useful boundary around it, and the main seams where infrastructure/framework code attaches to it.
+- Focus on "functional closure" rather than file adjacency: which nearby types/services/config/state stores are actually required for the capability to work.
+- Do not fully design the transplant here. Only identify the structural anchor points, dependency seams, and likely rewrite pressure that a later `recomposer.prompt.md` should inspect in detail.
+
+For major items, include these anchor fields when they can be inferred with confidence:
+- `harvest posture`: `core-bound`, `adapter-friendly`, or `candidate reusable subsystem`
+- `capability nucleus`: the useful behavior this part of the system seems to provide
+- `functional closure`: the smallest set of components/data/contracts that appear necessary for that behavior
+- `dependency seams`: interfaces, adapters, middleware, event boundaries, persistence edges, framework hooks, or config surfaces where the capability attaches to the rest of the repo
+- `rewrite pressure`: what looks portable as-is vs. what appears repo-specific and likely to need refactoring
+
+Repo context:
+- Language(s): [e.g., TypeScript, Rust, Python, C, etc.]
+- Framework(s): [e.g., Node/Express, Next.js, etc.]
+- How it runs: [docker-compose/k8s/systemd/local, etc.]
+- My current task: [what you’re trying to change/build/understand]
+
+Deliverables (in this order):
+
+1) Existing docs inventory & C4-style overview (The Legend)
+- Skim README and docs.
+- Provide a C4 overview (C1: users/systems, C2: containers).
+- For each container: entry file(s), how it's launched, ports, and key config.
+
+2) Entry-point map (The Roots)
+- Find where execution originates: CLI commands, server bootstraps, background workers, scheduled jobs, test harnesses.
+- For each: show the call path down to the first domain-layer action.
+
+3) Runtime topology (The Trunk)
+- What primary processes run (API, workers, schedulers) and how they communicate.
+- Explicitly map out Dependency Injection containers, middleware chains, and lifecycle hooks so execution traces from the root are clear.
+
+4) Component map (The Thick Branches)
+- Break the core application into its massive, structural domain-layer modules.
+- For each core component: responsibilities, key types, and what sub-components it invokes.
+
+5) State & Persistence Map (The Soil/Data)
+- Enumerate all physical data boundaries (SQLite, file system blobs, config files, caches).
+- For each: location on disk, schema/format, which branches own read/write operations, and volatility.
+
+6) Domain model (The Sap)
+- Identify core entities/value objects/events.
+- Show the main workflows/state transitions and where they run through the tree.
+
+7) Extensibility & Plugins Map (The Thin Branches)
+- Clearly separate the strictly structural "core" from completely decoupled/additive extensions.
+- Detail how interfaces attach to the thick branches (e.g., Plugin SDK, component interfaces, hooks).
+- Enumerate existing extension categories (e.g., channels, auth, features) without dissecting their internal shapes.
+
+8) Public surface map (The Canopy)
+- What this tree exposes to the outside world (HTTP routes, GraphQL/RPC, message/event types, exported interfaces).
+- For each: handler location and the immediate internal component it invokes.
+
+9) Focused signature index (The Cellular Level)
+- For the top 20 most central/critical types: name, purpose, key methods, references ("used by", "depends on"), and stable file path.
+
+10) Architectural Guardrails & Workflows (The Laws of Physics)
+- Summarize developer testing flows (test framework, commands to run).
+- Document absolute structural constraints and "anti-patterns" to prevent the tree from breaking (e.g., boundary crossing, static vs dynamic import rules).
+
+11) Recomposer anchors (The Graft Points)
+- Identify the 5-15 most promising harvest targets at the subsystem level, not just isolated classes/functions.
+- For each target:
+  - capability nucleus
+  - why it appears useful outside this repo
+  - harvest posture (`core-bound`, `adapter-friendly`, `candidate reusable subsystem`)
+  - functional closure (minimal set of components/contracts/state needed for the capability)
+  - inbound edges (who drives it) and outbound edges (what it depends on)
+  - dependency seams where adapters/interfaces could be inserted
+  - rewrite pressure: what seems portable, what seems tightly coupled, and what likely has to be reshaped
+  - a short "why this is or is not worth harvesting" note
+- Prefer coherent logical organs over local utility fragments. A larger reusable workflow/service cluster is more valuable than a tiny pure helper with no leverage.
+- Distinguish between:
+  - reusable logic already in a portable shape
+  - logic that is valuable but entangled and would need recomposition
+  - logic that is so runtime-specific that it should only be referenced, not harvested
+
+Output files in codemaps directory:
+01-architecture.md
+02-entry-points.md
+03-runtime-topology.md
+04-components.md
+05-state-and-persistence.md
+06-domain-model.md
+07-extensibility-and-plugins.md
+08-public-surface.md
+09-signature-index.md
+10-guardrails-and-workflows.md
+11-recomposer-anchors.md
+12-task-specific-map.md (optional context for specific task)
+
+Output format:
+- Use Markdown headings.
+- Include mermaid diagrams when helpful.
+- Use stable, clickable file paths.
+- End with: “If I want to change X, start at …” pointers for my task.
+- Timebox yourself per layer and stop expanding when repetition begins.
+- For `11-recomposer-anchors.md`, prefer compact comparison tables plus small dependency/flow diagrams over long prose.
+- When describing harvest candidates, stay concrete about boundaries and seams; avoid vague advice like "could be extracted later" unless you name the likely closure and friction points.
+

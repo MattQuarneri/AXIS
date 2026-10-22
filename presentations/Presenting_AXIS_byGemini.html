@@ -1,0 +1,2685 @@
+<!DOCTYPE html>
+<html lang="en" data-look="obsidian" data-layout="studio">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presenting AXIS — The Architecture of Behavior and Change</title>
+<meta name="description" content="An interactive introduction to AXIS (Agentically eXtensible Instruction Structures). Decompressing Model-View-Controller into Static Essence and Dynamic Expression, revealing the 7 cognitive axes and the engine of state and change.">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     AXIS CSS FACET SYSTEM (Composed at runtime: Layout Facet × Look Facet)
+     Layout Facets: Structure, layout grid, responsive rails
+     Look Facets: Colors, surfaces, borders, shadows, tokens
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<style data-facet="base.css">
+  *, *::before, *::after { box-sizing: border-box; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 80px;
+  }
+  body {
+    margin: 0;
+    font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Inter, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5 { line-height: 1.25; margin: 0 0 .5em; font-weight: 700; letter-spacing: -0.02em; }
+  p { margin: 0 0 1em; }
+  p:last-child { margin-bottom: 0; }
+  code, pre, kbd { font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+  code { font-size: 0.88em; padding: 0.15em 0.4em; border-radius: 4px; }
+  pre { margin: 0; overflow-x: auto; font-size: 13px; line-height: 1.6; tab-size: 2; padding: 14px; border-radius: 8px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  svg { display: block; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  /* Utilities */
+  .u-mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; border-radius: 999px; }
+
+  /* Keyframe Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slideOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(16px) scale(0.96); }
+  }
+  @keyframes pulseGlow {
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(96, 165, 250, 0); }
+    50% { transform: scale(1.02); box-shadow: 0 0 20px var(--accent-glow); }
+    100% { transform: scale(1); box-shadow: 0 0 0 rgba(96, 165, 250, 0); }
+  }
+  @keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+
+<!-- LOOK FACET 1: Obsidian Dark (Default) -->
+<style data-facet="look.obsidian.css" data-family="look">
+  :root,
+  :root[data-look="obsidian"] {
+    --bg-app: #0a0c10;
+    --bg-surface: #12151d;
+    --bg-elevated: #181d28;
+    --bg-subtle: #1f2533;
+    --border: #262e40;
+    --border-hover: #3b4660;
+    --text-main: #edf1f8;
+    --text-muted: #9ba4b8;
+    --text-dim: #657088;
+    --accent: #60a5fa;
+    --accent-glow: rgba(96, 165, 250, 0.25);
+    
+    /* 7 Axes Hues */
+    --c-being: #3b82f6;      /* Blue */
+    --c-identity: #ec4899;   /* Magenta / Pink */
+    --c-meaning: #8b5cf6;    /* Violet */
+    --c-relating: #10b981;   /* Emerald */
+    --c-doing: #f59e0b;      /* Amber / Warm Gold */
+    --c-changing: #ef4444;   /* Vermilion / Red */
+    --c-bridging: #06b6d4;   /* Cyan */
+
+    /* Zones */
+    --zone-edge: rgba(6, 182, 212, 0.1);
+    --zone-pure: rgba(16, 185, 129, 0.1);
+    --zone-orch: rgba(245, 158, 11, 0.1);
+    --zone-eff: rgba(239, 68, 68, 0.1);
+
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-lg: 0 12px 36px rgba(0,0,0,0.6);
+  }
+  :root,
+  :root[data-look="obsidian"] body { background-color: var(--bg-app); color: var(--text-main); }
+  :root,
+  :root[data-look="obsidian"] code { background: var(--bg-elevated); color: #93c5fd; border: 1px solid var(--border); }
+  :root,
+  :root[data-look="obsidian"] pre { background: #07090d; border: 1px solid var(--border); color: #e2e8f0; }
+</style>
+
+<!-- LOOK FACET 2: Architect Light -->
+<style data-facet="look.architect.css" data-family="look">
+  :root[data-look="architect"] {
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f1f5f9;
+    --bg-subtle: #e2e8f0;
+    --border: #cbd5e1;
+    --border-hover: #94a3b8;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+    --accent: #2563eb;
+    --accent-glow: rgba(37, 99, 235, 0.2);
+    
+    --c-being: #1d4ed8;
+    --c-identity: #be185d;
+    --c-meaning: #6d28d9;
+    --c-relating: #047857;
+    --c-doing: #b45309;
+    --c-changing: #b91c1c;
+    --c-bridging: #0e7490;
+
+    --zone-edge: rgba(14, 116, 144, 0.08);
+    --zone-pure: rgba(4, 120, 87, 0.08);
+    --zone-orch: rgba(180, 83, 9, 0.08);
+    --zone-eff: rgba(185, 28, 28, 0.08);
+
+    --success: #047857;
+    --warning: #b45309;
+    --danger: #b91c1c;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 28px rgba(0,0,0,0.12);
+  }
+  :root[data-look="architect"] body { background-color: var(--bg-app); color: var(--text-main); }
+  :root[data-look="architect"] code { background: var(--bg-elevated); color: #1e40af; border: 1px solid var(--border); }
+  :root[data-look="architect"] pre { background: #0f172a; border: 1px solid var(--border); color: #f8fafc; }
+  :root[data-look="architect"] .node-card.essence { background: rgba(37, 99, 235, 0.03); }
+  :root[data-look="architect"] .node-card.expression { background: rgba(190, 24, 93, 0.04); }
+</style>
+
+<!-- LOOK FACET 3: Cyberpunk / High Contrast -->
+<style data-facet="look.cyberpunk.css" data-family="look">
+  :root[data-look="cyberpunk"] {
+    --bg-app: #050508;
+    --bg-surface: #0b0c14;
+    --bg-elevated: #141724;
+    --bg-subtle: #1c2136;
+    --border: #ff007f;
+    --border-hover: #00ffff;
+    --text-main: #f0f4ff;
+    --text-muted: #a6b2d4;
+    --text-dim: #7384aa;
+    --accent: #00ffff;
+    --accent-glow: rgba(0, 255, 255, 0.3);
+    
+    --c-being: #00e5ff;
+    --c-identity: #ff007f;
+    --c-meaning: #bf00ff;
+    --c-relating: #00ff88;
+    --c-doing: #ffbe00;
+    --c-changing: #ff3344;
+    --c-bridging: #00ffff;
+
+    --zone-edge: rgba(0, 255, 255, 0.12);
+    --zone-pure: rgba(0, 255, 136, 0.12);
+    --zone-orch: rgba(255, 190, 0, 0.12);
+    --zone-eff: rgba(255, 51, 68, 0.15);
+
+    --success: #00ff88;
+    --warning: #ffbe00;
+    --danger: #ff0055;
+    --shadow-sm: 0 2px 10px rgba(255, 0, 127, 0.25);
+    --shadow-lg: 0 12px 40px rgba(0, 255, 255, 0.25);
+  }
+  :root[data-look="cyberpunk"] body { background-color: var(--bg-app); color: var(--text-main); }
+  :root[data-look="cyberpunk"] code { background: #160a22; color: #00ffff; border: 1px solid #ff007f; }
+  :root[data-look="cyberpunk"] pre { background: #07030d; border: 1px solid #bf00ff; color: #00ffea; }
+  :root[data-look="cyberpunk"] .card { border-color: #2a2040; }
+  :root[data-look="cyberpunk"] .card:hover { border-color: #ff007f; }
+</style>
+
+<!-- LAYOUT FACET 1: Studio (Navigation Rail + Stage + Inspector) -->
+<style data-facet="layout.studio.css" data-family="layout">
+  :root,
+  :root[data-layout="studio"] {
+    --stage-max-w: 1120px;
+  }
+  :root .app-shell,
+  :root[data-layout="studio"] .app-shell {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+  :root .rail,
+  :root[data-layout="studio"] .rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    z-index: 40;
+  }
+  :root .stage,
+  :root[data-layout="studio"] .stage {
+    min-width: 0;
+    padding: 40px clamp(16px, 4.5vw, 64px) 120px;
+  }
+  :root .container,
+  :root[data-layout="studio"] .container {
+    max-width: var(--stage-max-w);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+  }
+</style>
+
+<!-- LAYOUT FACET 2: Reader (Single Column Deep Dive) -->
+<style data-facet="layout.reader.css" data-family="layout">
+  :root[data-layout="reader"] {
+    --stage-max-w: 880px;
+  }
+  :root[data-layout="reader"] .app-shell {
+    display: block;
+    min-height: 100vh;
+  }
+  :root[data-layout="reader"] .rail {
+    position: sticky;
+    top: 0;
+    height: auto;
+    background: var(--bg-surface);
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+  }
+  :root[data-layout="reader"] .rail-brand-box {
+    margin-bottom: 0;
+  }
+  :root[data-layout="reader"] .brand-subtitle {
+    display: none;
+  }
+  :root[data-layout="reader"] .rail-nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 62%;
+    scrollbar-width: none;
+  }
+  :root[data-layout="reader"] .rail-nav::-webkit-scrollbar { display: none; }
+  :root[data-layout="reader"] .rail-nav .nav-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+  :root[data-layout="reader"] .rail-nav .nav-label {
+    display: none;
+  }
+  :root[data-layout="reader"] .rail-nav .nav-link {
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  :root[data-layout="reader"] .rail-facet-picker {
+    margin-top: 0 !important;
+  }
+  :root[data-layout="reader"] .stage {
+    padding: 44px clamp(16px, 4.5vw, 36px) 120px;
+  }
+  :root[data-layout="reader"] .container {
+    max-width: var(--stage-max-w);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 72px;
+  }
+</style>
+
+<!-- COMPONENT STYLING & RESPONSIVE BEHAVIOR -->
+<style data-facet="components.css">
+  /* Navigation */
+  .rail-brand-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .brand-badge {
+    display: flex; align-items: center; gap: 10px; font-weight: 750; font-size: 18px;
+    color: var(--text-main); text-decoration: none;
+  }
+  .brand-logo {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--c-bridging), var(--c-doing), var(--c-changing));
+    display: grid; place-items: center; color: #fff; font-weight: 900; font-size: 15px;
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .brand-title { letter-spacing: -0.01em; }
+  .brand-subtitle { font-size: 11.5px; color: var(--text-dim); line-height: 1.4; }
+
+  .nav-group { display: flex; flex-direction: column; gap: 4px; }
+  .nav-label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--text-dim); letter-spacing: 0.08em; padding: 8px 10px 4px; }
+  .nav-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px;
+    color: var(--text-muted); text-decoration: none; font-size: 13.5px; font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .nav-link:hover { color: var(--text-main); background: var(--bg-elevated); }
+  .nav-link.active { color: var(--accent); background: var(--accent-glow); font-weight: 600; }
+  .nav-link .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* Facet Switcher Controls */
+  .facet-box {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .facet-box-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+  .btn-group { display: flex; background: var(--bg-subtle); border-radius: 6px; padding: 3px; gap: 2px; }
+  .btn-group button {
+    flex: 1; text-align: center; font-size: 11.5px; font-weight: 600; padding: 6px 8px; border-radius: 4px;
+    color: var(--text-muted); transition: all 0.15s ease; min-height: 32px;
+  }
+  .btn-group button:hover { color: var(--text-main); }
+  .btn-group button.active {
+    background: var(--bg-surface); color: var(--text-main); box-shadow: var(--shadow-sm); font-weight: 700;
+  }
+
+  /* Mobile Rail Controls */
+  .rail-mobile-actions {
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .mobile-menu-btn,
+  .mobile-theme-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    transition: all 0.15s ease;
+  }
+  .mobile-menu-btn:hover,
+  .mobile-theme-btn:hover {
+    border-color: var(--accent);
+  }
+
+  /* Mobile Drawer */
+  .mobile-drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .mobile-drawer-backdrop.open {
+    display: block;
+    opacity: 1;
+  }
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(340px, 86vw);
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border);
+    z-index: 999;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .mobile-drawer.open {
+    transform: translateX(0);
+  }
+  .mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-drawer-close {
+    font-size: 20px;
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  .mobile-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mobile-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    min-height: 44px;
+    transition: all 0.15s ease;
+  }
+  .mobile-nav-link:hover,
+  .mobile-nav-link:focus-visible {
+    color: var(--text-main);
+    background: var(--bg-elevated);
+  }
+  .mobile-nav-link.active {
+    color: var(--accent);
+    background: var(--accent-glow);
+    font-weight: 600;
+  }
+  .mobile-nav-link .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0;
+  }
+
+  /* Mobile Quick-Swipe Pills (Sticky beneath top rail on mobile) */
+  .mobile-quick-pills {
+    display: none;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 14px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 57px;
+    z-index: 35;
+    scrollbar-width: none;
+  }
+  .mobile-quick-pills::-webkit-scrollbar { display: none; }
+  .pill-item {
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    transition: all 0.15s ease;
+  }
+  .pill-item:hover { color: var(--text-main); border-color: var(--border-hover); }
+  .pill-item.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Hero Section */
+  .section-hero {
+    display: flex; flex-direction: column; gap: 20px; padding-bottom: 28px; border-bottom: 1px solid var(--border);
+  }
+  .hero-pretitle {
+    display: inline-flex; align-items: center; gap: 8px; color: var(--accent);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .hero-title { font-size: clamp(30px, 4.2vw, 48px); font-weight: 800; letter-spacing: -0.03em; margin: 0; }
+  .hero-lead { font-size: clamp(16px, 2vw, 19px); color: var(--text-muted); line-height: 1.6; max-width: 820px; }
+
+  .act-header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+  .act-num { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+  .act-title { font-size: clamp(22px, 3vw, 32px); font-weight: 750; margin: 0; }
+  .act-subtitle { font-size: clamp(14px, 1.8vw, 16px); color: var(--text-muted); max-width: 780px; }
+
+  /* Cards and Panels */
+  .card {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: clamp(18px, 3vw, 26px); display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-sm);
+  }
+  .card-highlight { border-color: var(--border-hover); background: linear-gradient(180deg, var(--bg-surface), var(--bg-elevated)); }
+
+  /* The MVC Decompression Component */
+  .mvc-viewport {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: clamp(18px, 3vw, 24px); display: flex; flex-direction: column; gap: 24px;
+  }
+  .stage-stepper {
+    display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border);
+    padding-bottom: 16px; gap: 12px; flex-wrap: wrap;
+  }
+  .stepper-btn {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; background: var(--bg-elevated); border: 1px solid var(--border);
+    color: var(--text-muted); transition: all 0.2s; min-height: 40px;
+  }
+  .stepper-btn:hover { color: var(--text-main); border-color: var(--border-hover); }
+  .stepper-btn.active {
+    background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: var(--shadow-sm);
+  }
+
+  /* Grid Views for Decompression */
+  .mvc-stage-view { display: none; animation: fadeIn 0.3s ease; }
+  .mvc-stage-view.active { display: block; }
+
+  .classic-mvc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; }
+  
+  .mvc-box {
+    background: var(--bg-elevated); border: 2px dashed var(--border); border-radius: 10px;
+    padding: 20px; display: flex; flex-direction: column; gap: 12px; position: relative;
+  }
+  .mvc-box.model { border-color: #3b82f6; }
+  .mvc-box.view { border-color: #06b6d4; }
+  .mvc-box.controller { border-color: #f59e0b; }
+  
+  .mvc-box-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+  .mvc-conflation-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .mvc-conflation-item {
+    font-size: 12.5px; padding: 7px 10px; background: var(--bg-subtle); border-radius: 6px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  }
+  .mvc-conflation-item .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+  .tag-static { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid #3b82f6; }
+  .tag-dynamic { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid #ec4899; }
+
+  /* Decompressed Split Grid */
+  .split-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 768px) { .split-columns { grid-template-columns: 1fr; } }
+
+  .pole-panel {
+    border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .pole-panel.essence {
+    background: rgba(59, 130, 246, 0.04); border: 2px solid var(--border-hover);
+  }
+  .pole-panel.expression {
+    background: rgba(236, 72, 153, 0.04); border: 2px solid var(--border-hover);
+  }
+  .pole-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .pole-icon { width: 14px; height: 14px; display: inline-block; flex-shrink: 0; }
+  .pole-icon.hollow { border: 2px solid currentColor; border-radius: 2px; }
+  .pole-icon.filled { background: currentColor; border-radius: 999px; }
+
+  /* Table Scroll Wrapper */
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin: 4px 0;
+  }
+  .table-scroll-wrapper table {
+    min-width: 660px;
+    margin: 0;
+  }
+
+  /* 7 Axes Matrix Table & Visual Cards */
+  .axes-grid-header {
+    display: grid;
+    grid-template-columns: 170px 1fr 1fr;
+    gap: 14px;
+    padding: 0 4px 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+  .axes-grid-header .col-hdr {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .axes-grid-header .essence-hdr { color: var(--accent); }
+  .axes-grid-header .expression-hdr { color: var(--c-identity); }
+
+  .axes-matrix {
+    display: grid; grid-template-columns: 170px 1fr 1fr; gap: 14px; align-items: stretch;
+  }
+  @media (max-width: 860px) {
+    .axes-grid-header { display: none; }
+    .axes-matrix { grid-template-columns: 1fr; gap: 10px; }
+    .axis-label-cell { border-bottom: 2px solid var(--border); padding: 12px 0 6px !important; margin-top: 14px; }
+  }
+  .axis-label-cell {
+    display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px;
+  }
+  .axis-name { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .axis-question { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+
+  /* Essence and Expression Nodes */
+  .node-card {
+    border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px;
+    cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); position: relative;
+    user-select: none; -webkit-tap-highlight-color: transparent; min-height: 100px;
+  }
+  /* Essence: Sharp corners, hollow outline */
+  .node-card.essence {
+    border: 2px solid var(--node-color); background: transparent; border-radius: 6px;
+  }
+  .node-card.essence:hover {
+    background: rgba(255,255,255,0.04); transform: translateY(-2px); box-shadow: 0 4px 16px -4px var(--node-color);
+  }
+  .node-card.essence.active {
+    background: rgba(255,255,255,0.06); transform: translateY(-2px); box-shadow: 0 0 0 2px var(--text-main), 0 4px 20px -2px var(--node-color);
+  }
+  /* Expression: Rounded pill/capsule, filled tinted body */
+  .node-card.expression {
+    border: 1px solid var(--node-color); background: rgba(255,255,255,0.03); border-radius: 16px;
+  }
+  .node-card.expression:hover {
+    background: rgba(255,255,255,0.08); transform: translateY(-2px); box-shadow: 0 4px 16px -4px var(--node-color);
+  }
+  .node-card.expression.active {
+    background: rgba(255,255,255,0.1); transform: translateY(-2px); box-shadow: 0 0 0 2px var(--text-main), 0 4px 20px -2px var(--node-color);
+  }
+
+  .node-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .node-name { font-size: 15px; font-weight: 750; letter-spacing: -0.01em; color: var(--node-color); }
+  .node-pole-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); }
+  .node-tagline { font-size: 12.5px; color: var(--text-muted); line-height: 1.4; }
+  .node-analogy { font-size: 11px; color: var(--text-dim); font-style: italic; }
+
+  /* Details Drawer */
+  .inspector-drawer {
+    background: var(--bg-surface); border: 2px solid var(--accent); border-radius: 14px;
+    padding: clamp(16px, 3vw, 24px); display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-lg);
+    animation: fadeIn 0.25s ease;
+  }
+  .inspector-details-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  @media (max-width: 680px) {
+    .inspector-details-grid { grid-template-columns: 1fr; gap: 12px; }
+  }
+
+  /* Visual Architecture Flow Diagram in Act 3 */
+  .flow-diagram-container {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; display: flex; flex-direction: column; gap: 16px; margin-top: 8px;
+  }
+  .flow-pipeline-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .flow-box {
+    flex: 1; min-width: 130px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; text-align: center; display: flex; flex-direction: column; gap: 4px;
+  }
+  .flow-arrow { color: var(--text-dim); font-size: 18px; font-weight: 800; flex-shrink: 0; }
+  .membrane-callout-bar {
+    background: rgba(239, 68, 68, 0.12); border: 1px dashed var(--danger); border-radius: 8px;
+    padding: 10px 14px; font-size: 12.5px; color: #f87171; text-align: center; font-weight: 600;
+  }
+
+  /* The Live Pipeline Simulator */
+  .simulator-container {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: clamp(16px, 3vw, 24px); display: flex; flex-direction: column; gap: 24px;
+  }
+  .pipeline-lanes {
+    display: grid; grid-template-columns: 1.2fr 2fr 2fr 1.6fr; gap: 14px;
+    position: relative; padding: 8px 0;
+  }
+  .pipeline-lane {
+    border-radius: 10px; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px;
+    background: var(--zone-bg); border: 1px solid var(--border); position: relative;
+    transition: outline 0.2s ease, transform 0.2s ease;
+  }
+  .lane-badge { font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: 0.06em; color: var(--lane-color); }
+  .lane-title { font-size: 13.5px; font-weight: 700; margin: 0; }
+  .lane-nodes { display: flex; flex-direction: column; gap: 10px; }
+  
+  .lane-node-item {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 12.5px; display: flex; flex-direction: column; gap: 4px;
+    transition: all 0.25s ease;
+  }
+  .lane-node-item.active {
+    border-color: var(--accent); background: var(--bg-elevated); transform: scale(1.03);
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .mobile-lane-arrow {
+    display: none;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 18px;
+    font-weight: 800;
+    margin: -10px 0;
+  }
+  .mobile-membrane-divider {
+    display: none;
+    background: rgba(239, 68, 68, 0.15);
+    border: 2px dashed var(--danger);
+    color: #f87171;
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 900px) {
+    .pipeline-lanes { grid-template-columns: 1fr; gap: 16px; }
+    .mobile-lane-arrow { display: block; }
+    .mobile-membrane-divider { display: block; }
+    .pipeline-lane#lane-effectful { border-left-width: 1px !important; }
+  }
+
+  /* Controls & Action buttons */
+  .sim-actions-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    padding: 16px; background: var(--bg-elevated); border-radius: 10px; border: 1px solid var(--border);
+  }
+  .sim-btn {
+    padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s ease;
+    min-height: 38px;
+  }
+  .sim-btn-primary { background: var(--accent); color: #fff; }
+  .sim-btn-primary:hover { filter: brightness(1.12); }
+  .sim-btn-secondary { background: var(--bg-subtle); color: var(--text-main); border: 1px solid var(--border); }
+  .sim-btn-secondary:hover { border-color: var(--border-hover); background: var(--bg-surface); }
+  .sim-btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid #ef4444; }
+  .sim-btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+  .sim-btn-outline { background: transparent; color: var(--text-muted); border: 1px dashed var(--border); }
+  .sim-btn-outline:hover { color: var(--text-main); border-color: var(--text-muted); }
+
+  /* Live Inspection Log & Grids */
+  .sim-log-viewer {
+    background: #06080d; border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    font-family: ui-monospace, monospace; font-size: 12px; max-height: 280px; overflow-y: auto;
+  }
+  .sim-output-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  @media (max-width: 768px) {
+    .sim-log-viewer,
+    .sim-output-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Rules & Comparison Cards */
+  .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+  .rule-item {
+    background: var(--bg-elevated); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
+    padding: 16px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .rule-item h4 { font-size: 14.5px; margin: 0; color: var(--text-main); }
+  .rule-item p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+  /* Interactive Architecture Decision Tree */
+  .quiz-box {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: clamp(18px, 3vw, 24px); display: flex; flex-direction: column; gap: 16px;
+  }
+  .quiz-option {
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 8px;
+    background: var(--bg-elevated); border: 1px solid var(--border); cursor: pointer; transition: all 0.15s;
+    min-height: 48px;
+  }
+  .quiz-option:hover { border-color: var(--accent); }
+  .quiz-option.selected { border-color: var(--accent); background: var(--accent-glow); }
+
+  /* Toast Notification */
+  .axis-toast-banner {
+    position: fixed;
+    bottom: clamp(16px, 3vw, 24px);
+    right: clamp(16px, 3vw, 24px);
+    max-width: min(420px, calc(100vw - 32px));
+    z-index: 9999;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    word-break: break-word;
+    animation: slideIn 0.25s ease;
+  }
+
+  /* Responsive Rules for Small Devices (max-width: 960px) */
+  @media (max-width: 960px) {
+    :root .app-shell,
+    :root[data-layout="studio"] .app-shell,
+    :root[data-layout="reader"] .app-shell {
+      grid-template-columns: 100% !important;
+      display: block !important;
+    }
+    
+    .rail {
+      position: sticky !important;
+      top: 0 !important;
+      height: auto !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      padding: 10px 16px !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      z-index: 100 !important;
+      backdrop-filter: blur(12px) !important;
+      background: color-mix(in srgb, var(--bg-surface) 92%, transparent) !important;
+    }
+
+    .brand-subtitle { display: none !important; }
+    .rail-nav { display: none !important; }
+    .rail-facet-picker { display: none !important; }
+    .rail-mobile-actions { display: flex !important; }
+    .mobile-menu-btn { display: inline-flex !important; }
+    .mobile-theme-btn { display: inline-flex !important; }
+    .mobile-quick-pills { display: flex !important; }
+
+    .stage {
+      padding: 24px 14px 80px !important;
+    }
+    .container {
+      gap: 52px !important;
+    }
+  }
+</style>
+</head>
+
+<body data-wrapper="axis-presentation">
+
+<div class="app-shell" data-wrapper="app-shell">
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       LEFT RAIL: NAVIGATION & FACET COMPOSER
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <aside class="rail" data-wrapper="navigation-rail" id="nav-rail">
+    <!-- Brand -->
+    <div class="rail-brand-box">
+      <a href="#hero" class="brand-badge">
+        <span class="brand-logo">A</span>
+        <span class="brand-title">AXIS</span>
+      </a>
+      <div class="brand-subtitle">
+        Agentically eXtensible Instruction Structures
+      </div>
+    </div>
+
+    <!-- Navigation Menu (Desktop & Reader Mode) -->
+    <nav class="rail-nav" data-wrapper="rail-nav" aria-label="Page Sections">
+      <div class="nav-group">
+        <span class="nav-label">The Journey</span>
+        <a href="#mvc-origin" class="nav-link active" data-adapter="nav-link"><span class="dot"></span>1. Starting with MVC</a>
+        <a href="#decompression" class="nav-link" data-adapter="nav-link"><span class="dot"></span>2. Essence & Expression</a>
+        <a href="#seven-axes" class="nav-link" data-adapter="nav-link"><span class="dot"></span>3. The 7 Cognitive Axes</a>
+        <a href="#flow-of-change" class="nav-link" data-adapter="nav-link"><span class="dot"></span>4. The Flow of Change</a>
+        <a href="#interactive-simulator" class="nav-link" data-adapter="nav-link"><span class="dot"></span>5. Live AXIS Simulator</a>
+        <a href="#axis-lite" class="nav-link" data-adapter="nav-link"><span class="dot"></span>6. AXIS Lite & Rules</a>
+        <a href="#why-agents" class="nav-link" data-adapter="nav-link"><span class="dot"></span>7. For Coding Agents</a>
+      </div>
+    </nav>
+
+    <!-- Mobile Header Quick Actions -->
+    <div class="rail-mobile-actions">
+      <button class="mobile-theme-btn" id="mobile-quick-theme-btn" aria-label="Toggle Look Theme" title="Toggle Theme (Dark / Light / Cyber)">
+        <span id="mobile-theme-icon">🎨</span>
+      </button>
+      <button class="mobile-menu-btn" id="mobile-menu-toggle-btn" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <svg id="menu-icon-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Facet Customizer (Desktop Sidebar & Reader Bar) -->
+    <div class="rail-facet-picker" style="margin-top:auto;">
+      <div class="facet-box" data-wrapper="facet-controls">
+        <div class="facet-box-title">🎨 Composable Facets</div>
+        
+        <!-- Look Facet -->
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:11px; color:var(--text-muted);">Look Facet (Themes)</span>
+          <div class="btn-group" id="look-facet-buttons" role="group" aria-label="Look Facet Switcher">
+            <button class="active" data-adapter="facet-look" data-look="obsidian">Dark</button>
+            <button data-adapter="facet-look" data-look="architect">Light</button>
+            <button data-adapter="facet-look" data-look="cyberpunk">Cyber</button>
+          </div>
+        </div>
+
+        <!-- Layout Facet -->
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:11px; color:var(--text-muted);">Layout Facet (Geometry)</span>
+          <div class="btn-group" id="layout-facet-buttons" role="group" aria-label="Layout Facet Switcher">
+            <button class="active" data-adapter="facet-layout" data-layout="studio">Studio</button>
+            <button data-adapter="facet-layout" data-layout="reader">Reader</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Navigation Drawer -->
+  <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop" aria-hidden="true"></div>
+  <aside class="mobile-drawer" id="mobile-drawer" aria-label="Mobile Navigation" role="dialog" aria-modal="true">
+    <div class="mobile-drawer-header">
+      <div class="brand-badge">
+        <span class="brand-logo">A</span>
+        <span class="brand-title">AXIS Guide</span>
+      </div>
+      <button class="mobile-drawer-close" id="mobile-drawer-close-btn" aria-label="Close Navigation">✕</button>
+    </div>
+
+    <div class="mobile-drawer-body">
+      <div class="mobile-nav-group">
+        <span class="nav-label">Chapters</span>
+        <a href="#mvc-origin" class="mobile-nav-link active" data-adapter="mobile-nav-link"><span class="dot"></span>1. Starting with MVC</a>
+        <a href="#decompression" class="mobile-nav-link" data-adapter="mobile-nav-link"><span class="dot"></span>2. Essence & Expression</a>
+        <a href="#seven-axes" class="mobile-nav-link" data-adapter="mobile-nav-link"><span class="dot"></span>3. The 7 Cognitive Axes</a>
+        <a href="#flow-of-change" class="mobile-nav-link" data-adapter="mobile-nav-link"><span class="dot"></span>4. The Flow of Change</a>
+        <a href="#interactive-simulator" class="mobile-nav-link" data-adapter="mobile-nav-link"><span class="dot"></span>5. Live AXIS Simulator</a>
+        <a href="#axis-lite" class="mobile-nav-link" data-adapter="mobile-nav-link"><span class="dot"></span>6. AXIS Lite & Rules</a>
+        <a href="#why-agents" class="mobile-nav-link" data-adapter="mobile-nav-link"><span class="dot"></span>7. For Coding Agents</a>
+      </div>
+
+      <div class="facet-box" style="margin-top:20px;">
+        <div class="facet-box-title">🎨 Composable Facets</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <span style="font-size:11px; color:var(--text-muted);">Theme (Look Facet)</span>
+          <div class="btn-group" role="group" aria-label="Mobile Look Switcher">
+            <button class="active" data-adapter="facet-look" data-look="obsidian">Dark</button>
+            <button data-adapter="facet-look" data-look="architect">Light</button>
+            <button data-adapter="facet-look" data-look="cyberpunk">Cyber</button>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
+          <span style="font-size:11px; color:var(--text-muted);">Layout (Geometry)</span>
+          <div class="btn-group" role="group" aria-label="Mobile Layout Switcher">
+            <button class="active" data-adapter="facet-layout" data-layout="studio">Studio</button>
+            <button data-adapter="facet-layout" data-layout="reader">Reader</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Quick-Swipe Pills (Sticky beneath top bar on mobile) -->
+  <nav class="mobile-quick-pills" aria-label="Quick section navigation">
+    <a href="#mvc-origin" class="pill-item active" data-adapter="quick-pill">1. MVC</a>
+    <a href="#decompression" class="pill-item" data-adapter="quick-pill">2. Essence</a>
+    <a href="#seven-axes" class="pill-item" data-adapter="quick-pill">3. 7 Axes</a>
+    <a href="#flow-of-change" class="pill-item" data-adapter="quick-pill">4. Flow</a>
+    <a href="#interactive-simulator" class="pill-item" data-adapter="quick-pill">5. Sim</a>
+    <a href="#axis-lite" class="pill-item" data-adapter="quick-pill">6. Rules</a>
+    <a href="#why-agents" class="pill-item" data-adapter="quick-pill">7. Agents</a>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       MAIN STAGE: THE PEDAGOGICAL PRESENTATION
+       ══════════════════════════════════════════════════════════════════════════ -->
+  <main class="stage" data-wrapper="stage-content">
+    <div class="container">
+
+      <!-- HERO / INTRO -->
+      <section class="section-hero" id="hero" data-wrapper="section-hero">
+        <div class="hero-pretitle">
+          <span class="badge" style="background:var(--accent-glow); color:var(--accent);">Meta-Architecture</span>
+          <span>Cognitive Systems Design</span>
+        </div>
+        <h1 class="hero-title">Understanding AXIS</h1>
+        <p class="hero-lead">
+          Software exists to produce change. Yet modern software architectures routinely drown in tangled state,
+          leaky I/O, and blurred responsibilities. <strong>AXIS</strong> is not another framework—it is a cognitive map
+          revealing how human intent becomes codified behavior, and how behavior safely produces change.
+        </p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+          <a href="#mvc-origin" class="sim-btn sim-btn-primary" data-adapter="smooth-scroll">Start the Walkthrough ↓</a>
+          <a href="#interactive-simulator" class="sim-btn sim-btn-secondary" data-adapter="smooth-scroll">Jump to Live Simulator ⚡</a>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ACT 1: STARTING WITH MODEL-VIEW-CONTROLLER (THE COMPRESSION PROBLEM)
+           ════════════════════════════════════════════════════════════════════════ -->
+      <section id="mvc-origin" class="section-block" data-wrapper="act-1">
+        <div class="act-header">
+          <span class="act-num">Act I · The Common Ground</span>
+          <h2 class="act-title">Where We Begin: Classic Model-View-Controller</h2>
+          <p class="act-subtitle">
+            Every developer learns MVC. It gave the software industry its first clean vocabulary.
+            So why does almost every production MVC project eventually degenerate into "fat models",
+            "god controllers", and untestable spaghetti?
+          </p>
+        </div>
+
+        <div class="mvc-viewport" data-wrapper="mvc-viewport" id="decompression">
+          <div class="stage-stepper" data-wrapper="stage-stepper">
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span style="font-weight:700; font-size:14px;">The Decompression Progression</span>
+              <span style="font-size:12px; color:var(--text-muted);">Watch how three overloaded buckets decompress into clean structural dimensions</span>
+            </div>
+            <div style="display:flex; gap:8px;" id="decompression-tabs">
+              <button class="stepper-btn active" data-adapter="step-tab" data-target="view-compressed">1. Compressed MVC</button>
+              <button class="stepper-btn" data-adapter="step-tab" data-target="view-split">2. Static vs. Dynamic</button>
+              <button class="stepper-btn" data-adapter="step-tab" data-target="view-axis">3. The 7 AXIS Dimensions</button>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 1: COMPRESSED MVC -->
+          <div id="view-compressed" class="mvc-stage-view active" data-wrapper="subview-compressed">
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px;">
+              In classic MVC, each of the three terms acts as an ontological landfill. Notice how many mutually
+              contradictory responsibilities are stuffed inside each box:
+            </p>
+
+            <div class="classic-mvc-grid">
+              <!-- Model Box -->
+              <div class="mvc-box model">
+                <div class="mvc-box-title" style="color:#60a5fa;">
+                  <span>MODEL</span>
+                  <span class="badge" style="background:#1e3a8a; color:#93c5fd;">Overloaded</span>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted);">Conflates static definitions with runtime snapshots:</p>
+                <ul class="mvc-conflation-list">
+                  <li class="mvc-conflation-item">
+                    <span>Schema, types & field invariants</span>
+                    <span class="tag tag-static">Static</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Relational parent/child rules</span>
+                    <span class="tag tag-static">Static</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Live in-memory record state</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Session auth tickets & claim scopes</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Database queries & joins</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- View Box -->
+              <div class="mvc-box view">
+                <div class="mvc-box-title" style="color:#06b6d4;">
+                  <span>VIEW</span>
+                  <span class="badge" style="background:#0e7490; color:#a5f3fc;">Overloaded</span>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted);">Conflates physical mount boundaries with projected facets:</p>
+                <ul class="mvc-conflation-list">
+                  <li class="mvc-conflation-item">
+                    <span>Custom element & route shells</span>
+                    <span class="tag tag-static">Static</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Render slots & event mount points</span>
+                    <span class="tag tag-static">Static</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Visible role/lifecycle surfaces</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Theme / Layout visual facets</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Direct DOM mutations & listeners</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Controller Box -->
+              <div class="mvc-box controller">
+                <div class="mvc-box-title" style="color:#f59e0b;">
+                  <span>CONTROLLER</span>
+                  <span class="badge" style="background:#78350f; color:#fde68a;">Dangerous</span>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted);">Conflates pure math with irreversible side-effects:</p>
+                <ul class="mvc-conflation-list">
+                  <li class="mvc-conflation-item">
+                    <span>Pure business calculations & logic</span>
+                    <span class="tag tag-static">Static</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>HTTP / DOM input normalization</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>State commit & workflow orchestration</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                  <li class="mvc-conflation-item">
+                    <span>Disk, SQL, Email, Fetch I/O</span>
+                    <span class="tag tag-dynamic">Dynamic</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div style="margin-top:16px; padding:12px 16px; background:var(--bg-subtle); border-radius:8px; font-size:13px; color:var(--text-muted);">
+              💡 <strong>The Symptom:</strong> When a single class handles both a pure business calculation (e.g. discount logic) and a direct I/O call (e.g. database write or email send), unit testing requires heavy mocking, AI agents make catastrophic assumptions, and race conditions flourish.
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 2: STATIC VS DYNAMIC DECOMPOSITION -->
+          <div id="view-split" class="mvc-stage-view" data-wrapper="subview-split">
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px;">
+              Step 1 of AXIS: <strong>Separate Essence (Static Definition) from Expression (Dynamic Realization).</strong>
+              Static structures define what something <em>is</em>; dynamic expression governs how it <em>manifests at runtime</em>.
+            </p>
+
+            <div class="split-columns">
+              <!-- ESSENCE COLUMN -->
+              <div class="pole-panel essence">
+                <div class="pole-title" style="color:var(--accent);">
+                  <span class="pole-icon hollow"></span>
+                  <span>ESSENCE (Static Definition)</span>
+                </div>
+                <p style="font-size:13px; color:var(--text-muted);">
+                  The stable outline. Schemas, identities, pure functions, and capability maps.
+                  <strong>Contains no live values, no mutations, and no I/O.</strong>
+                </p>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-being);">
+                    <strong>Form</strong> (from Model): Schema, field types, invariant formulas
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-identity);">
+                    <strong>Identity</strong> (from Model): Enduring entity naming rule & ID policy
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-relating);">
+                    <strong>Bond</strong> (from Model): Static relationship rule, multiplicity, consistency constraints
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-bridging);">
+                    <strong>Wrapper</strong> (from View): Structural shell, custom-element tag, host boundary
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-meaning);">
+                    <strong>Facet</strong> (from View/Controller): Permitted capability lens (e.g. Draft vs Paid)
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-doing);">
+                    <strong>Action</strong> (from Controller): Pure deterministic transition function
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-changing);">
+                    <strong>Effect</strong> (from Controller): Declarative data description of requested side-effect
+                  </div>
+                </div>
+              </div>
+
+              <!-- EXPRESSION COLUMN -->
+              <div class="pole-panel expression">
+                <div class="pole-title" style="color:var(--c-identity);">
+                  <span class="pole-icon filled"></span>
+                  <span>EXPRESSION (Dynamic Realization)</span>
+                </div>
+                <p style="font-size:13px; color:var(--text-muted);">
+                  The runtime manifestation. State snapshots, scoped tokens, live orchestration, and concrete I/O.
+                  <strong>This is where time, lifecycles, and side-effects reside.</strong>
+                </p>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-being);">
+                    <strong>Instance</strong> (from Model): Committed in-memory state snapshot & revision counter
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-identity);">
+                    <strong>Token</strong> (from Model): Scoped session ticket, claim flags, expiration timestamp
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-relating);">
+                    <strong>Link</strong> (from Model): Pre-hydrated graph traversal and resolved entity pointer
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-bridging);">
+                    <strong>Adapter</strong> (from View/Controller): Normalizes noisy browser/HTTP events into clean Intents
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-meaning);">
+                    <strong>Intent</strong> (from Controller): Normalized command object describing user/system will
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-doing);">
+                    <strong>Manager</strong> (from Controller): Boundary coordinator, conductor, state committer
+                  </div>
+                  <div class="lane-node-item" style="border-left:3px solid var(--c-changing);">
+                    <strong>Impact</strong> (from Controller): Concrete executor that executes effects against the world
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 3: THE 7 AXIS MATRIX -->
+          <div id="view-axis" class="mvc-stage-view" data-wrapper="subview-axis">
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px;">
+              When you align each Static concept with its Dynamic partner, you discover <strong>Seven Orthogonal Cognitive Dimensions</strong>.
+              Nothing is arbitrary: each row answers one fundamental question of computation.
+            </p>
+
+            <div class="table-scroll-wrapper">
+              <table style="width:100%; min-width:680px; border-collapse:collapse;">
+                <thead>
+                  <tr style="background:var(--bg-elevated); text-align:left; font-size:12px; color:var(--text-dim); text-transform:uppercase;">
+                    <th style="padding:12px;">Axis (The Concern)</th>
+                    <th style="padding:12px;">Essence (Static Definition)</th>
+                    <th style="padding:12px;">Expression (Dynamic Manifestation)</th>
+                    <th style="padding:12px;">The Core Question</th>
+                  </tr>
+                </thead>
+                <tbody style="font-size:13.5px;">
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-being);">1. Being</td>
+                    <td style="padding:12px;"><code style="color:var(--c-being);">Form</code> (Schema & Invariants)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-being);">Instance</code> (State snapshot & Rev)</td>
+                    <td style="padding:12px; color:var(--text-muted);">What shape can state take?</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-identity);">2. Identity</td>
+                    <td style="padding:12px;"><code style="color:var(--c-identity);">Identity</code> (Enduring Entity ID)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-identity);">Token</code> (Scoped ticket/claims)</td>
+                    <td style="padding:12px; color:var(--text-muted);">Is it the same entity across time?</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-meaning);">3. Meaning</td>
+                    <td style="padding:12px;"><code style="color:var(--c-meaning);">Facet</code> (Capability lens/role)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-meaning);">Intent</code> (Normalized command)</td>
+                    <td style="padding:12px; color:var(--text-muted);">What operations are permitted right now?</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-relating);">4. Relating</td>
+                    <td style="padding:12px;"><code style="color:var(--c-relating);">Bond</code> (Relationship rule)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-relating);">Link</code> (Hydrated graph edge)</td>
+                    <td style="padding:12px; color:var(--text-muted);">How do entities connect and compose?</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-doing);">5. Doing</td>
+                    <td style="padding:12px;"><code style="color:var(--c-doing);">Action</code> (Pure transition math)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-doing);">Manager</code> (Conductor / Orchestrator)</td>
+                    <td style="padding:12px; color:var(--text-muted);">How does computation calculate changes?</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-changing);">6. Changing</td>
+                    <td style="padding:12px;"><code style="color:var(--c-changing);">Effect</code> (Side-effect as data)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-changing);">Impact</code> (Concrete I/O executor)</td>
+                    <td style="padding:12px; color:var(--text-muted);">What physical change occurs in the world?</td>
+                  </tr>
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:12px; font-weight:700; color:var(--c-bridging);">7. Bridging</td>
+                    <td style="padding:12px;"><code style="color:var(--c-bridging);">Wrapper</code> (Boundary host/element)</td>
+                    <td style="padding:12px;"><code style="color:var(--c-bridging);">Adapter</code> (Input normalizer)</td>
+                    <td style="padding:12px; color:var(--text-muted);">How does outside world touch inside code?</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:12px; color:var(--text-dim); margin-top:8px; display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+              <span>↔️ Swipe horizontally to inspect all columns</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ACT 2: EXPLORING THE 7 AXES INTERACTIVELY
+           ════════════════════════════════════════════════════════════════════════ -->
+      <section id="seven-axes" class="section-block" data-wrapper="act-2">
+        <div class="act-header">
+          <span class="act-num">Act II · The Topology</span>
+          <h2 class="act-title">The 7 Axes Interactive Explorer</h2>
+          <p class="act-subtitle">
+            Click on any card below to inspect its contractual responsibility, its conventional programming equivalent,
+            and its placement rules.
+          </p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Visual Legend -->
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:12px 16px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <span style="font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Visual Semantics:</span>
+              <div style="display:flex; align-items:center; gap:6px; font-size:12.5px;">
+                <span class="pole-icon hollow" style="color:var(--accent);"></span>
+                <span><strong>Hollow / Sharp:</strong> Essence (Static outline, zero state)</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:12.5px;">
+                <span class="pole-icon filled" style="color:var(--c-identity);"></span>
+                <span><strong>Filled / Pill:</strong> Expression (Dynamic, stateful, active)</span>
+              </div>
+            </div>
+            <span style="font-size:11.5px; color:var(--text-dim);">*Click any card to inspect contract details</span>
+          </div>
+
+          <!-- DESKTOP AXES GRID HEADER -->
+          <div class="axes-grid-header">
+            <div class="col-hdr">Concern</div>
+            <div class="col-hdr essence-hdr"><span class="pole-icon hollow"></span> Essence (Static Rules & Schemas)</div>
+            <div class="col-hdr expression-hdr"><span class="pole-icon filled"></span> Expression (Runtime State & Actions)</div>
+          </div>
+
+          <!-- THE 7x2 GRID -->
+          <div class="axes-matrix" id="axes-cards-grid" data-wrapper="axes-cards-grid">
+            
+            <!-- ROW 1: BEING -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-being);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-being);"></span>Being</span>
+              <span class="axis-question">Does it exist, and what shape is it?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-being);" data-adapter="node-select" data-id="form">
+              <div class="node-header">
+                <span class="node-name">FORM</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Generative shape definition & invariant rules.</span>
+              <span class="node-analogy">Familiar: TypeScript type, JSON schema, validator</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-being);" data-adapter="node-select" data-id="instance">
+              <div class="node-header">
+                <span class="node-name">INSTANCE</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">Committed state snapshot with revision ID.</span>
+              <span class="node-analogy">Familiar: Entity state, DB row, Redux snapshot</span>
+            </div>
+
+            <!-- ROW 2: IDENTITY -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-identity);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-identity);"></span>Identity</span>
+              <span class="axis-question">Is it the same entity over time?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-identity);" data-adapter="node-select" data-id="identity">
+              <div class="node-header">
+                <span class="node-name">IDENTITY</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Permanent entity identifier and addressing contract.</span>
+              <span class="node-analogy">Familiar: UUID, URI, Primary Key definition</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-identity);" data-adapter="node-select" data-id="token">
+              <div class="node-header">
+                <span class="node-name">TOKEN</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">Scoped, temporal handle with expiry & capability claims.</span>
+              <span class="node-analogy">Familiar: JWT, Session Ticket, Bearer Token</span>
+            </div>
+
+            <!-- ROW 3: MEANING -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-meaning);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-meaning);"></span>Meaning</span>
+              <span class="axis-question">What operations are available right now?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-meaning);" data-adapter="node-select" data-id="facet">
+              <div class="node-header">
+                <span class="node-name">FACET</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Capability map & surface for role or lifecycle stage.</span>
+              <span class="node-analogy">Familiar: Role policy table, state machine guard map</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-meaning);" data-adapter="node-select" data-id="intent">
+              <div class="node-header">
+                <span class="node-name">INTENT</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">Clean normalized command object expressing user goal.</span>
+              <span class="node-analogy">Familiar: Command DTO, Flux Action payload</span>
+            </div>
+
+            <!-- ROW 4: RELATING -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-relating);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-relating);"></span>Relating</span>
+              <span class="axis-question">How are entities connected?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-relating);" data-adapter="node-select" data-id="bond">
+              <div class="node-header">
+                <span class="node-name">BOND</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Static relationship rule, cardinality & relational invariants.</span>
+              <span class="node-analogy">Familiar: Foreign Key constraint, Aggregate rule</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-relating);" data-adapter="node-select" data-id="link">
+              <div class="node-header">
+                <span class="node-name">LINK</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">Resolved, pre-hydrated reference traverser.</span>
+              <span class="node-analogy">Familiar: Hydrated relation, ORM join result</span>
+            </div>
+
+            <!-- ROW 5: DOING -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-doing);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-doing);"></span>Doing</span>
+              <span class="axis-question">How does logic compute changes?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-doing);" data-adapter="node-select" data-id="action">
+              <div class="node-header">
+                <span class="node-name">ACTION</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Pure deterministic logic returning <code>{delta, effects[]}</code>.</span>
+              <span class="node-analogy">Familiar: Pure reducer, pure business domain rule</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-doing);" data-adapter="node-select" data-id="manager">
+              <div class="node-header">
+                <span class="node-name">MANAGER</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">Runtime conductor: routing, workflow, and state commit.</span>
+              <span class="node-analogy">Familiar: Process manager, store coordinator</span>
+            </div>
+
+            <!-- ROW 6: CHANGING -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-changing);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-changing);"></span>Changing</span>
+              <span class="axis-question">What side-effects occur in the world?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-changing);" data-adapter="node-select" data-id="effect">
+              <div class="node-header">
+                <span class="node-name">EFFECT</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Declarative data payload describing a needed side-effect.</span>
+              <span class="node-analogy">Familiar: Redux Saga descriptor, Elm Cmd</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-changing);" data-adapter="node-select" data-id="impact">
+              <div class="node-header">
+                <span class="node-name">IMPACT</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">The ONLY place where I/O executes (Network, Disk, DOM).</span>
+              <span class="node-analogy">Familiar: Side-effect driver, I/O runner</span>
+            </div>
+
+            <!-- ROW 7: BRIDGING -->
+            <div class="axis-label-cell">
+              <span class="axis-name" style="color:var(--c-bridging);"><span style="width:8px; height:8px; border-radius:50%; background:var(--c-bridging);"></span>Bridging</span>
+              <span class="axis-question">How does outside world touch inside?</span>
+            </div>
+            <div class="node-card essence" style="--node-color:var(--c-bridging);" data-adapter="node-select" data-id="wrapper">
+              <div class="node-header">
+                <span class="node-name">WRAPPER</span>
+                <span class="node-pole-tag">Essence</span>
+              </div>
+              <span class="node-tagline">Structural mount boundary, host element, route shell.</span>
+              <span class="node-analogy">Familiar: Web Component &lt;tag&gt;, API route handler</span>
+            </div>
+            <div class="node-card expression" style="--node-color:var(--c-bridging);" data-adapter="node-select" data-id="adapter">
+              <div class="node-header">
+                <span class="node-name">ADAPTER</span>
+                <span class="node-pole-tag">Expression</span>
+              </div>
+              <span class="node-tagline">Edge translator converting raw external noise into Intent.</span>
+              <span class="node-analogy">Familiar: Event listener, JSON request parser</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Node Inspector Drawer -->
+          <div id="node-inspector" class="inspector-drawer" style="display:none;" data-wrapper="node-inspector">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span id="inspect-tag" class="badge" style="background:var(--accent-glow); color:var(--accent); margin-bottom:6px;">AXIS COMPONENT</span>
+                <h3 id="inspect-title" style="margin:0; font-size:22px;">Component Name</h3>
+              </div>
+              <button data-adapter="close-inspector" style="color:var(--text-dim); font-size:20px;">✕</button>
+            </div>
+            <p id="inspect-desc" style="font-size:14px; color:var(--text-muted); margin:0;">Description goes here...</p>
+            <div class="inspector-details-grid">
+              <div style="background:var(--bg-elevated); padding:12px; border-radius:8px; border:1px solid var(--border);">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px;">Type Contract</div>
+                <pre id="inspect-contract" style="font-size:11px; padding:8px;"></pre>
+              </div>
+              <div style="background:var(--bg-elevated); padding:12px; border-radius:8px; border:1px solid var(--border);">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px;">Golden Rule & Placement</div>
+                <div id="inspect-rule" style="font-size:12.5px; color:var(--text-main); line-height:1.5;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ACT 3: THE FLOW OF CHANGE & THE IO MEMBRANE
+           ════════════════════════════════════════════════════════════════════════ -->
+      <section id="flow-of-change" class="section-block" data-wrapper="act-3">
+        <div class="act-header">
+          <span class="act-num">Act III · The Engine</span>
+          <h2 class="act-title">How Change and State Operate</h2>
+          <p class="act-subtitle">
+            Software does not mutate by magic. It transforms through a strict cognitive pipeline.
+            AXIS's most powerful innovation is <strong>The Fork</strong> and <strong>The I/O Membrane</strong>.
+          </p>
+        </div>
+
+        <div class="card card-highlight">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px;">
+            <div>
+              <h3 style="font-size:18px; margin-bottom:8px;">1. The Purity Membrane</h3>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                In traditional code, functions perform HTTP requests, write to databases, or mutate DOM elements anywhere.
+                In AXIS, a strict geometric boundary exists: <strong>The Membrane</strong>.
+              </p>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                <strong>Actions</strong> are strictly pure. They are mathematical formulas that take the current state and an Intent,
+                and return what <em>would</em> change. <strong>Only Impact</strong> is allowed to penetrate the membrane and touch the outside world.
+              </p>
+            </div>
+            <div>
+              <h3 style="font-size:18px; margin-bottom:8px;">2. The Pure Fork: <code>{ delta, effects }</code></h3>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                When an Action executes, it emits two pure data structures:
+              </p>
+              <ul style="font-size:13px; color:var(--text-muted); padding-left:18px; margin:0 0 10px;">
+                <li><strong><code>delta</code>:</strong> State modifications to be validated and committed to the Instance.</li>
+                <li><strong><code>effects[]</code>:</strong> Inert data objects describing what external work must happen.</li>
+              </ul>
+              <p style="font-size:13px; color:var(--text-muted);">
+                Neither has happened yet! If an invariant check fails on the delta, the transaction is rejected,
+                and the effects are discarded without touching the database or sending duplicate emails.
+              </p>
+            </div>
+          </div>
+
+          <!-- Visual Architecture Pipeline Diagram -->
+          <div class="flow-diagram-container">
+            <div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:4px;">
+              The Geometric Pipeline: Intent to Impact
+            </div>
+            <div class="flow-pipeline-row">
+              <div class="flow-box" style="border-color:var(--c-bridging);">
+                <span class="badge" style="background:rgba(6, 182, 212, 0.15); color:var(--c-bridging); margin:0 auto;">1. Edge</span>
+                <strong style="font-size:13px;">Adapter</strong>
+                <span style="font-size:11px; color:var(--text-dim);">Raw Event ➔ Intent</span>
+              </div>
+              <span class="flow-arrow">➔</span>
+              <div class="flow-box" style="border-color:var(--c-meaning);">
+                <span class="badge" style="background:rgba(139, 92, 246, 0.15); color:var(--c-meaning); margin:0 auto;">2. Guard</span>
+                <strong style="font-size:13px;">Facet</strong>
+                <span style="font-size:11px; color:var(--text-dim);">Capability Permitted?</span>
+              </div>
+              <span class="flow-arrow">➔</span>
+              <div class="flow-box" style="border-color:var(--c-doing); background:var(--zone-pure);">
+                <span class="badge" style="background:rgba(245, 158, 11, 0.15); color:var(--c-doing); margin:0 auto;">3. Pure Math</span>
+                <strong style="font-size:13px;">Action</strong>
+                <span style="font-size:11px; color:var(--text-dim);">Returns {delta, effects[]}</span>
+              </div>
+              <span class="flow-arrow">➔</span>
+              <div class="flow-box" style="border-color:var(--c-being);">
+                <span class="badge" style="background:rgba(59, 130, 246, 0.15); color:var(--c-being); margin:0 auto;">4. Commit</span>
+                <strong style="font-size:13px;">Manager</strong>
+                <span style="font-size:11px; color:var(--text-dim);">Validate Form ➔ Instance</span>
+              </div>
+            </div>
+
+            <!-- The Membrane Separator -->
+            <div class="membrane-callout-bar">
+              ⚡ <strong>THE I/O MEMBRANE</strong> · Strict boundary quarantining all side-effects from pure code
+            </div>
+
+            <div style="display:flex; justify-content:flex-end;">
+              <div class="flow-box" style="width:100%; max-width:320px; border-color:var(--danger); background:var(--zone-eff);">
+                <span class="badge" style="background:rgba(239, 68, 68, 0.15); color:var(--danger); margin:0 auto;">5. The Only I/O Site</span>
+                <strong style="font-size:13px; color:var(--danger);">Impact Executor</strong>
+                <span style="font-size:11px; color:var(--text-muted);">Executes HTTP, DB write, email send, DOM paint</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ACT 4: LIVE INTERACTIVE AXIS SIMULATOR (THE PAGE RUNNING AXIS)
+           ════════════════════════════════════════════════════════════════════════ -->
+      <section id="interactive-simulator" class="section-block" data-wrapper="act-4">
+        <div class="act-header">
+          <span class="act-num">Act IV · Live Execution</span>
+          <h2 class="act-title">The Running Pipeline: An Interactive Demonstration</h2>
+          <p class="act-subtitle">
+            Watch an operation flow through the zones in real time. We are managing an <strong>Invoice Domain</strong>:
+            dispatch an Intent, watch the packet travel, inspect the Pure Action's returned delta & effects,
+            and observe commit-time invariant enforcement!
+          </p>
+        </div>
+
+        <div class="simulator-container" data-wrapper="sim-container">
+          
+          <!-- SIMULATOR CONTROL BAR -->
+          <div class="sim-actions-bar" data-wrapper="sim-controls">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Dispatch Intent:</span>
+              <button class="sim-btn sim-btn-primary" data-adapter="sim-intent" data-intent="addItem">
+                ➕ Add Item ($100)
+              </button>
+              <button class="sim-btn sim-btn-secondary" data-adapter="sim-intent" data-intent="applyDiscount">
+                🏷️ Apply 20% Discount
+              </button>
+              <button class="sim-btn sim-btn-secondary" data-adapter="sim-intent" data-intent="sendInvoice">
+                ✉️ Send Invoice (Emit Effect)
+              </button>
+              <button class="sim-btn sim-btn-danger" data-adapter="sim-intent" data-intent="illegalDiscount">
+                ⚠️ Attempt Illegal Discount (150%)
+              </button>
+              <button class="sim-btn sim-btn-outline" id="sim-reset-btn" data-adapter="sim-reset" title="Reset Invoice State">
+                🔄 Reset State
+              </button>
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <label style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; cursor:pointer; min-height:36px;">
+                <input type="checkbox" id="sim-step-mode" data-adapter="sim-toggle-step" style="width:16px; height:16px; accent-color:var(--accent);">
+                <span>Step-by-Step Mode</span>
+              </label>
+              <button id="sim-next-btn" class="sim-btn sim-btn-primary" style="display:none;" data-adapter="sim-next-step">
+                Step ⏭️
+              </button>
+            </div>
+          </div>
+
+          <!-- THE PIPELINE LANES VISUALIZATION -->
+          <div class="pipeline-lanes" data-wrapper="pipeline-lanes" id="sim-lanes">
+            
+            <!-- ZONE 1: EDGE -->
+            <div class="pipeline-lane" style="--zone-bg:var(--zone-edge); --lane-color:var(--c-bridging);" id="lane-edge">
+              <span class="lane-badge">1. Edge (Bridging)</span>
+              <h4 class="lane-title">Normalization</h4>
+              <div class="lane-nodes">
+                <div class="lane-node-item" id="node-wrapper-box">
+                  <strong>Wrapper</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">UI Mount / Endpoint Host</span>
+                </div>
+                <div class="lane-node-item" id="node-adapter-box">
+                  <strong>Adapter</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Normalizes event into Intent</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-lane-arrow" aria-hidden="true">↓</div>
+
+            <!-- ZONE 2: MEANING & PURE CORE -->
+            <div class="pipeline-lane" style="--zone-bg:var(--zone-pure); --lane-color:var(--c-meaning);" id="lane-meaning">
+              <span class="lane-badge">2. Pure Core (Doing)</span>
+              <h4 class="lane-title">Pure Computation</h4>
+              <div class="lane-nodes">
+                <div class="lane-node-item" id="node-facet-box">
+                  <strong>Facet Guard</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Checks active capabilities</span>
+                </div>
+                <div class="lane-node-item" id="node-action-box">
+                  <strong>Pure Action</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Returns {delta, effects[]}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-lane-arrow" aria-hidden="true">↓</div>
+
+            <!-- ZONE 3: ORCHESTRATION & COMMIT -->
+            <div class="pipeline-lane" style="--zone-bg:var(--zone-orch); --lane-color:var(--c-doing);" id="lane-orch">
+              <span class="lane-badge">3. Orchestration</span>
+              <h4 class="lane-title">State Invariants & Commit</h4>
+              <div class="lane-nodes">
+                <div class="lane-node-item" id="node-manager-box">
+                  <strong>Manager Conductor</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Validates Form Invariants</span>
+                </div>
+                <div class="lane-node-item" id="node-instance-box">
+                  <strong>Instance</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Committed: Rev #<span id="instance-rev">1</span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-membrane-divider" aria-hidden="true">⚡ THE I/O MEMBRANE (QUARANTINED SIDE-EFFECT BOUNDARY) ⚡</div>
+
+            <!-- ZONE 4: THE MEMBRANE & IMPACT -->
+            <div class="pipeline-lane" style="--zone-bg:var(--zone-eff); --lane-color:var(--c-changing); border-left:3px dashed var(--danger);" id="lane-effectful">
+              <span class="lane-badge" style="color:var(--danger);">4. The Membrane (I/O)</span>
+              <h4 class="lane-title">Effectful Impact</h4>
+              <div class="lane-nodes">
+                <div class="lane-node-item" id="node-effect-box">
+                  <strong>Effect (Inert Data)</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Crosses the membrane</span>
+                </div>
+                <div class="lane-node-item" id="node-impact-box">
+                  <strong>Impact</strong>
+                  <span style="font-size:11px; color:var(--text-dim);">Executes DOM / Fetch / Email</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- PACKET INSPECTOR & REAL-TIME STATE -->
+          <div class="sim-output-grid">
+            <!-- Current State Display -->
+            <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:8px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:11.5px; font-weight:700; text-transform:uppercase; color:var(--text-dim);">Current Instance State</span>
+                <span class="badge" id="invoice-status-badge" style="background:#1e3a8a; color:#93c5fd;">Status: DRAFT</span>
+              </div>
+              <pre id="sim-state-json" style="font-size:11.5px; padding:10px;"></pre>
+            </div>
+
+            <!-- Pipeline Event Log -->
+            <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:8px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:11.5px; font-weight:700; text-transform:uppercase; color:var(--text-dim);">Execution Pipeline Trace</span>
+                <button data-adapter="sim-clear-log" style="font-size:11px; color:var(--text-dim);">Clear</button>
+              </div>
+              <pre id="sim-trace-log" style="font-size:11.5px; padding:10px; max-height:160px; overflow-y:auto;"></pre>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ACT 5: AXIS LITE & THE HARD RULES (NO CEREMONY SHOCK)
+           ════════════════════════════════════════════════════════════════════════ -->
+      <section id="axis-lite" class="section-block" data-wrapper="act-5">
+        <div class="act-header">
+          <span class="act-num">Act V · Pragmatism First</span>
+          <h2 class="act-title">AXIS Lite: Preserving the Discipline, Not the Ceremony</h2>
+          <p class="act-subtitle">
+            Do not let 14 terms overwhelm you. In 90% of real-world services and frontend components,
+            you only need <strong>AXIS Lite</strong>. Add components only when the problem justifies it.
+          </p>
+        </div>
+
+        <!-- The Non-Negotiable Hard Rules -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 style="font-size:18px; margin-bottom:12px;">The 7 Non-Negotiable Hard Rules</h3>
+          <div class="rule-grid">
+            <div class="rule-item">
+              <h4>1. Actions Stay Pure</h4>
+              <p>They transform state and declare effects. They never call <code>fetch</code>, touch the database, or read system clocks.</p>
+            </div>
+            <div class="rule-item">
+              <h4>2. Effects Are Data</h4>
+              <p>An Effect is an inert JSON object describing what to do. It cannot execute itself.</p>
+            </div>
+            <div class="rule-item">
+              <h4>3. Only Impact Performs I/O</h4>
+              <p>Disk, network, queues, and DOM manipulation are quarantined strictly to Impact handlers.</p>
+            </div>
+            <div class="rule-item">
+              <h4>4. Adapters Normalize at the Edge</h4>
+              <p>Raw browser click events or HTTP payloads are sanitized into stable, replayable Intents immediately.</p>
+            </div>
+            <div class="rule-item">
+              <h4>5. State Has One Explicit Owner</h4>
+              <p>No loose global mutable variables. The Manager boundary owns and versions state transitions.</p>
+            </div>
+            <div class="rule-item">
+              <h4>6. Invariants Validated on Commit</h4>
+              <p>Every delta is verified against Form rules before state changes take effect. Invalid deltas are rejected cleanly.</p>
+            </div>
+            <div class="rule-item">
+              <h4>7. Explicit Cross-Boundary Seams</h4>
+              <p>Bounded contexts never touch each other's in-memory state directly. They communicate via declared Effects.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Escalation Advisor -->
+        <div class="quiz-box" data-wrapper="advisor-quiz">
+          <h3 style="font-size:17px; margin:0;">🧭 AXIS Escalation Advisor: Which Pieces Do You Need?</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin:0;">Select your project's characteristics to get your recommended architecture profile:</p>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+            <div class="quiz-option selected" data-adapter="quiz-opt" data-profile="lite">
+              <input type="radio" name="advisor" checked style="margin-top:2px;">
+              <div>
+                <strong style="font-size:13px; display:block;">Standard CRUD / UI App</strong>
+                <span style="font-size:12px; color:var(--text-muted);">Owned state, standard business rules, API persistence.</span>
+              </div>
+            </div>
+            <div class="quiz-option" data-adapter="quiz-opt" data-profile="roles">
+              <input type="radio" name="advisor" style="margin-top:2px;">
+              <div>
+                <strong style="font-size:13px; display:block;">Role & Lifecycle Heavy</strong>
+                <span style="font-size:12px; color:var(--text-muted);">Users with different permissions seeing different surfaces at different stages.</span>
+              </div>
+            </div>
+            <div class="quiz-option" data-adapter="quiz-opt" data-profile="graph">
+              <input type="radio" name="advisor" style="margin-top:2px;">
+              <div>
+                <strong style="font-size:13px; display:block;">Relational Aggregate</strong>
+                <span style="font-size:12px; color:var(--text-muted);">Parent-child consistency constraints across multiple entities.</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="advisor-result" style="background:var(--bg-elevated); padding:16px; border-radius:8px; border:1px solid var(--border); font-size:13px; line-height:1.5;">
+            <strong>Recommended Profile: AXIS Lite (5 Components)</strong><br>
+            <span style="color:var(--text-muted);">Use: <code>Form</code> + <code>Instance</code> + <code>Action</code> + <code>Manager</code> + <code>Effect/Impact</code>.</span><br>
+            <em>Do not introduce Tokens, Facets, Bonds, or Links until your domain complexity demands them!</em>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════════════
+           ACT 6: WHY CODING AGENTS (AND HUMANS) NEED AXIS
+           ════════════════════════════════════════════════════════════════════════ -->
+      <section id="why-agents" class="section-block" data-wrapper="act-6">
+        <div class="act-header">
+          <span class="act-num">Act VI · The Agentic Frontier</span>
+          <h2 class="act-title">AI Coding Agents Need Maps, Not Just Prompts</h2>
+          <p class="act-subtitle">
+            AI agents can generate syntactically correct code effortlessly. The hardest problem is structural:
+            determining <em>where</em> logic belongs, what it is permitted to touch, and how to prevent architectural rot.
+          </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card">
+            <h3 style="font-size:17px; color:var(--danger); display:flex; align-items:center; gap:8px;">
+              <span>❌ The Prompt-Only Trap</span>
+            </h3>
+            <p style="font-size:13px; color:var(--text-muted);">
+              When an agent is asked to "add a discount feature" to a vague codebase:
+            </p>
+            <ul style="font-size:12.5px; color:var(--text-muted); padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+              <li>It puts raw SQL/API calls directly inside an event handler.</li>
+              <li>It mutates shared global state without incrementing revision counters.</li>
+              <li>It misses cross-entity invariants.</li>
+              <li>It generates code that compiles, but damages the long-term maintainability of the project.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:17px; color:var(--success); display:flex; align-items:center; gap:8px;">
+              <span>✅ The AXIS Placement Grammar</span>
+            </h3>
+            <p style="font-size:13px; color:var(--text-muted);">
+              With AXIS, the agent has an unambiguous decision tree:
+            </p>
+            <ul style="font-size:12.5px; color:var(--text-muted); padding-left:18px; display:flex; flex-direction:column; gap:6px;">
+              <li><strong>Need to calculate?</strong> Implement a pure function in <code>actions/</code>.</li>
+              <li><strong>Need external I/O?</strong> Declare an <code>Effect</code>, executed only in <code>impacts/</code>.</li>
+              <li><strong>Need input mapping?</strong> Normalize it in <code>adapters/</code>.</li>
+              <li><strong>Unit testing?</strong> Run the Action with input state. No database mocks, no network stubs required!</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px; background:var(--bg-elevated);">
+          <h3 style="font-size:16px; margin-bottom:8px;">Harvesting Reusable Organs with Recomposition</h3>
+          <p style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+            Code reuse should not start by copying files. It starts with identifying the <strong>functional closure</strong>
+            around a capability. In AXIS, a capability's nucleus comprises its Form, its pure Actions, its Bonds, and its declared Effects.
+            Agents can transplant this organ into another repository safely because its boundary seams and side-effects are completely explicit.
+          </p>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer style="border-top:1px solid var(--border); padding-top:32px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; font-size:13px; color:var(--text-dim);" data-wrapper="footer">
+        <div>
+          <strong>AXIS Architecture Guide</strong> · Designed by Gemini for MENTIC Cognitive Systems
+        </div>
+        <div>
+          AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC · Originally published at <a href="https://mentic.com/AXIS">mentic.com/AXIS</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+          <br>If you found these ideas useful you could <a href="https://buymeacoffee.com/mattq4">Buy Me a Coffee</a> to show your support.
+        </div>
+      </footer>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     AXIS IN-BROWSER KERNEL
+     (Written strictly following AXIS: Wrappers, Adapters, Intents, Actions,
+      State Manager with Commit Invariants, Declarative Effects & Impacts)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script id="axis-in-browser-app">
+(() => {
+  'use strict';
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 1. FORMS & SCHEMAS (Essence of Being)
+  // ──────────────────────────────────────────────────────────────────────────
+  const InvoiceForm = {
+    defaults: {
+      id: 'inv-1001',
+      customer: 'Acme Corp',
+      status: 'DRAFT', // 'DRAFT', 'SENT', 'PAID'
+      items: [{ label: 'Cognitive Architecture Audit', amount: 100 }],
+      discountPercent: 0,
+      total: 100
+    },
+    validate: (state) => {
+      if (state.total < 0) return 'Invariant Violation: Total cannot be negative!';
+      if (state.discountPercent < 0 || state.discountPercent > 100) {
+        return 'Invariant Violation: Discount percent must be between 0 and 100!';
+      }
+      if (state.items.length === 0) return 'Invariant Violation: Invoice must have at least one line item!';
+      return null;
+    }
+  };
+
+  const ComponentRegistry = {
+    form: {
+      name: 'FORM',
+      pole: 'Essence',
+      tag: 'Generative State Contract',
+      desc: 'Defines the valid shape, defaults, and invariants of state before any values exist. Zero runtime state.',
+      contract: '{ shape, defaults, invariants[], transitions? }',
+      rule: 'Forms define shape, never hold values. Invariant formulas run at commit time to protect state integrity.'
+    },
+    instance: {
+      name: 'INSTANCE',
+      pole: 'Expression',
+      tag: 'Committed State Snapshot',
+      desc: 'The authoritative, versioned runtime snapshot of data adhering to a Form. Updated only through Manager commits.',
+      contract: '{ formRef, identityRef, revisionId, state }',
+      rule: 'All mutations must yield a new immutable revision. No in-place property mutations permitted.'
+    },
+    identity: {
+      name: 'IDENTITY',
+      pole: 'Essence',
+      tag: 'Enduring Sameness',
+      desc: 'The immutable identification rule and namespace for an entity across databases, workflows, and time.',
+      contract: '{ entityNamespace, idPolicy, versioning }',
+      rule: 'Identity never expires or changes. Scoped temporal authorization belongs in Tokens.'
+    },
+    token: {
+      name: 'TOKEN',
+      pole: 'Expression',
+      tag: 'Scoped Temporal Projection',
+      desc: 'An ephemeral capability ticket carrying specific claims, session state, and an expiration timestamp.',
+      contract: '{ identityRef, scope, capabilities, expiresAt }',
+      rule: 'Tokens are issued and verified dynamically. When a token expires, capabilities revoke instantly.'
+    },
+    facet: {
+      name: 'FACET',
+      pole: 'Essence',
+      tag: 'Capability Surface',
+      desc: 'A lens mapping which operations are legal for a given role or lifecycle stage. If an operation is not in the Facet, it does not exist.',
+      contract: '{ name, allowedIntents[], delegates: { intent: action } }',
+      rule: 'Security and lifecycle state guards live in Facets, preventing sprawling if/else conditionals in controllers.'
+    },
+    intent: {
+      name: 'INTENT',
+      pole: 'Expression',
+      tag: 'Normalized Semantic Meaning',
+      desc: 'A sanitized data payload expressing what an external actor intended to do, stripped of transport noise.',
+      contract: '{ type, payload, actor, timestamp }',
+      rule: 'Adapters produce Intents. Actions receive Intents. Never pass raw HTTP or DOM events into business logic.'
+    },
+    bond: {
+      name: 'BOND',
+      pole: 'Essence',
+      tag: 'Static Relationship Constraint',
+      desc: 'Defines cardinality, ownership boundaries, and consistency invariants between multiple Forms.',
+      contract: '{ ownerFormRef, targetFormRef, cardinality, relationalInvariants[] }',
+      rule: 'Bonds establish the schema graph and relational integrity rules checked during multi-entity commits.'
+    },
+    link: {
+      name: 'LINK',
+      pole: 'Expression',
+      tag: 'Hydrated Dynamic Graph',
+      desc: 'The runtime traversal and resolved object pointer satisfying a Bond for a specific Instance.',
+      contract: '{ bondRef, sourceInstanceRef, targetInstanceRef, resolved }',
+      rule: 'Links pre-hydrate dependencies at composition time so pure Actions never perform database joins.'
+    },
+    action: {
+      name: 'ACTION',
+      pole: 'Essence',
+      tag: 'Pure State Transition',
+      desc: 'Deterministic mathematical function: takes currentState and intent, returns { delta, effects[] } with zero I/O.',
+      contract: '(state, intent) => { delta: Partial<State>, effects: Effect[] }',
+      rule: 'Actions must be 100% pure. No network calls, no disk reads, no mutation. Testable with zero mocks.'
+    },
+    manager: {
+      name: 'MANAGER',
+      pole: 'Expression',
+      tag: 'Boundary Orchestrator',
+      desc: 'The conductor owning routing, workflow steps, and state commit. Validates invariants before updating Instances.',
+      contract: '{ composer: wiring, conductor: dispatch, committer: validateAndCommit }',
+      rule: 'A Manager coords logic; it does not contain business calculations. Composer sets up; Conductor runs.'
+    },
+    effect: {
+      name: 'EFFECT',
+      pole: 'Essence',
+      tag: 'Side-Effect as Data',
+      desc: 'Inert data structure describing requested external I/O. Does nothing on its own until handed to Impact.',
+      contract: '{ effectType: string, payload: any }',
+      rule: 'Keep side-effects as data until execution. This enables effortless replayability, auditing, and cancellation.'
+    },
+    impact: {
+      name: 'IMPACT',
+      pole: 'Expression',
+      tag: 'The I/O Membrane Executor',
+      desc: 'The single quarantined boundary permitted to touch the outside world: network fetch, disk storage, DOM updates.',
+      contract: '(effect: Effect) => Promise<ImpactResult>',
+      rule: 'Impact is the sole site of side-effects. Quarantining I/O here keeps the entire rest of your codebase pure.'
+    },
+    wrapper: {
+      name: 'WRAPPER',
+      pole: 'Essence',
+      tag: 'Structural Boundary Shell',
+      desc: 'Names the physical mount point, custom element, or API endpoint host separately from business capability.',
+      contract: 'HTML tag, Route path, Custom Element declaration',
+      rule: 'Wrappers host UI boundaries; they never own domain logic or direct business decisions.'
+    },
+    adapter: {
+      name: 'ADAPTER',
+      pole: 'Expression',
+      tag: 'Input Normalizer',
+      desc: 'Translates messy transport signals (clicks, touches, query strings, headers) into clean semantic Intents.',
+      contract: '(rawEvent: Event) => Intent',
+      rule: 'Adapters normalize only. They extract credentials and payloads, but never authorize or mint tokens.'
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 2. ACTIONS (Pure Essence of Doing)
+  // ──────────────────────────────────────────────────────────────────────────
+  const InvoiceActions = {
+    addItem: (state, intent) => {
+      const newItems = [...state.items, { label: 'Additional Line Item', amount: intent.amount || 100 }];
+      const subtotal = newItems.reduce((acc, item) => acc + item.amount, 0);
+      const total = subtotal * (1 - (state.discountPercent / 100));
+      return {
+        delta: { items: newItems, total },
+        effects: [
+          { type: 'ui.render_notice', message: `Added item ($${intent.amount || 100}). Subtotal now: $${subtotal}.` }
+        ]
+      };
+    },
+
+    applyDiscount: (state, intent) => {
+      const subtotal = state.items.reduce((acc, item) => acc + item.amount, 0);
+      const discountPercent = intent.percent;
+      const total = subtotal * (1 - (discountPercent / 100));
+      return {
+        delta: { discountPercent, total },
+        effects: [
+          { type: 'ui.render_notice', message: `Applied ${discountPercent}% discount.` }
+        ]
+      };
+    },
+
+    sendInvoice: (state, intent) => {
+      if (state.status === 'SENT') {
+        return {
+          delta: {},
+          effects: [{ type: 'ui.render_notice', message: 'Invoice already sent previously.' }]
+        };
+      }
+      return {
+        delta: { status: 'SENT' },
+        effects: [
+          { type: 'email.dispatch', to: 'finance@acmecorp.com', subject: `Invoice #${state.id}`, amount: state.total },
+          { type: 'audit.log', event: 'INVOICE_SENT', actor: intent.actor }
+        ]
+      };
+    },
+
+    illegalDiscount: (state, intent) => {
+      // Deliberately compute an invalid delta to show commit-time validation
+      return {
+        delta: { discountPercent: 150, total: -50 },
+        effects: [
+          { type: 'dangerous.leak', message: 'This effect should NEVER execute!' }
+        ]
+      };
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 3. FACETS (Capability Guards by Lifecycle)
+  // ──────────────────────────────────────────────────────────────────────────
+  const InvoiceFacets = {
+    DRAFT: {
+      allowed: ['addItem', 'applyDiscount', 'sendInvoice', 'illegalDiscount']
+    },
+    SENT: {
+      allowed: ['sendInvoice'] // Cannot alter items once sent!
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 4. MANAGER & STATE ENGINE (Conductor & Committer)
+  // ──────────────────────────────────────────────────────────────────────────
+  class InvoiceManager {
+    constructor() {
+      this.revision = 1;
+      this.state = structuredClone(InvoiceForm.defaults);
+      this.history = [];
+      this.stepQueue = [];
+      this.isStepMode = false;
+      this.isAnimating = false;
+    }
+
+    reset() {
+      this.revision = 1;
+      this.state = structuredClone(InvoiceForm.defaults);
+      this.history = [];
+      this.stepQueue = [];
+      this.isAnimating = false;
+      ImpactRunner.renderState(this.state, this.revision);
+      this.logTrace(`↺ [System Reset] Invoice state restored to initial DRAFT snapshot.`);
+      ImpactRunner.showBanner('Invoice reset to initial draft state', 'success');
+      document.querySelectorAll('.lane-node-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.pipeline-lane').forEach(l => l.style.outline = 'none');
+      const nextBtn = document.getElementById('sim-next-btn');
+      if (nextBtn) nextBtn.style.display = 'none';
+    }
+
+    dispatch(intent) {
+      if (this.isAnimating) return;
+      document.querySelectorAll('.lane-node-item').forEach(el => el.classList.remove('active'));
+      this.logTrace(`[Edge Adapter] Normalized raw event into Intent: ${intent.type}`);
+      
+      const currentFacet = InvoiceFacets[this.state.status];
+      if (!currentFacet || !currentFacet.allowed.includes(intent.actionKey)) {
+        this.logTrace(`❌ [Facet Guard] Operation "${intent.type}" prohibited in status "${this.state.status}"!`);
+        ImpactRunner.showBanner(`Action prohibited by Facet in status ${this.state.status}!`, 'danger');
+        ImpactRunner.highlightZone('lane-meaning', 'error');
+        return;
+      }
+
+      this.logTrace(`✓ [Facet Guard] Intent "${intent.type}" permitted for status "${this.state.status}".`);
+
+      // Execute Pure Action
+      const actionFn = InvoiceActions[intent.actionKey];
+      if (!actionFn) {
+        this.logTrace(`❌ [Action] No Action found for key: ${intent.actionKey}`);
+        return;
+      }
+
+      const { delta, effects } = actionFn(this.state, intent);
+      this.logTrace(`[Pure Action] Computed delta: ${JSON.stringify(delta)}`);
+      this.logTrace(`[Pure Action] Declared ${effects.length} inert effect(s).`);
+
+      // Step-by-Step Mode handling
+      if (this.isStepMode) {
+        this.stepQueue = [
+          {
+            stage: 'edge',
+            nodeIds: ['node-wrapper-box', 'node-adapter-box'],
+            msg: `[Edge Adapter] Normalized raw transport event into Intent: ${intent.type}`
+          },
+          {
+            stage: 'pure',
+            nodeIds: ['node-facet-box', 'node-action-box'],
+            msg: `[Pure Core] Facet guard approved; Action computed delta & declared ${effects.length} effect(s)`
+          },
+          {
+            stage: 'commit',
+            nodeIds: ['node-manager-box', 'node-instance-box'],
+            delta,
+            effects,
+            msg: `[Orchestration] Invariant validation & state commit`
+          },
+          {
+            stage: 'impact',
+            nodeIds: ['node-effect-box', 'node-impact-box'],
+            effects,
+            msg: `[The Membrane] Side-effects dispatched to Impact runner`
+          }
+        ];
+        this.runNextStep();
+        return;
+      }
+
+      // Instant mode with animated visual flow!
+      this.animateFlow(intent, delta, effects);
+    }
+
+    animateFlow(intent, delta, effects) {
+      this.isAnimating = true;
+
+      // Stage 1: Edge
+      ImpactRunner.highlightLane('edge', ['node-wrapper-box', 'node-adapter-box']);
+
+      setTimeout(() => {
+        // Stage 2: Pure Core
+        ImpactRunner.highlightLane('pure', ['node-facet-box', 'node-action-box']);
+
+        setTimeout(() => {
+          // Stage 3: Orchestration & Commit Invariant Check
+          const candidateState = { ...this.state, ...delta };
+          const invariantError = InvoiceForm.validate(candidateState);
+
+          if (invariantError) {
+            this.logTrace(`🚨 [Manager Invariant Failure] ${invariantError}`);
+            this.logTrace(`🛡️ [Safety Net] Delta rejected! State uncorrupted. Declared effects aborted!`);
+            ImpactRunner.showBanner(`Commit Rejected: ${invariantError}`, 'danger');
+            ImpactRunner.highlightZone('lane-orch', 'error');
+            this.isAnimating = false;
+            return;
+          }
+
+          // Valid commit
+          this.state = candidateState;
+          this.revision++;
+          this.logTrace(`✓ [Manager Committer] Delta committed successfully! Revision is now #${this.revision}.`);
+          ImpactRunner.renderState(this.state, this.revision);
+          ImpactRunner.highlightLane('commit', ['node-manager-box', 'node-instance-box']);
+
+          setTimeout(() => {
+            // Stage 4: Impact across the Membrane
+            this.logTrace(`→ [The Membrane] Handing ${effects.length} effect(s) across membrane to Impact.`);
+            ImpactRunner.highlightLane('impact', ['node-effect-box', 'node-impact-box']);
+            effects.forEach(eff => ImpactRunner.executeEffect(eff));
+            this.isAnimating = false;
+          }, 320);
+        }, 320);
+      }, 260);
+    }
+
+    runNextStep() {
+      if (this.stepQueue.length === 0) {
+        const nextBtn = document.getElementById('sim-next-btn');
+        if (nextBtn) nextBtn.style.display = 'none';
+        return;
+      }
+
+      const step = this.stepQueue.shift();
+      ImpactRunner.highlightLane(step.stage, step.nodeIds);
+      this.logTrace(`▶ Step [${step.stage.toUpperCase()}]: ${step.msg}`);
+
+      if (step.stage === 'commit') {
+        const candidateState = { ...this.state, ...step.delta };
+        const invariantError = InvoiceForm.validate(candidateState);
+
+        if (invariantError) {
+          this.logTrace(`🚨 [Manager Invariant Failure] ${invariantError}`);
+          this.logTrace(`🛡️ [Safety Net] Delta rejected! State uncorrupted. Declared effects aborted!`);
+          ImpactRunner.showBanner(`Commit Rejected: ${invariantError}`, 'danger');
+          ImpactRunner.highlightZone('lane-orch', 'error');
+          // Abort all remaining effect steps
+          this.stepQueue = [];
+          const nextBtn = document.getElementById('sim-next-btn');
+          if (nextBtn) nextBtn.style.display = 'none';
+          return;
+        }
+
+        this.state = candidateState;
+        this.revision++;
+        this.logTrace(`✓ [Manager Committer] Delta committed! Revision is now #${this.revision}.`);
+        ImpactRunner.renderState(this.state, this.revision);
+      } else if (step.stage === 'impact') {
+        this.logTrace(`→ [The Membrane] Handing ${step.effects.length} effect(s) across membrane to Impact.`);
+        step.effects.forEach(eff => ImpactRunner.executeEffect(eff));
+      }
+
+      const nextBtn = document.getElementById('sim-next-btn');
+      if (nextBtn) {
+        if (this.stepQueue.length === 0) {
+          nextBtn.style.display = 'none';
+        } else {
+          nextBtn.style.display = 'inline-flex';
+        }
+      }
+    }
+
+    logTrace(msg) {
+      const logEl = document.getElementById('sim-trace-log');
+      if (!logEl) return;
+      const time = new Date().toLocaleTimeString([], { hour12: false });
+      logEl.textContent = `[${time}] ${msg}\n` + logEl.textContent;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 5. IMPACT RUNNER (Expression of Changing - The Only Place I/O Occurs)
+  // ──────────────────────────────────────────────────────────────────────────
+  const ImpactRunner = {
+    renderState: (state, rev) => {
+      const jsonEl = document.getElementById('sim-state-json');
+      if (jsonEl) jsonEl.textContent = JSON.stringify(state, null, 2);
+      
+      const revEl = document.getElementById('instance-rev');
+      if (revEl) revEl.textContent = rev;
+      
+      const badge = document.getElementById('invoice-status-badge');
+      if (badge) {
+        badge.textContent = `Status: ${state.status}`;
+        if (state.status === 'SENT') {
+          badge.style.background = '#065f46';
+          badge.style.color = '#6ee7b7';
+        } else {
+          badge.style.background = '#1e3a8a';
+          badge.style.color = '#93c5fd';
+        }
+      }
+    },
+
+    executeEffect: (effect) => {
+      console.info('[Impact Executor]', effect);
+      if (effect.type === 'ui.render_notice') {
+        ImpactRunner.showBanner(effect.message, 'success');
+      } else if (effect.type === 'email.dispatch') {
+        ImpactRunner.showBanner(`Simulated Email dispatched to ${effect.to} for $${effect.amount}!`, 'warning');
+      } else if (effect.type === 'audit.log') {
+        console.log(`[Audit Trail Impact] Recorded: ${effect.event}`);
+      }
+    },
+
+    showBanner: (text, type = 'success') => {
+      const banner = document.createElement('div');
+      banner.className = 'axis-toast-banner';
+      if (type === 'danger') {
+        banner.style.background = '#991b1b';
+        banner.style.color = '#fecaca';
+        banner.style.border = '1px solid #ef4444';
+      } else if (type === 'warning') {
+        banner.style.background = '#92400e';
+        banner.style.color = '#fde68a';
+        banner.style.border = '1px solid #f59e0b';
+      } else {
+        banner.style.background = '#065f46';
+        banner.style.color = '#a7f3d0';
+        banner.style.border = '1px solid #10b981';
+      }
+      banner.innerHTML = `<span>${type === 'danger' ? '🚨' : type === 'warning' ? '✉️' : '✓'}</span> <span>${text}</span>`;
+      document.body.appendChild(banner);
+      setTimeout(() => {
+        banner.style.animation = 'slideOut 0.25s forwards';
+        setTimeout(() => banner.remove(), 260);
+      }, 3500);
+    },
+
+    highlightLane: (stage, nodeIds = []) => {
+      document.querySelectorAll('.pipeline-lane').forEach(l => l.style.outline = 'none');
+      document.querySelectorAll('.lane-node-item').forEach(n => n.classList.remove('active'));
+
+      const laneMap = {
+        edge: 'lane-edge',
+        pure: 'lane-meaning',
+        commit: 'lane-orch',
+        impact: 'lane-effectful'
+      };
+      const target = document.getElementById(laneMap[stage]);
+      if (target) {
+        target.style.outline = '2px solid var(--accent)';
+        setTimeout(() => target.style.outline = 'none', 1400);
+      }
+      if (nodeIds && nodeIds.length > 0) {
+        nodeIds.forEach(id => {
+          const nodeEl = document.getElementById(id);
+          if (nodeEl) {
+            nodeEl.classList.add('active');
+            setTimeout(() => nodeEl.classList.remove('active'), 1400);
+          }
+        });
+      }
+    },
+
+    highlightZone: (laneId, styleType) => {
+      const el = document.getElementById(laneId);
+      if (el) {
+        el.style.outline = styleType === 'error' ? '3px solid #ef4444' : '2px solid var(--accent)';
+        if (styleType === 'error') {
+          el.style.animation = 'shakeError 0.4s ease';
+          setTimeout(() => el.style.animation = '', 450);
+        }
+        setTimeout(() => el.style.outline = 'none', 2000);
+      }
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 6. INITIALIZATION & ADAPTERS (Connecting DOM to AXIS Intents)
+  // ──────────────────────────────────────────────────────────────────────────
+  const manager = new InvoiceManager();
+  ImpactRunner.renderState(manager.state, manager.revision);
+
+  // Adapter: Step Stepper Tabs
+  document.querySelectorAll('[data-adapter="step-tab"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-adapter="step-tab"]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mvc-stage-view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      const targetView = document.getElementById(btn.dataset.target);
+      if (targetView) targetView.classList.add('active');
+    });
+  });
+
+  // Adapter: Look Facet Switcher (Themes)
+  const setLook = (look) => {
+    document.documentElement.setAttribute('data-look', look);
+    document.querySelectorAll('[data-adapter="facet-look"]').forEach(b => {
+      b.classList.toggle('active', b.dataset.look === look);
+    });
+    // Update theme icon on mobile button
+    const themeIcon = document.getElementById('mobile-theme-icon');
+    if (themeIcon) {
+      themeIcon.textContent = look === 'architect' ? '☀️' : look === 'cyberpunk' ? '⚡' : '🌙';
+    }
+    // Also toggle disabled attribute for facet demonstration
+    document.querySelectorAll('style[data-family="look"]').forEach(style => {
+      style.disabled = !style.dataset.facet.includes(look);
+    });
+  };
+
+  document.querySelectorAll('[data-adapter="facet-look"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setLook(btn.dataset.look);
+    });
+  });
+
+  // Mobile quick theme cycle
+  const themeCycle = ['obsidian', 'architect', 'cyberpunk'];
+  document.getElementById('mobile-quick-theme-btn')?.addEventListener('click', () => {
+    const currentLook = document.documentElement.getAttribute('data-look') || 'obsidian';
+    const nextIdx = (themeCycle.indexOf(currentLook) + 1) % themeCycle.length;
+    setLook(themeCycle[nextIdx]);
+  });
+
+  // Adapter: Layout Facet Switcher (Geometry)
+  const setLayout = (layout) => {
+    document.documentElement.setAttribute('data-layout', layout);
+    document.querySelectorAll('[data-adapter="facet-layout"]').forEach(b => {
+      b.classList.toggle('active', b.dataset.layout === layout);
+    });
+    document.querySelectorAll('style[data-family="layout"]').forEach(style => {
+      style.disabled = !style.dataset.facet.includes(layout);
+    });
+  };
+
+  document.querySelectorAll('[data-adapter="facet-layout"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setLayout(btn.dataset.layout);
+    });
+  });
+
+  // Mobile Drawer Navigation
+  const drawer = document.getElementById('mobile-drawer');
+  const backdrop = document.getElementById('mobile-drawer-backdrop');
+  const toggleBtn = document.getElementById('mobile-menu-toggle-btn');
+  const closeBtn = document.getElementById('mobile-drawer-close-btn');
+
+  const openDrawer = () => {
+    if (drawer) drawer.classList.add('open');
+    if (backdrop) backdrop.classList.add('open');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeDrawer = () => {
+    if (drawer) drawer.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  };
+
+  toggleBtn?.addEventListener('click', () => {
+    if (drawer?.classList.contains('open')) closeDrawer();
+    else openDrawer();
+  });
+
+  closeBtn?.addEventListener('click', closeDrawer);
+  backdrop?.addEventListener('click', closeDrawer);
+
+  const handleDecompressionNav = (href) => {
+    if (href === '#decompression') {
+      const tab2 = document.querySelector('[data-target="view-split"]');
+      if (tab2) tab2.click();
+    }
+  };
+
+  document.querySelectorAll('[data-adapter="mobile-nav-link"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      closeDrawer();
+      handleDecompressionNav(link.getAttribute('href'));
+    });
+  });
+
+  document.querySelectorAll('[data-adapter="quick-pill"]').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      handleDecompressionNav(pill.getAttribute('href'));
+    });
+  });
+
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      handleDecompressionNav(link.getAttribute('href'));
+    });
+  });
+
+  // Adapter: 7 Axes Node Selection (Inspector Drawer)
+  const selectNode = (card) => {
+    document.querySelectorAll('.node-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    const id = card.dataset.id;
+    const comp = ComponentRegistry[id];
+    if (!comp) return;
+
+    const drawerEl = document.getElementById('node-inspector');
+    drawerEl.style.display = 'flex';
+    document.getElementById('inspect-tag').textContent = `${comp.pole} · ${comp.name}`;
+    document.getElementById('inspect-title').textContent = `${comp.name} — ${comp.tag}`;
+    document.getElementById('inspect-desc').textContent = comp.desc;
+    document.getElementById('inspect-contract').textContent = comp.contract;
+    document.getElementById('inspect-rule').textContent = comp.rule;
+  };
+
+  document.querySelectorAll('[data-adapter="node-select"]').forEach(card => {
+    card.addEventListener('click', () => {
+      selectNode(card);
+      const drawerEl = document.getElementById('node-inspector');
+      drawerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  document.querySelector('[data-adapter="close-inspector"]')?.addEventListener('click', () => {
+    document.getElementById('node-inspector').style.display = 'none';
+    document.querySelectorAll('.node-card').forEach(c => c.classList.remove('active'));
+  });
+
+  // Pre-select Form card on load
+  const initialCard = document.querySelector('.node-card[data-id="form"]');
+  if (initialCard) {
+    selectNode(initialCard);
+  }
+
+  // Adapter: Simulator Intent Triggers
+  document.querySelectorAll('[data-adapter="sim-intent"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const intentMap = {
+        addItem: { type: 'invoice.item.add', actionKey: 'addItem', amount: 100, actor: 'user-77' },
+        applyDiscount: { type: 'invoice.discount.apply', actionKey: 'applyDiscount', percent: 20, actor: 'user-77' },
+        sendInvoice: { type: 'invoice.workflow.send', actionKey: 'sendInvoice', actor: 'user-77' },
+        illegalDiscount: { type: 'invoice.discount.illegal', actionKey: 'illegalDiscount', actor: 'user-77' }
+      };
+      const intent = intentMap[btn.dataset.intent];
+      if (intent) manager.dispatch(intent);
+    });
+  });
+
+  // Adapter: Simulator Reset
+  document.getElementById('sim-reset-btn')?.addEventListener('click', () => {
+    manager.reset();
+  });
+
+  // Adapter: Step Toggle & Next Button
+  document.getElementById('sim-step-mode')?.addEventListener('change', (e) => {
+    manager.isStepMode = e.target.checked;
+    if (!manager.isStepMode) {
+      document.getElementById('sim-next-btn').style.display = 'none';
+    }
+  });
+
+  document.getElementById('sim-next-btn')?.addEventListener('click', () => {
+    manager.runNextStep();
+  });
+
+  document.querySelector('[data-adapter="sim-clear-log"]')?.addEventListener('click', () => {
+    document.getElementById('sim-trace-log').textContent = '';
+  });
+
+  // Adapter: Architecture Advisor Quiz
+  document.querySelectorAll('[data-adapter="quiz-opt"]').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('[data-adapter="quiz-opt"]').forEach(o => {
+        o.classList.remove('selected');
+        const radio = o.querySelector('input');
+        if (radio) radio.checked = false;
+      });
+      opt.classList.add('selected');
+      const radio = opt.querySelector('input');
+      if (radio) radio.checked = true;
+
+      const profile = opt.dataset.profile;
+      const resEl = document.getElementById('advisor-result');
+      if (profile === 'lite') {
+        resEl.innerHTML = `
+          <strong>Recommended Profile: AXIS Lite (5 Components)</strong><br>
+          <span style="color:var(--text-muted);">Use: <code>Form</code> + <code>Instance</code> + <code>Action</code> + <code>Manager</code> + <code>Effect/Impact</code>.</span><br>
+          <em>Keep business logic pure and side-effects isolated. Do not introduce Tokens, Facets, or Bonds until domain complexity demands them!</em>
+        `;
+      } else if (profile === 'roles') {
+        resEl.innerHTML = `
+          <strong>Recommended Profile: AXIS Role/Lifecycle Profile (7 Components)</strong><br>
+          <span style="color:var(--text-muted);">Add: <code>Facet</code> + <code>Token</code> to AXIS Lite.</span><br>
+          <em>Facets declare legal operations per lifecycle stage (e.g. Draft vs Paid) or user claims, completely eliminating deeply nested if/else guards.</em>
+        `;
+      } else if (profile === 'graph') {
+        resEl.innerHTML = `
+          <strong>Recommended Profile: AXIS Relational Profile (9 Components)</strong><br>
+          <span style="color:var(--text-muted);">Add: <code>Bond</code> + <code>Link</code> to enforce cross-entity invariants.</span><br>
+          <em>Bonds define parent-child multiplicities and consistency constraints verified at commit time; Links pre-hydrate entity references at composition boundaries.</em>
+        `;
+      }
+    });
+  });
+
+  // Adapter: Smooth Scroll Links
+  document.querySelectorAll('[data-adapter="smooth-scroll"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Adapter: Keyboard shortcuts (Esc closes drawer & inspector)
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeDrawer();
+      const inspector = document.getElementById('node-inspector');
+      if (inspector && inspector.style.display !== 'none') {
+        inspector.style.display = 'none';
+        document.querySelectorAll('.node-card').forEach(c => c.classList.remove('active'));
+      }
+    }
+  });
+
+  // Adapter: ScrollSpy for Rail Links and Mobile Quick Pills
+  const sections = document.querySelectorAll('section[id], div#decompression');
+  const onScroll = () => {
+    let current = '';
+    const scrollPos = window.scrollY + 160;
+    sections.forEach(section => {
+      if (scrollPos >= section.offsetTop) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    if (current) {
+      document.querySelectorAll('.nav-link, .mobile-nav-link, .pill-item').forEach(link => {
+        const href = link.getAttribute('href');
+        const isActive = href === `#${current}`;
+        link.classList.toggle('active', isActive);
+      });
+    }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  console.info('AXIS In-Browser Presentation Kernel initialized.');
+})();
+</script>
+
+
+<!-- Shared, draggable navigation between AXIS presentations and MENTIC home. -->
+<axis-navigator></axis-navigator>
+<script src="../../../webcomponents/axis-navigator.js" defer></script>
+  <script src="../../devloiter/devloiter.js"></script>
+  <devloiter-widget height="160"></devloiter-widget>
+</body>
+</html>

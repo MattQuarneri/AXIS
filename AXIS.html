@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore AXIS, a placement grammar for code. Download the agent skill, install it in Claude or Codex, and browse interactive presentations.">
+  <meta name="color-scheme" content="dark">
+  <title>AXIS — Architecture for humans and agents</title>
+  <style>
+    :root{--bg:#101916;--panel:#18241f;--ink:#eef3e9;--muted:#acbbb0;--line:#34463b;--accent:#c8ef8b;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--accent);text-underline-offset:4px}a:hover{color:white}a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:5px}.wrap{max-width:1120px;margin:auto;padding:0 32px}header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:25px 0;border-bottom:1px solid var(--line)}.brand{font-weight:750;letter-spacing:.12em;color:var(--ink);text-decoration:none}.brand small{font-size:11px;color:var(--muted);font-weight:450;letter-spacing:.08em;margin-left:12px}nav{display:flex;flex-wrap:wrap;gap:22px;font-size:14px}nav a{color:var(--muted);text-decoration:none}.hero{padding:86px 0 68px;display:grid;grid-template-columns:1.35fr 1fr;gap:65px;align-items:center}.eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.16em;font:12px/1.5 var(--mono)}h1{font-size:clamp(48px,6.3vw,78px);line-height:1.06;font-weight:550;letter-spacing:-.055em;margin:22px 0 26px}h1 em{font-style:normal;color:var(--accent)}.lead{font-size:20px;max-width:630px;color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 14px}.button,button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:5px;padding:12px 20px;font:600 14px/1.4 system-ui;cursor:pointer;text-decoration:none;background:transparent;color:var(--ink)}.button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}.button:hover,button:hover{border-color:var(--accent);color:var(--accent)}.button.primary:hover{background:#ddffae;color:var(--bg)}.note{font-size:13px;color:var(--muted)}.diagram{padding:28px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.diagram p{margin:0 0 20px;color:var(--muted);font:12px var(--mono);letter-spacing:.08em}.flow{font:14px/2 var(--mono)}.flow div{padding:12px 0;border-bottom:1px solid var(--line)}.flow div:last-child{border:0}.flow span{color:var(--accent)}.diagram .caption{margin:22px 0 0;line-height:1.7;letter-spacing:0;font:14px/1.7 system-ui}section{padding:54px 0;border-top:1px solid var(--line)}.section-heading{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start;margin-bottom:30px}h2{font-size:34px;font-weight:550;line-height:1.2;letter-spacing:-.035em;margin:10px 0}h3{font-size:20px;font-weight:600;margin:0 0 12px}p{margin:0 0 16px}.muted{color:var(--muted)}.install-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{border:1px solid var(--line);border-radius:7px;padding:27px;background:var(--panel)}.card.wide{grid-column:1/-1}.step{color:var(--accent);font:12px var(--mono);display:block;margin-bottom:16px}code{font-family:var(--mono);font-size:.85em;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:16px;margin:12px 0 18px;font:13px/1.7 var(--mono)}ol{padding-left:23px}li{margin-bottom:8px}.copy-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.status{font-size:13px;color:var(--accent);min-height:22px}.presentations{display:grid;grid-template-columns:1fr 1fr;gap:0 32px}.presentation{display:block;padding:24px 0;border-top:1px solid var(--line);text-decoration:none}.presentation strong{color:var(--ink);font-weight:550;font-size:19px;display:block;margin-bottom:6px}.presentation span{display:block;color:var(--muted);font-size:14px}.presentation:hover strong{color:var(--accent)}.resources{display:flex;gap:16px 28px;flex-wrap:wrap}details{border-top:1px solid var(--line);padding:20px 0}summary{cursor:pointer;font-weight:550}details p,details pre{margin-top:16px}footer{border-top:1px solid var(--line);padding:28px 0 40px;font-size:13px;color:var(--muted)}footer p{margin-bottom:8px}.skip{position:absolute;left:20px;top:-100px;background:var(--bg);padding:12px;z-index:10}.skip:focus{top:10px}@media(max-width:760px){.wrap{padding:0 22px}header{align-items:flex-start;flex-direction:column;gap:15px}nav{gap:18px}.hero{grid-template-columns:1fr;padding:50px 0;gap:30px}.section-heading,.install-grid,.presentations{grid-template-columns:1fr}.section-heading{gap:10px}.card.wide{grid-column:auto}h2{font-size:29px}section{padding:38px 0}.brand small{font-size:10px}.diagram{padding:22px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+  <header>
+    <a class="brand" href="#">AXIS <small>MENTIC COGNITIVE SYSTEMS</small></a>
+    <nav aria-label="Main navigation"><a href="#install">Install</a><a href="#try">Try it</a><a href="#presentations">Presentations</a><a href="https://github.com/mentic-cognitive-systems/AXIS">GitHub ↗</a></nav>
+  </header>
+  <main id="main">
+    <div class="hero">
+      <div>
+        <span class="eyebrow">Architecture for humans &amp; agents</span>
+        <h1>Give every piece<br>of code <em>a home.</em></h1>
+        <p class="lead">AXIS is a placement grammar for code: keep business rules pure, put IO at the edge, and give every piece of mutable state one owner.</p>
+        <p class="muted">Agentically eXtensible Instruction Structures. Seven concerns, each with a definition and a live counterpart. Use the roles to reason about your code, in your repository’s own names.</p>
+        <div class="actions"><a class="button primary" href="skill/axis.skill" download="axis.zip">Download AXIS · ZIP ↓</a><a class="button" href="#install">Installation guide</a></div>
+        <p class="note">Apache 2.0 skill · Bundled tool requires Python 3.8+ · No Python dependencies</p>
+      </div>
+      <div class="diagram" aria-label="AXIS execution flow">
+        <p>ONE PATH FROM INPUT TO CHANGE</p>
+        <div class="flow"><div>raw event → Adapter → <span>Intent</span></div><div>Manager → <span>Action</span></div><div>delta → commit → <span>new Instance</span></div><div>effects → Impact → <span>outside world</span></div></div>
+        <p class="caption">Actions compute. Effects describe. Managers commit. Impact performs IO.</p>
+      </div>
+    </div>
+    <section id="install">
+      <div class="section-heading"><div><span class="eyebrow">01 / Install once</span><h2>Bring AXIS into your agent.</h2></div><p class="muted">Download the ZIP and choose your tool below. The package contains the core instructions, references, examples, and a repository mapper. Keep the entire <code>axis/</code> folder together.</p></div>
+      <div class="install-grid">
+        <article class="card"><span class="step">CODEX · CLI &amp; IDE</span><h3>Install the skill folder</h3><p>Extract the ZIP. Put its <code>axis/</code> folder in one of these locations:</p><p class="note">For yourself, across repositories</p><pre>~/.agents/skills/axis/SKILL.md</pre><p class="note">For a project, committed with the repository</p><pre>.agents/skills/axis/SKILL.md</pre><p>Use <code>/skills</code> or type <code>$axis</code> to select it. If it does not appear, restart Codex.</p><a href="https://learn.chatgpt.com/docs/build-skills">Official OpenAI installation guide ↗</a></article>
+        <article class="card"><span class="step">CLAUDE CODE</span><h3>Install the skill folder</h3><p>Extract the ZIP. Put its <code>axis/</code> folder in one of these locations:</p><p class="note">For yourself, across repositories</p><pre>~/.claude/skills/axis/SKILL.md</pre><p class="note">For a project, committed with the repository</p><pre>.claude/skills/axis/SKILL.md</pre><p>Invoke <code>/axis</code>, or ask Claude Code to use the AXIS skill for your task.</p><a href="https://code.claude.com/docs/en/skills">Official Claude Code installation guide ↗</a></article>
+        <article class="card"><span class="step">CLAUDE APP</span><h3>Upload and enable</h3><ol><li>Download the ZIP; leave it compressed.</li><li>Open <strong>Customize → Skills</strong>.</li><li>Choose <strong>+ → Create skill → Upload a skill</strong>.</li><li>Upload <code>axis.zip</code> and enable AXIS.</li></ol><p class="muted">Code execution must be enabled. Team or Enterprise settings can affect skill availability.</p><a href="https://support.claude.com/en/articles/12512180-use-skills-in-claude">Official Claude upload guide ↗</a></article>
+        <article class="card"><span class="step">FIRST TASK</span><h3>Start with the code you have</h3><p>Open your repository in your coding agent, or supply the code you want reviewed. Then ask:</p><pre id="installed-prompt">Use the AXIS skill to map this repository, identify mixed responsibilities, and recommend the smallest useful changes.</pre><div class="copy-row"><button type="button" data-copy="installed-prompt">Copy prompt</button><span class="status" role="status"></span></div><p class="note" style="margin-top:16px">Installed skills can be selected explicitly. Agents may also select them when a task matches the skill description.</p></article>
+      </div>
+    </section>
+    <section id="try">
+      <div class="section-heading"><div><span class="eyebrow">02 / Try it by URL</span><h2>Start with a conversation.</h2></div><p class="muted">For an agent that can fetch web pages, paste this prompt and provide your code. This loads AXIS for the task; it does not persistently install the skill.</p></div>
+      <div class="card"><pre id="url-prompt">Read https://mentic.com/AXIS/skill/llms.txt and its linked core instructions. Apply AXIS to the code I provide, fetching references as needed.</pre><div class="copy-row"><button type="button" data-copy="url-prompt">Copy prompt</button><span class="status" role="status"></span></div><p class="note" style="margin-top:16px">If your agent cannot fetch URLs, supply the <a href="skill/llms-full.txt">complete plain-text guide</a> directly. Running the repository mapper also requires access to the repository and Python.</p></div>
+    </section>
+    <section id="presentations">
+      <div class="section-heading"><div><span class="eyebrow">03 / Explore the architecture</span><h2>Different ways into AXIS.</h2></div><p class="muted">Browse the presentations, explore the running architecture, or keep the quick sheet beside your code.</p></div>
+      <div class="presentations">
+        <a class="presentation" href="presentations/the_AXIS_arch.html"><strong>The architecture, running ↗</strong><span>Explore the interactive AXIS architecture.</span></a>
+        <a class="presentation" href="presentations/AXIS_quicksheet_bySol.html"><strong>AXIS quick sheet · Sol ↗</strong><span>A compact reference for humans and agents.</span></a>
+        <a class="presentation" href="presentations/Presenting_AXIS_bySol.html"><strong>From structure to change · Sol ↗</strong><span>A developer field guide, starting with familiar MVC concepts.</span></a>
+        <a class="presentation" href="presentations/Presenting_AXIS_byOpus.html"><strong>Presenting AXIS · Opus ↗</strong><span>An interactive introduction to AXIS.</span></a>
+        <a class="presentation" href="presentations/Presenting_AXIS_byArgon.html"><strong>Presenting AXIS · Argon ↗</strong><span>Agentically eXtensible Instruction Structures.</span></a>
+        <a class="presentation" href="presentations/Presenting_AXIS_byGemini.html"><strong>Presenting AXIS · Gemini ↗</strong><span>The architecture of behavior and change.</span></a>
+      </div>
+    </section>
+    <section id="resources">
+      <div class="section-heading"><div><span class="eyebrow">04 / Source &amp; distribution</span><h2>Open the source. Share the skill.</h2></div><p class="muted">The repository is the home for the architecture and its skill. Download a copy, inspect the instructions, and keep the license and attribution with redistributions.</p></div>
+      <div class="resources"><a href="https://github.com/mentic-cognitive-systems/AXIS">AXIS on GitHub ↗</a><a href="skill/axis.skill" download>Download .skill</a><a href="skill/axis/SKILL.md">Core instructions</a><a href="skill/llms.txt">Agent index · llms.txt</a><a href="skill/llms-full.txt">Complete plain-text guide</a><a href="skill/README.md">Package README</a></div>
+      <div style="margin-top:32px">
+        <details><summary>Publishing AXIS on your own website</summary><p>Upload this page with <code>presentations/</code> and <code>skill/</code> beside it. Preserve the skill folder structure: the agent index links to its references, script, examples, and license. Its optional links also point to the parent AXIS source documents.</p><pre>AXIS/
+  AXIS.html
+  presentations/…
+  skill/
+    axis.skill
+    llms.txt
+    llms-full.txt
+    axis/
+      SKILL.md
+      references/…
+      scripts/axis.py
+      assets/…
+      LICENSE.txt
+      NOTICE.txt</pre><p>The ZIP button downloads <code>axis.skill</code> with the filename <code>axis.zip</code>; both contain the same ZIP archive. The URL prompt assumes the files are published at <code>https://mentic.com/AXIS/skill/</code>. If you host elsewhere, update that prompt.</p><p>Hosting makes the files available. Visitors still install the skill in their agent or explicitly ask the agent to read the published instructions.</p></details>
+        <details><summary>Building and updating the package</summary><p>In the source repository, run these commands from <code>architectures/AXIS/skill/</code>:</p><pre>python3 build.py
+python3 build.py --check</pre><p>The builder regenerates the assembled references, agent pages, and <code>axis.skill</code>. Publish them together. People using downloaded copies need to install the updated package.</p></details>
+        <details><summary>Distributing through an OpenAI plugin</summary><p>For installation through the OpenAI plugin directory, package AXIS as a plugin. This is a separate distribution step from hosting these files. OpenAI recommends plugins for distributing reusable skills beyond a single repository.</p><a href="https://learn.chatgpt.com/docs/build-skills">Read the official skills and distribution guide ↗</a></details>
+      </div>
+    </section>
+  </main>
+  <footer><p>AXIS, formulated by Matthew Quarneri — MENTIC Cognitive Systems. © 2026 MENTIC LLC.</p><p>If you found these ideas useful you could <a href="https://buymeacoffee.com/mattq4">Buy Me a Coffee</a> to show your support.</p><p>Skill: <a href="skill/axis/LICENSE.txt">Apache License 2.0</a> · <a href="skill/axis/NOTICE.txt">Attribution notice</a>. Architecture documents: <a href="LICENSE.md">CC BY 4.0</a>.</p></footer>
+</div>
+<script>
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.addEventListener('click', async function () {
+      var source = document.getElementById(button.dataset.copy);
+      var status = button.parentElement.querySelector('[role="status"]');
+      try {
+        if (!navigator.clipboard || !window.isSecureContext) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(source.textContent.trim());
+        status.textContent = 'Prompt copied.';
+      } catch (error) {
+        var selection = window.getSelection();
+        if (selection) {
+          var range = document.createRange();
+          range.selectNodeContents(source);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        status.textContent = 'Select and copy the prompt above (⌘C or Ctrl+C).';
+      }
+    });
+  });
+</script>
+  <script src="../devloiter/devloiter.js"></script>
+  <devloiter-widget height="160"></devloiter-widget>
+</body>
+</html>
